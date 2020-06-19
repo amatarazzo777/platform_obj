@@ -146,7 +146,7 @@ public:
 
 class ANTIALIAS : public DisplayUnit {
 public:
-  ANTIALIAS(antialias _antialias)
+  ANTIALIAS(alias_t _antialias)
       : setting(static_cast<cairo_antialias_t>(_antialias)) {}
 
   void invoke(DisplayContext &context) {
@@ -184,7 +184,7 @@ public:
       if (!fontDescription) {
         std::string s = "Font could not be loaded from description. ( ";
         s += description + ")";
-        context.errorState(__func__, __LINE__, __FILE__, std::string_view(s));
+        context.error_state(__func__, __LINE__, __FILE__, std::string_view(s));
       }
     }
     bprocessed = true;
@@ -227,10 +227,10 @@ public:
 
 class ALIGN : public DisplayUnit {
 public:
-  ALIGN(alignment _aln) : setting(_aln) {}
+  ALIGN(alignment_t _aln) : setting(_aln) {}
   ~ALIGN() {}
   void emit(PangoLayout *layout);
-  alignment setting = alignment::left;
+  alignment_t setting = alignment_t::left;
   void invoke(DisplayContext &context) { bprocessed = true; }
 };
 

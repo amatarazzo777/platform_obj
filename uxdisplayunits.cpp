@@ -27,16 +27,16 @@ shading or texturing derive and publish the Paint class interface.
 
 #define ERROR_CHECK(obj)                                                       \
   {                                                                            \
-    cairo_status_t stat = context.errorCheck(obj);                             \
+    cairo_status_t stat = context.error_check(obj);                             \
     if (stat)                                                                  \
-      context.errorState(__func__, __LINE__, __FILE__, stat);                  \
+      context.error_state(__func__, __LINE__, __FILE__, stat);                  \
   }
 #define ERROR_DRAW_PARAM(s)                                                    \
-  context.errorState(__func__, __LINE__, __FILE__, std::string_view(s));       \
+  context.error_state(__func__, __LINE__, __FILE__, std::string_view(s));       \
   error(s);
 
 #define ERROR_DESC(s)                                                          \
-  context.errorState(__func__, __LINE__, __FILE__, std::string_view(s));
+  context.error_state(__func__, __LINE__, __FILE__, std::string_view(s));
 
 void uxdevice::DrawingOutput::invoke(cairo_t *cr) {
 
@@ -49,10 +49,12 @@ void uxdevice::DrawingOutput::intersect(cairo_rectangle_t &r) {
   if (!hasInkExtents)
     return;
   cairo_rectangle_int_t rInt = {(int)r.x, (int)r.y, (int)r.width,
-                                (int)r.height};
+                                (int)r.height
+                               };
   cairo_region_t *rectregion = cairo_region_create_rectangle(&rInt);
   cairo_rectangle_int_t objrect = {inkRectangle.x, inkRectangle.y,
-                                   inkRectangle.width, inkRectangle.height};
+                                   inkRectangle.width, inkRectangle.height
+                                  };
 
   overlap = cairo_region_contains_rectangle(rectregion, &objrect);
   if (overlap == CAIRO_REGION_OVERLAP_PART) {
@@ -60,7 +62,8 @@ void uxdevice::DrawingOutput::intersect(cairo_rectangle_t &r) {
     cairo_region_intersect(dst, rectregion);
     cairo_region_get_extents(dst, &intersection);
     _intersection = {(double)intersection.x, (double)intersection.y,
-                     (double)intersection.width, (double)intersection.height};
+                     (double)intersection.width, (double)intersection.height
+                    };
     cairo_region_destroy(dst);
   }
 
@@ -74,7 +77,8 @@ void uxdevice::DrawingOutput::intersect(CairoRegion &rectregion) {
   cairo_region_intersect(dst, rectregion._ptr);
   cairo_region_get_extents(dst, &intersection);
   _intersection = {(double)intersection.x, (double)intersection.y,
-                   (double)intersection.width, (double)intersection.height};
+                   (double)intersection.width, (double)intersection.height
+                  };
   cairo_region_destroy(dst);
 }
 
@@ -94,12 +98,14 @@ void uxdevice::DrawingOutput::evaluate_cache(DisplayContext &context) {
   } else if (!oncethread) {
     auto currentPoint = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> diff =
-        currentPoint - lastRenderTime;
+      currentPoint - lastRenderTime;
     // if rendering requests are for more than 2 frames
     bool useCache = diff.count() < context.cacheThreshold;
     if (useCache) {
       oncethread = std::make_unique<std::thread>(
-          [=, &context]() { fnCacheSurface(context); });
+      [=, &context]() {
+        fnCacheSurface(context);
+      });
       oncethread->detach();
     }
   }
@@ -146,7 +152,7 @@ bool uxdevice::TEXT_RENDER::set_layout_options(cairo_t *cr) {
   guint layoutSerial = pango_layout_get_serial(layout);
 
   const PangoFontDescription *originalDescription =
-      pango_layout_get_font_description(layout);
+    pango_layout_get_font_description(layout);
   if (!originalDescription ||
       !pango_font_description_equal(originalDescription, font->fontDescription))
     pango_layout_set_font_description(layout, font->fontDescription);
@@ -173,7 +179,8 @@ bool uxdevice::TEXT_RENDER::set_layout_options(cairo_t *cr) {
     int th = std::min((double)logical_rect.height, a.h);
     inkRectangle = {(int)a.x, (int)a.y, tw, th};
     _inkRectangle = {(double)inkRectangle.x, (double)inkRectangle.y,
-                     (double)inkRectangle.width, (double)inkRectangle.height};
+                     (double)inkRectangle.width, (double)inkRectangle.height
+                    };
 
     hasInkExtents = true;
     ret = true;
@@ -185,8 +192,8 @@ bool uxdevice::TEXT_RENDER::set_layout_options(cairo_t *cr) {
 void uxdevice::TEXT_RENDER::create_shadow(void) {
   if (!shadowImage) {
     shadowImage = cairo_image_surface_create(
-        CAIRO_FORMAT_ARGB32, _inkRectangle.width + textshadow->x,
-        _inkRectangle.height + textshadow->y);
+                    CAIRO_FORMAT_ARGB32, _inkRectangle.width + textshadow->x,
+                    _inkRectangle.height + textshadow->y);
     shadowCr = cairo_create(shadowImage);
     // offset text by the parameter amounts
     cairo_move_to(shadowCr, textshadow->x, textshadow->y);
@@ -491,7 +498,8 @@ void uxdevice::IMAGE::invoke(DisplayContext &context) {
   const AREA &a = *area;
   inkRectangle = {(int)a.x, (int)a.y, (int)a.w, (int)a.h};
   _inkRectangle = {(double)inkRectangle.x, (double)inkRectangle.y,
-                   (double)inkRectangle.width, (double)inkRectangle.height};
+                   (double)inkRectangle.width, (double)inkRectangle.height
+                  };
   hasInkExtents = true;
   auto fnCache = [=](DisplayContext &context) {
     // set directly callable rendering function.

@@ -103,11 +103,11 @@ public:
 
   virtual void emit(cairo_t *cr);
   virtual void emit(cairo_t *cr, double x, double y, double w, double h);
-  void filter(filterType ft) {
+  void filter(filter_t ft) {
     if (_pattern)
       cairo_pattern_set_filter(_pattern, static_cast<cairo_filter_t>(ft));
   }
-  void extend(extendType et) {
+  void extend(extend_t et) {
     if (_pattern)
       cairo_pattern_set_extend(_pattern, static_cast<cairo_extend_t>(et));
   }
@@ -133,8 +133,8 @@ private:
   double _cx0 = 0, _cy0 = 0, _radius0 = 0, _cx1 = 0, _cy1 = 0, _radius1 = 0;
   ColorStops _stops = {};
 
-  filterType _filter = filterType::fast;
-  extendType _extend = extendType::repeat;
+  filter_t _filter = filter_t::fast;
+  extend_t _extend = extend_t::repeat;
   double _width = -1;
   double _height = -1;
 

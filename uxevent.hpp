@@ -42,14 +42,14 @@ the caller. There is one event class for all of the distinct events. Simply
 different constructors are selected based upon the necessity of information
 given within the parameters.
 */
-using event = class event {
+using event_t = class event_t {
 public:
-  event(const eventType &et) : type(et) {}
-  event(const eventType &et, const char &k) : type(et), key(k) {}
-  event(const eventType &et, const unsigned int &vk)
+  event_t(const eventType &et) : type(et) {}
+  event_t(const eventType &et, const char &k) : type(et), key(k) {}
+  event_t(const eventType &et, const unsigned int &vk)
       : type(et), virtualKey(vk), isVirtualKey(true) {}
 
-  event(const eventType &et, const short &mx, const short &my,
+  event_t(const eventType &et, const short &mx, const short &my,
         const short &mb_dis)
       : type(et), x(mx), y(my) {
 
@@ -58,15 +58,15 @@ public:
     else
       button = static_cast<char>(mb_dis);
   }
-  event(const eventType &et, const short &_w, const short &_h)
+  event_t(const eventType &et, const short &_w, const short &_h)
       : type(et), x(_w), y(_h), w(_w), h(_h) {}
 
-  event(const eventType &et, const short &_x, const short &_y, const short &_w,
+  event_t(const eventType &et, const short &_x, const short &_y, const short &_w,
         const short &_h)
       : type(et), x(_x), y(_y), w(_w), h(_h) {}
-  event(const eventType &et, const short &_distance)
+  event_t(const eventType &et, const short &_distance)
       : type(et), distance(_distance) {}
-  ~event(){};
+  ~event_t(){};
 
 public:
   eventType type = eventType::none;
@@ -87,6 +87,6 @@ public:
 
 /// \typedef eventHandler is used to note and declare a lambda function for
 /// the specified event.
-typedef std::function<void(const event &et)> eventHandler;
+typedef std::function<void(const event_t &et)> eventHandler;
 
 } // namespace uxdevice

@@ -8,7 +8,7 @@
 */
 #pragma once
 namespace uxdevice {
-enum class antialias {
+enum class alias_t {
   def = CAIRO_ANTIALIAS_DEFAULT,
 
   /* method */
@@ -22,7 +22,7 @@ enum class antialias {
   best = CAIRO_ANTIALIAS_BEST
 };
 
-enum class filterType {
+enum class filter_t {
   fast = CAIRO_FILTER_FAST,
   good = CAIRO_FILTER_GOOD,
   best = CAIRO_FILTER_BEST,
@@ -31,20 +31,20 @@ enum class filterType {
   gaussian = CAIRO_FILTER_GAUSSIAN
 };
 
-enum class extendType {
+enum class extend_t {
   none = CAIRO_EXTEND_NONE,
   repeat = CAIRO_EXTEND_REPEAT,
   reflect = CAIRO_EXTEND_REFLECT,
   pad = CAIRO_EXTEND_PAD
 };
 
-enum class lineCap {
+enum class line_cap_t {
   butt = CAIRO_LINE_CAP_BUTT,
   round = CAIRO_LINE_CAP_ROUND,
   square = CAIRO_LINE_CAP_SQUARE
 };
 
-enum class lineJoin {
+enum class line_join_t {
   miter = CAIRO_LINE_JOIN_MITER,
   round = CAIRO_LINE_JOIN_ROUND,
   bevel = CAIRO_LINE_JOIN_BEVEL
@@ -82,19 +82,19 @@ enum op_t {
   opHSLColor = CAIRO_OPERATOR_HSL_COLOR,
   opHSLLuminosity = CAIRO_OPERATOR_HSL_LUMINOSITY
 };
-enum class alignment {
+enum class alignment_t {
   left = PangoAlignment::PANGO_ALIGN_LEFT,
   center = PangoAlignment::PANGO_ALIGN_CENTER,
   right = PangoAlignment::PANGO_ALIGN_RIGHT,
   justified = 4
 };
-enum class ellipsize {
+enum class ellipsize_t {
   none = PANGO_ELLIPSIZE_NONE,
   start = PANGO_ELLIPSIZE_START,
   middle = PANGO_ELLIPSIZE_MIDDLE,
   end = PANGO_ELLIPSIZE_END
 };
-enum class content {
+enum class content_t {
   color = CAIRO_CONTENT_COLOR,
   alpha = CAIRO_CONTENT_ALPHA,
   all = CAIRO_CONTENT_COLOR_ALPHA

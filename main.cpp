@@ -1,4 +1,3 @@
-
 #include "uxdevice.hpp"
 
 using namespace std;
@@ -20,44 +19,44 @@ void handleError(const std::string errText) {
 // description but larger in the source description perhaps unless the c++ RAW
 // literanl input format is used for literal string data.
 const char *stripes =
-    "data:image/"
-    "png;base64,iVBORw0KGgoAAAANSUhEUgAAACsAAAARCAYAAABEvFULAAAABmJLR0QA/wD/"
-    "AP+"
-    "gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH5AQZFBsOzDGg0AAABQZJREFUSMe"
-    "llttvVFUUxn9r98x0oLRAW8pNLKUBrG1pC3ItEIqAQNSoGCEQQQNG/"
-    "gvfjD74QIwmPpCIGgWCJiogQaQgUAWDUC4lpUCBWq51GEovM9Nz9vLhdJiZthQMK5mH2Ze1v"
-    "rXWt759ZMtW52Z3F6PFgOn9Jcx1wXOT/"
-    "wPB9P1UcxxYstJQkLsIS4RvvvwbgMwQLHvZ0NqiXG9W7kfQ7i7/"
-    "fCAIBaNFSiuEvLyxBGQqrl5j357L3Lnln0ngmFIiyOdfO3bWPEP4X+"
-    "XiBSUWTQKYPlt4vmQmRvJAY5w5X8v5eiURrK9ZC8EgxOPJpFzXP5tfALl5wsg8wfOUC2eV+"
-    "5Gkn564f/"
-    "aFuUJl1WQaG5u41qxEwhCL+"
-    "r7l488cm6iM40A0mg4kFoW31huyh1Yi5CCEuH5jP8ePWh60Dww6FfyUEmHaDCEzMJYMGQ0Yh"
-    "KEIQ4npr/"
-    "zyo0esN6brQmeHf7dihjC9qhohBDh4XEVauoNeppkDBAGLp618v+OypFY4USHwg8+"
-    "cZwhKNY1NRzhxTHlSS/hQC5MmCwtrSjDkI6RnfPpsLQ31SmcHbHg/"
-    "m4BU+Em2RvO8wwfauXtbJdVhKhcTrXzU3tNYIAjViwzjxz2HIT9tr7HpCHWHFWNg3bvjkQ+"
-    "3+DSYWCxUzBDNHTlBRbJR7aSh4ar8dUxFTP92DwbUWn8wrU2uGQMD+UmtenaOX/"
-    "HSCiFkFgEGxeWXvYdouwNyIzrWO3miTe7dU7KzhbnVUzWZoQNYLGH2/"
-    "HROIuEnr1ZRsTBndo0qcZQ44GL1AUoHFxpuyfEjfsUCwf6JpiaZKAyAfPSpYzMcP/"
-    "NEpRYsNhQWZXL2dJQZVTUKcPRYrVxpenJ+"
-    "JgIuf9UwJn9x70WLkkDiz0dLSzMH9loZTBYTJp984TzMIzcfhgwRrjUrnutrpOtCeZVwqVHp"
-    "if9/Tib43qupjBqDFhaJZA0pxJFiFFfBlXB7HQf2Wjo7BqZKIAiyc1/"
-    "A5hX4OldeOYyAVGmk46hkZQ1n+7Z7TzU8rtv/"
-    "oUl9bHJGwJtrpmAYB1iEIM3XD1K73w44I3I3tsxTXJQOlDiq3VhusX9Pp4Tb+"
-    "svOYLra19ZsGKJnT0el/qQ+8l5PHNa/"
-    "NwpHSlLT4VDtHzRfTr8nu48G7LlTPqXEPBpQaYXotMpxcrzuBq0t6S/doywWhU2b56mnt/"
-    "lq62UZTAne3jgeR4pTVg2eXuPwwau03fXjmcbzSiDocyLxig1k9SdVhJBWV1fr6jVLNL/"
-    "g8WAzQ+BqE44UMiK3P8DqRQZr/ZjfbWtF6UgdUTJkAotfXMCq1cX0xCHjpVfMB0/"
-    "SUmPgYuM9KS2bBMSZPPlZyiqU0kqPCUWeRMJK+/3+/"
-    "Gxq7JKysiJi7lW5fbOP7gqsfC1Lz5zqERG40HCTsvLCvpFpunSaG/"
-    "+AGeg5HKytu3YekrZInQghMqSQgFSRP2K+rli5UN/ZNF3fWGs0lSId7eBxh/"
-    "Lycu1LnStNSlDmsmqtUWt9/"
-    "loi6XKFw5+9mmwSmjh2vLBuY4b2FeS+1t0FP++y7Nh+QO6GfdBge6d5KFnB+"
-    "WzcPF1HjUlKjqfNZJDPMxPTfamFHq1nWGg+r68xCrDz2zPpdNHmh5+"
-    "pBmD0OFi6tEaDMpspJfJYSjiOX+XdP/"
-    "igw+11JJvkg16xfLFmhvyVSxe7RLHMmmfIGZHs4LAcej9SXOp+t5JQh4O/HektABgZ/"
-    "jDuf4YrMMm0cOGnAAAAAElFTkSuQmCC";
+  "data:image/"
+  "png;base64,iVBORw0KGgoAAAANSUhEUgAAACsAAAARCAYAAABEvFULAAAABmJLR0QA/wD/"
+  "AP+"
+  "gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH5AQZFBsOzDGg0AAABQZJREFUSMe"
+  "llttvVFUUxn9r98x0oLRAW8pNLKUBrG1pC3ItEIqAQNSoGCEQQQNG/"
+  "gvfjD74QIwmPpCIGgWCJiogQaQgUAWDUC4lpUCBWq51GEovM9Nz9vLhdJiZthQMK5mH2Ze1v"
+  "rXWt759ZMtW52Z3F6PFgOn9Jcx1wXOT/"
+  "wPB9P1UcxxYstJQkLsIS4RvvvwbgMwQLHvZ0NqiXG9W7kfQ7i7/"
+  "fCAIBaNFSiuEvLyxBGQqrl5j357L3Lnln0ngmFIiyOdfO3bWPEP4X+"
+  "XiBSUWTQKYPlt4vmQmRvJAY5w5X8v5eiURrK9ZC8EgxOPJpFzXP5tfALl5wsg8wfOUC2eV+"
+  "5Gkn564f/"
+  "aFuUJl1WQaG5u41qxEwhCL+"
+  "r7l488cm6iM40A0mg4kFoW31huyh1Yi5CCEuH5jP8ePWh60Dww6FfyUEmHaDCEzMJYMGQ0Yh"
+  "KEIQ4npr/"
+  "zyo0esN6brQmeHf7dihjC9qhohBDh4XEVauoNeppkDBAGLp618v+OypFY4USHwg8+"
+  "cZwhKNY1NRzhxTHlSS/hQC5MmCwtrSjDkI6RnfPpsLQ31SmcHbHg/"
+  "m4BU+Em2RvO8wwfauXtbJdVhKhcTrXzU3tNYIAjViwzjxz2HIT9tr7HpCHWHFWNg3bvjkQ+"
+  "3+DSYWCxUzBDNHTlBRbJR7aSh4ar8dUxFTP92DwbUWn8wrU2uGQMD+UmtenaOX/"
+  "HSCiFkFgEGxeWXvYdouwNyIzrWO3miTe7dU7KzhbnVUzWZoQNYLGH2/"
+  "HROIuEnr1ZRsTBndo0qcZQ44GL1AUoHFxpuyfEjfsUCwf6JpiaZKAyAfPSpYzMcP/"
+  "NEpRYsNhQWZXL2dJQZVTUKcPRYrVxpenJ+"
+  "JgIuf9UwJn9x70WLkkDiz0dLSzMH9loZTBYTJp984TzMIzcfhgwRrjUrnutrpOtCeZVwqVHp"
+  "if9/Tib43qupjBqDFhaJZA0pxJFiFFfBlXB7HQf2Wjo7BqZKIAiyc1/"
+  "A5hX4OldeOYyAVGmk46hkZQ1n+7Z7TzU8rtv/"
+  "oUl9bHJGwJtrpmAYB1iEIM3XD1K73w44I3I3tsxTXJQOlDiq3VhusX9Pp4Tb+"
+  "svOYLra19ZsGKJnT0el/qQ+8l5PHNa/"
+  "NwpHSlLT4VDtHzRfTr8nu48G7LlTPqXEPBpQaYXotMpxcrzuBq0t6S/doywWhU2b56mnt/"
+  "lq62UZTAne3jgeR4pTVg2eXuPwwau03fXjmcbzSiDocyLxig1k9SdVhJBWV1fr6jVLNL/"
+  "g8WAzQ+BqE44UMiK3P8DqRQZr/ZjfbWtF6UgdUTJkAotfXMCq1cX0xCHjpVfMB0/"
+  "SUmPgYuM9KS2bBMSZPPlZyiqU0kqPCUWeRMJK+/3+/"
+  "Gxq7JKysiJi7lW5fbOP7gqsfC1Lz5zqERG40HCTsvLCvpFpunSaG/"
+  "+AGeg5HKytu3YekrZInQghMqSQgFSRP2K+rli5UN/ZNF3fWGs0lSId7eBxh/"
+  "Lycu1LnStNSlDmsmqtUWt9/"
+  "loi6XKFw5+9mmwSmjh2vLBuY4b2FeS+1t0FP++y7Nh+QO6GfdBge6d5KFnB+"
+  "WzcPF1HjUlKjqfNZJDPMxPTfamFHq1nWGg+r68xCrDz2zPpdNHmh5+"
+  "pBmD0OFi6tEaDMpspJfJYSjiOX+XdP/"
+  "igw+11JJvkg16xfLFmhvyVSxe7RLHMmmfIGZHs4LAcej9SXOp+t5JQh4O/HektABgZ/"
+  "jDuf4YrMMm0cOGnAAAAAElFTkSuQmCC";
 
 // inline SVG, you may build this at run time or parameterize certain aspects
 // of the style or and of its data. Not all of the blocks below are required,
@@ -67,7 +66,7 @@ const char *stripes =
 // parsing. Files may be drawn in the inkscape application and transposed at
 // this layer.
 std::string sSVG =
-    R"data(<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+  R"data(<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
    xmlns:dc="http://purl.org/dc/elements/1.1/"
    xmlns:cc="http://creativecommons.org/ns#"
@@ -264,13 +263,14 @@ void drawText(CWindow &vis, bool bfast, string stxt) {
   std::uniform_int_distribution<> fill(1, 2);
 
   if (bfast) {
+    std::time_t t = std::time(nullptr);
     vis << source("blue") << std::put_time(std::localtime(&t), L"%A %c")
         << '\n';
-    vis.text(stxt, source("blue"));
     vis.text(coordinates{0, 0});
+    vis.text(stxt, source("blue"));
 
   } else {
-    // m1
+
     vis.text(
         index_by{"text"}, stxt,
         text_fill{
@@ -279,33 +279,33 @@ void drawText(CWindow &vis, bool bfast, string stxt) {
             coord(gen),
             coord(gen),
             {{_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}}},
-        outline{
+        text_outline{
             coord(gen),
             coord(gen),
             coord(gen),
             coord(gen),
             {{_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}}},
-        shadow{"green"}, line_width{lw(gen)}, alignment::left,
+        text_shadow{"green"}, line_width{lw(gen)}, alignment_t::left,
         {10, 10, 300, 300});
 
     vis["text"].set<text_shadow>("darkgreen");
-    vis["text"].set(text_shadow{"darkgreen"}, alignment::right);
+    vis["text"].set(text_shadow{"darkgreen"}, alignment_t::right);
     auto &o = vis["text"].get<text_shadow>();
     o.rotate(PI / 180 * 2);
 
-    vis.text_fill(
-        coord(gen), coord(gen), coord(gen), coord(gen),
-        {{_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}});
 
     vis.text(
-        indexBy{"text"}, stxt,
-        outline{
+        index_by{"text"}, stxt,
+        text_fill{
+        coord(gen), coord(gen), coord(gen), coord(gen),
+        {{_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}}},
+        text_outline{
             coord(gen),
             coord(gen),
             coord(gen),
             coord(gen),
             {{_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}}},
-        text_shadow{"green"}, line_width{lw(gen)}, alignment::left,
+        text_shadow{"green"}, line_width{lw(gen)}, alignment_t::left,
         {10, 10, 300, 300});
     vis.object("text").set<text_shadow>("darkgreen");
 
@@ -362,11 +362,11 @@ void drawText(CWindow &vis, bool bfast) {
   }
 
   // set the font name according to pango spi. see pango font description.
-  vis.font("50px");
+  vis.text(text_font("50px"));
   std::uniform_int_distribution<> fill(1, 3);
 
   if (bfast) {
-    vis.text(stxt, font("50px"),
+    vis.text(stxt, text_font("50px"),
              source{coord(gen),
                     coord(gen),
                     coord(gen),
@@ -378,7 +378,7 @@ void drawText(CWindow &vis, bool bfast) {
   } else {
 
     vis.text(text_shadow("black"));
-    vis.text(alignment::left));
+    vis.text(text_alignment::left);
 
     vis.text(text_fill(
         coord(gen), coord(gen), coord(gen), coord(gen),
@@ -387,8 +387,8 @@ void drawText(CWindow &vis, bool bfast) {
     vis.text(text_outline(
         coord(gen), coord(gen), coord(gen), coord(gen),
         {{_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}}));
-    vix.text(text_coordinates({coord(gen), coord(gen), coord(gen), coord(gen)}));
-    vis.text(stxt, font("50px"));
+    vix.text(coordinates({coord(gen), coord(gen), coord(gen), coord(gen)}));
+    vis.text(stxt, text_font("50px"));
   }
 }
 
@@ -427,19 +427,19 @@ void drawlines(CWindow &vis) {
       Paint(coord(gen), coord(gen), coord(gen), coord(gen),
             {{_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}});
 
-  pf = Paint(coord(gen), coord(gen), coord(gen), coord(gen),
+  auto pf = Paint(coord(gen), coord(gen), coord(gen), coord(gen),
              {{_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}});
 
-  myshape.stroke_preserve(p).fill(p);
+  myshape.stroke_preserve(ps).fill(pf);
 
   auto &myshape1 = vis.group("testgroup2");
   myshape1.move(10, 10).relative().hline(10).vline(10).hline(-10).vline(-10);
-  myshape1.stroke_preserve(p).fill(p);
+  myshape1.stroke_preserve(ps).fill(pf);
 
   vis.fn<int,int,int,int>("fntest", [](int x, int y, int w, int h)
                     {
     move(x, y).relative().hline(w).vline(h).hline(-w).vline(-h);
-    stroke_preserve(p).fill(p);}
+    stroke_preserve(ps).fill(pf);}
                     ));
 
   vis.fn("fntest")(200, 30, 40, 50);

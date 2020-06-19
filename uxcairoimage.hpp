@@ -10,11 +10,11 @@
 
 namespace uxdevice {
 
-cairo_surface_t *readImage(std::string &data, double w = -1, double h = -1);
+cairo_surface_t *read_image(std::string &data, double w = -1, double h = -1);
 cairo_status_t read_contents(const gchar *file_name, guint8 **contents,
                              gsize *length);
 
-cairo_surface_t *imageSurfaceSVG(bool bDataPassed, std::string &data,
+cairo_surface_t *image_surface_SVG(bool bDataPassed, std::string &data,
                                  double width = -1, double height = -1);
 
 #if defined(USE_STACKBLUR)

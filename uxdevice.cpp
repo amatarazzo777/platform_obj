@@ -35,12 +35,12 @@ void uxdevice::CWindow::render_loop(void) {
     // small lists for the multi-threaded necessity.
     // searches for unready and syncs display context
     // if no work exists  it waits on the cvRenderWork condition variable.
-    if (context.surfacePrime()) {
+    if (context.surface_prime()) {
       context.render();
     }
 
-    if (context.errorState())
-      fnError(context.errorText());
+    if (context.error_state())
+      fnError(context.error_text());
   }
 }
 
@@ -51,16 +51,17 @@ If default
 necessary operation.
 
 */
-void uxdevice::CWindow::dispatch_event(const event &evt) {
+void uxdevice::CWindow::dispatch_event(const event_t &evt) {
 
   switch (evt.type) {
   case eventType::none:
     break;
   case eventType::paint: {
-    context.stateSurface(evt.x, evt.y, evt.w, evt.h);
-  } break;
+    context.state_surface(evt.x, evt.y, evt.w, evt.h);
+  }
+  break;
   case eventType::resize:
-    context.resizeSurface(evt.w, evt.h);
+    context.resize_surface(evt.w, evt.h);
     break;
   case eventType::keydown: {
 
@@ -112,16 +113,16 @@ with windows message queue processing.
 void uxdevice::CWindow::start_processing(void) {
   // setup the event dispatcher
   eventHandler ev =
-      std::bind(&uxdevice::CWindow::dispatch_event, this, std::placeholders::_1);
+    std::bind(&uxdevice::CWindow::dispatch_event, this, std::placeholders::_1);
   context.cacheThreshold = 2000;
   std::thread thrRenderer([=]() {
     bProcessing = true;
-    renderLoop();
+    render_loop();
   });
 
   std::thread thrMessageQueue([=]() {
     bProcessing = true;
-    messageLoop();
+    message_loop();
   });
 
   thrRenderer.detach();
@@ -138,21 +139,22 @@ This is kept statically here for resource management.
 */
 vector<eventHandler> &uxdevice::CWindow::get_event_vector(eventType evtType) {
   static std::unordered_map<eventType, std::vector<eventHandler> &>
-      eventTypeMap = {{eventType::focus, onfocus},
-                      {eventType::blur, onblur},
-                      {eventType::resize, onresize},
-                      {eventType::keydown, onkeydown},
-                      {eventType::keyup, onkeyup},
-                      {eventType::keypress, onkeypress},
-                      {eventType::mouseenter, onmouseenter},
-                      {eventType::mouseleave, onmouseleave},
-                      {eventType::mousemove, onmousemove},
-                      {eventType::mousedown, onmousedown},
-                      {eventType::mouseup, onmouseup},
-                      {eventType::click, onclick},
-                      {eventType::dblclick, ondblclick},
-                      {eventType::contextmenu, oncontextmenu},
-                      {eventType::wheel, onwheel}};
+  eventTypeMap = {{eventType::focus, onfocus},
+    {eventType::blur, onblur},
+    {eventType::resize, onresize},
+    {eventType::keydown, onkeydown},
+    {eventType::keyup, onkeyup},
+    {eventType::keypress, onkeypress},
+    {eventType::mouseenter, onmouseenter},
+    {eventType::mouseleave, onmouseleave},
+    {eventType::mousemove, onmousemove},
+    {eventType::mousedown, onmousedown},
+    {eventType::mouseup, onmouseup},
+    {eventType::click, onclick},
+    {eventType::dblclick, ondblclick},
+    {eventType::contextmenu, oncontextmenu},
+    {eventType::wheel, onwheel}
+  };
   auto it = eventTypeMap.find(evtType);
   return it->second;
 }
@@ -210,8 +212,8 @@ uxdevice::CWindow::CWindow(const CoordinateList &coordinates,
                            const Paint &background) {}
 
 uxdevice::CWindow::CWindow(
-    const CoordinateList &coord, &const std::string &sWindowTitle,
-    const Paint &background) {
+  const CoordinateList &coord, const std::string &sWindowTitle,
+  const Paint &background) {
   CWindow ret;
   auto it = coord.begin();
 
@@ -243,7 +245,7 @@ uxdevice::CWindow::CWindow(
 
   /* Get the first screen */
   context.screen =
-      xcb_setup_roots_iterator(xcb_get_setup(context.connection)).data;
+    xcb_setup_roots_iterator(xcb_get_setup(context.connection)).data;
   if (!context.screen) {
     closeWindow();
     std::stringstream sError;
@@ -285,11 +287,12 @@ uxdevice::CWindow::CWindow(
          XCB_CW_SAVE_UNDER | XCB_CW_EVENT_MASK;
 
   uint32_t vals[] = {
-      context.screen->black_pixel, XCB_GRAVITY_NORTH_WEST, 0, 1,
-      XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_KEY_PRESS |
-          XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_POINTER_MOTION |
-          XCB_EVENT_MASK_BUTTON_MOTION | XCB_EVENT_MASK_BUTTON_PRESS |
-          XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_STRUCTURE_NOTIFY};
+    context.screen->black_pixel, XCB_GRAVITY_NORTH_WEST, 0, 1,
+    XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_KEY_PRESS |
+    XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_POINTER_MOTION |
+    XCB_EVENT_MASK_BUTTON_MOTION | XCB_EVENT_MASK_BUTTON_PRESS |
+    XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_STRUCTURE_NOTIFY
+  };
 
   xcb_create_window(context.connection, XCB_COPY_FROM_PARENT, context.window,
                     context.screen->root, 0, 0,
@@ -329,8 +332,8 @@ uxdevice::CWindow::CWindow(
   // create xcb surface
 
   context.xcbSurface = cairo_xcb_surface_create(
-      context.connection, context.window, context.visualType,
-      context.windowWidth, context.windowHeight);
+                         context.connection, context.window, context.visualType,
+                         context.windowWidth, context.windowHeight);
   if (!context.xcbSurface) {
     close_window();
     std::stringstream sError;
@@ -427,14 +430,14 @@ void uxdevice::CWindow::message_loop(void) {
 
   // setup close window event
   xcb_intern_atom_cookie_t cookie =
-      xcb_intern_atom(context.connection, 1, 12, "WM_PROTOCOLS");
+    xcb_intern_atom(context.connection, 1, 12, "WM_PROTOCOLS");
   xcb_intern_atom_reply_t *reply =
-      xcb_intern_atom_reply(context.connection, cookie, 0);
+    xcb_intern_atom_reply(context.connection, cookie, 0);
 
   xcb_intern_atom_cookie_t cookie2 =
-      xcb_intern_atom(context.connection, 0, 16, "WM_DELETE_WINDOW");
+    xcb_intern_atom(context.connection, 0, 16, "WM_DELETE_WINDOW");
   xcb_intern_atom_reply_t *reply2 =
-      xcb_intern_atom_reply(context.connection, cookie2, 0);
+    xcb_intern_atom_reply(context.connection, cookie2, 0);
 
   xcb_change_property(context.connection, XCB_PROP_MODE_REPLACE, context.window,
                       (*reply).atom, 4, 32, 1, &(*reply2).atom);
@@ -455,34 +458,37 @@ void uxdevice::CWindow::message_loop(void) {
       switch (xcbEvent->response_type & ~0x80) {
       case XCB_MOTION_NOTIFY: {
         xcb_motion_notify_event_t *motion =
-            (xcb_motion_notify_event_t *)xcbEvent;
+          (xcb_motion_notify_event_t *)xcbEvent;
         dispatch_event(event{
-            eventType::mousemove,
-            (short)motion->event_x,
-            (short)motion->event_y,
+          eventType::mousemove,
+          (short)motion->event_x,
+          (short)motion->event_y,
         });
-      } break;
+      }
+      break;
       case XCB_BUTTON_PRESS: {
         xcb_button_press_event_t *bp = (xcb_button_press_event_t *)xcbEvent;
         if (bp->detail == XCB_BUTTON_INDEX_4 ||
             bp->detail == XCB_BUTTON_INDEX_5) {
           dispatch_event(
-              event{eventType::wheel, (short)bp->event_x, (short)bp->event_y,
-                    (short)(bp->detail == XCB_BUTTON_INDEX_4 ? 1 : -1)});
+            event{eventType::wheel, (short)bp->event_x, (short)bp->event_y,
+                  (short)(bp->detail == XCB_BUTTON_INDEX_4 ? 1 : -1)});
 
         } else {
           dispatch_event(event{eventType::mousedown, (short)bp->event_x,
-                              (short)bp->event_y, (short)bp->detail});
+                               (short)bp->event_y, (short)bp->detail});
         }
-      } break;
+      }
+      break;
       case XCB_BUTTON_RELEASE: {
         xcb_button_release_event_t *br = (xcb_button_release_event_t *)xcbEvent;
         // ignore button 4 and 5 which are wheel events.
         if (br->detail != XCB_BUTTON_INDEX_4 &&
             br->detail != XCB_BUTTON_INDEX_5)
           dispatch_event(event{eventType::mouseup, (short)br->event_x,
-                              (short)br->event_y, (short)br->detail});
-      } break;
+                               (short)br->event_y, (short)br->detail});
+      }
+      break;
       case XCB_KEY_PRESS: {
         xcb_key_press_event_t *kp = (xcb_key_press_event_t *)xcbEvent;
         xcb_keysym_t sym = xcb_key_press_lookup_keysym(context.syms, kp, 0);
@@ -503,34 +509,39 @@ void uxdevice::CWindow::message_loop(void) {
         } else {
           dispatch_event(event{eventType::keydown, sym});
         }
-      } break;
+      }
+      break;
       case XCB_KEY_RELEASE: {
         xcb_key_release_event_t *kr = (xcb_key_release_event_t *)xcbEvent;
         xcb_keysym_t sym = xcb_key_press_lookup_keysym(context.syms, kr, 0);
         dispatch_event(event{eventType::keyup, sym});
-      } break;
+      }
+      break;
       case XCB_EXPOSE: {
         xcb_expose_event_t *eev = (xcb_expose_event_t *)xcbEvent;
 
         dispatch_event(event{eventType::paint, (short)eev->x, (short)eev->y,
-                            (short)eev->width, (short)eev->height});
+                             (short)eev->width, (short)eev->height});
 
-      } break;
+      }
+      break;
       case XCB_CONFIGURE_NOTIFY: {
         const xcb_configure_notify_event_t *cfgEvent =
-            (const xcb_configure_notify_event_t *)xcbEvent;
+          (const xcb_configure_notify_event_t *)xcbEvent;
 
         if (cfgEvent->window == context.window) {
           dispatch_event(event{eventType::resize, (short)cfgEvent->width,
-                              (short)cfgEvent->height});
+                               (short)cfgEvent->height});
         }
-      } break;
+      }
+      break;
       case XCB_CLIENT_MESSAGE: {
         if ((*(xcb_client_message_event_t *)xcbEvent).data.data32[0] ==
             (*reply2).atom) {
           bProcessing = false;
         }
-      } break;
+      }
+      break;
       }
       free(xcbEvent);
       xcbEvents.pop_front();
@@ -557,7 +568,9 @@ void uxdevice::CWindow::clear(void) {
   DL_CLEAR;
 }
 
-void uxdevice::CWindow::notifyComplete(void) { context.stateNotifyComplete(); }
+void uxdevice::CWindow::notifyComplete(void) {
+  context.stateNotifyComplete();
+}
 
 CWindow &uxdevice::CWindow::antiAlias(antialias antialias) {
   DL_SPIN;
@@ -667,7 +680,7 @@ CWindow &uxdevice::CWindow::stroke(double cx0, double cy0, double radius0,
                                    const ColorStops &cs) {
   DL_SPIN;
   auto item = DL.emplace_back(
-      make_shared<STROKE>(cx0, cy0, radius0, cx1, cy1, radius1, cs));
+                make_shared<STROKE>(cx0, cy0, radius0, cx1, cy1, radius1, cs));
   item->invoke(context);
   context.set_unit(std::dynamic_pointer_cast<STROKE>(item));
   DL_CLEAR;
@@ -741,13 +754,15 @@ CWindow &uxdevice::CWindow::fill(double cx0, double cy0, double radius0,
                                  const ColorStops &cs) {
   DL_SPIN;
   auto item = DL.emplace_back(
-      make_shared<PEN>(cx0, cy0, radius0, cx1, cy1, radius1, cs));
+                make_shared<PEN>(cx0, cy0, radius0, cx1, cy1, radius1, cs));
   item->invoke(context);
   context.set_unit(std::dynamic_pointer_cast<FILL>(item));
   DL_CLEAR;
   return *this;
 }
-CWindow &uxdevice::CWindow::surfaceBrush(Paint &b) { context.surfaceBrush(b); }
+CWindow &uxdevice::CWindow::surfaceBrush(Paint &b) {
+  context.surfaceBrush(b);
+}
 
 /**
 \brief
@@ -792,7 +807,7 @@ CWindow &uxdevice::CWindow::text_outline(const string &c, double dWidth) {
   return *this;
 }
 CWindow &uxdevice::CWindow::text_outline(const std::string &c, double w,
-                                        double h, double dWidth) {
+    double h, double dWidth) {
   DL_SPIN;
   auto item = DL.emplace_back(make_shared<TEXTOUTLINE>(c, w, h, dWidth));
   item->invoke(context);
@@ -804,7 +819,7 @@ CWindow &uxdevice::CWindow::text_outline(const std::string &c, double w,
 \brief
 */
 CWindow &uxdevice::CWindow::text_outline(double _r, double _g, double _b,
-                                        double dWidth) {
+    double dWidth) {
   DL_SPIN;
   auto item = DL.emplace_back(make_shared<TEXTOUTLINE>(_r, _g, _b, dWidth));
   item->invoke(context);
@@ -816,7 +831,7 @@ CWindow &uxdevice::CWindow::text_outline(double _r, double _g, double _b,
 \brief
 */
 CWindow &uxdevice::CWindow::text_outline(double _r, double _g, double _b,
-                                        double _a, double dWidth) {
+    double _a, double dWidth) {
   DL_SPIN;
   auto item = DL.emplace_back(make_shared<TEXTOUTLINE>(_r, _g, _b, _a, dWidth));
   item->invoke(context);
@@ -825,11 +840,11 @@ CWindow &uxdevice::CWindow::text_outline(double _r, double _g, double _b,
   return *this;
 }
 CWindow &uxdevice::CWindow::text_outline(double x0, double y0, double x1,
-                                        double y1, const ColorStops &cs,
-                                        double dWidth) {
+    double y1, const ColorStops &cs,
+    double dWidth) {
   DL_SPIN;
   auto item =
-      DL.emplace_back(make_shared<TEXTOUTLINE>(x0, y0, x1, y1, cs, dWidth));
+    DL.emplace_back(make_shared<TEXTOUTLINE>(x0, y0, x1, y1, cs, dWidth));
   item->invoke(context);
   context.set_unit(std::dynamic_pointer_cast<TEXTOUTLINE>(item));
   DL_CLEAR;
@@ -837,11 +852,11 @@ CWindow &uxdevice::CWindow::text_outline(double x0, double y0, double x1,
 }
 
 CWindow &uxdevice::CWindow::text_outline(double cx0, double cy0, double radius0,
-                                        double cx1, double cy1, double radius1,
-                                        const ColorStops &cs, double dWidth) {
+    double cx1, double cy1, double radius1,
+    const ColorStops &cs, double dWidth) {
   DL_SPIN;
   auto item = DL.emplace_back(make_shared<TEXTOUTLINE>(
-      cx0, cy0, radius0, cx1, cy1, radius1, cs, dWidth));
+                                cx0, cy0, radius0, cx1, cy1, radius1, cs, dWidth));
   item->invoke(context);
   context.set_unit(std::dynamic_pointer_cast<TEXTOUTLINE>(item));
   DL_CLEAR;
@@ -854,7 +869,9 @@ CWindow &uxdevice::CWindow::text_outline(double cx0, double cy0, double radius0,
 CWindow &uxdevice::CWindow::text_outline_none(void) {
   DL_SPIN;
   auto item = DL.emplace_back(make_shared<CLEARUNIT>(
-      [=]() { context.currentUnits.textoutline.reset(); }));
+  [=]() {
+    context.currentUnits.textoutline.reset();
+  }));
   item->invoke(context);
   DL_CLEAR;
   return *this;
@@ -901,7 +918,7 @@ CWindow &uxdevice::CWindow::text_fill(double _r, double _g, double _b) {
   return *this;
 }
 CWindow &uxdevice::CWindow::text_fill(double _r, double _g, double _b,
-                                     double _a) {
+                                      double _a) {
   DL_SPIN;
   auto item = DL.emplace_back(make_shared<TEXTFILL>(_r, _g, _b, _a));
   item->invoke(context);
@@ -910,7 +927,7 @@ CWindow &uxdevice::CWindow::text_fill(double _r, double _g, double _b,
   return *this;
 }
 CWindow &uxdevice::CWindow::text_fill(double x0, double y0, double x1, double y1,
-                                     const ColorStops &cs) {
+                                      const ColorStops &cs) {
   DL_SPIN;
   auto item = DL.emplace_back(make_shared<TEXTFILL>(x0, y0, x1, y1, cs));
   item->invoke(context);
@@ -919,11 +936,11 @@ CWindow &uxdevice::CWindow::text_fill(double x0, double y0, double x1, double y1
   return *this;
 }
 CWindow &uxdevice::CWindow::text_fill(double cx0, double cy0, double radius0,
-                                     double cx1, double cy1, double radius1,
-                                     const ColorStops &cs) {
+                                      double cx1, double cy1, double radius1,
+                                      const ColorStops &cs) {
   DL_SPIN;
   auto item = DL.emplace_back(
-      make_shared<TEXTFILL>(cx0, cy0, radius0, cx1, cy1, radius1, cs));
+                make_shared<TEXTFILL>(cx0, cy0, radius0, cx1, cy1, radius1, cs));
   item->invoke(context);
   context.set_unit(std::dynamic_pointer_cast<TEXTFILL>(item));
   DL_CLEAR;
@@ -936,7 +953,9 @@ CWindow &uxdevice::CWindow::text_fill(double cx0, double cy0, double radius0,
 CWindow &uxdevice::CWindow::text_fill_none(void) {
   DL_SPIN;
   auto item = DL.emplace_back(
-      make_shared<CLEARUNIT>([=]() { context.currentUnits.textfill.reset(); }));
+  make_shared<CLEARUNIT>([=]() {
+    context.currentUnits.textfill.reset();
+  }));
   item->invoke(context);
   DL_CLEAR;
   return *this;
@@ -945,7 +964,7 @@ CWindow &uxdevice::CWindow::text_fill_none(void) {
 \brief
 */
 CWindow &uxdevice::CWindow::text_shadow(const Paint &p, int r, double xOffset,
-                                       double yOffset) {
+                                        double yOffset) {
   DL_SPIN;
   auto item = DL.emplace_back(make_shared<TEXTSHADOW>(p, r, xOffset, yOffset));
   item->invoke(context);
@@ -954,7 +973,7 @@ CWindow &uxdevice::CWindow::text_shadow(const Paint &p, int r, double xOffset,
   return *this;
 }
 CWindow &uxdevice::CWindow::text_shadow(u_int32_t c, int r, double xOffset,
-                                       double yOffset) {
+                                        double yOffset) {
   DL_SPIN;
   auto item = DL.emplace_back(make_shared<TEXTSHADOW>(c, r, xOffset, yOffset));
   item->invoke(context);
@@ -966,7 +985,7 @@ CWindow &uxdevice::CWindow::text_shadow(u_int32_t c, int r, double xOffset,
 \brief
 */
 CWindow &uxdevice::CWindow::text_shadow(const string &c, int r, double xOffset,
-                                       double yOffset) {
+                                        double yOffset) {
   DL_SPIN;
   auto item = DL.emplace_back(make_shared<TEXTSHADOW>(c, r, xOffset, yOffset));
   item->invoke(context);
@@ -975,10 +994,10 @@ CWindow &uxdevice::CWindow::text_shadow(const string &c, int r, double xOffset,
   return *this;
 }
 CWindow &uxdevice::CWindow::text_shadow(const std::string &c, double w, double h,
-                                       int r, double xOffset, double yOffset) {
+                                        int r, double xOffset, double yOffset) {
   DL_SPIN;
   auto item =
-      DL.emplace_back(make_shared<TEXTSHADOW>(c, w, h, r, xOffset, yOffset));
+    DL.emplace_back(make_shared<TEXTSHADOW>(c, w, h, r, xOffset, yOffset));
   item->invoke(context);
   context.set_unit(std::dynamic_pointer_cast<TEXTSHADOW>(item));
   DL_CLEAR;
@@ -989,10 +1008,10 @@ CWindow &uxdevice::CWindow::text_shadow(const std::string &c, double w, double h
 \brief
 */
 CWindow &uxdevice::CWindow::text_shadow(double _r, double _g, double _b, int r,
-                                       double xOffset, double yOffset) {
+                                        double xOffset, double yOffset) {
   DL_SPIN;
   auto item =
-      DL.emplace_back(make_shared<TEXTSHADOW>(_r, _g, _b, r, xOffset, yOffset));
+    DL.emplace_back(make_shared<TEXTSHADOW>(_r, _g, _b, r, xOffset, yOffset));
   item->invoke(context);
   context.set_unit(std::dynamic_pointer_cast<TEXTSHADOW>(item));
   DL_CLEAR;
@@ -1002,11 +1021,11 @@ CWindow &uxdevice::CWindow::text_shadow(double _r, double _g, double _b, int r,
 \brief
 */
 CWindow &uxdevice::CWindow::text_shadow(double _r, double _g, double _b,
-                                       double _a, int r, double xOffset,
-                                       double yOffset) {
+                                        double _a, int r, double xOffset,
+                                        double yOffset) {
   DL_SPIN;
   auto item = DL.emplace_back(
-      make_shared<TEXTSHADOW>(_r, _g, _b, _a, r, xOffset, yOffset));
+                make_shared<TEXTSHADOW>(_r, _g, _b, _a, r, xOffset, yOffset));
   item->invoke(context);
   context.set_unit(std::dynamic_pointer_cast<TEXTSHADOW>(item));
   DL_CLEAR;
@@ -1014,11 +1033,11 @@ CWindow &uxdevice::CWindow::text_shadow(double _r, double _g, double _b,
 }
 
 CWindow &uxdevice::CWindow::text_shadow(double x0, double y0, double x1,
-                                       double y1, const ColorStops &cs, int r,
-                                       double xOffset, double yOffset) {
+                                        double y1, const ColorStops &cs, int r,
+                                        double xOffset, double yOffset) {
   DL_SPIN;
   auto item = DL.emplace_back(
-      make_shared<TEXTSHADOW>(x0, y0, x1, y1, cs, r, xOffset, yOffset));
+                make_shared<TEXTSHADOW>(x0, y0, x1, y1, cs, r, xOffset, yOffset));
   item->invoke(context);
   context.set_unit(std::dynamic_pointer_cast<TEXTSHADOW>(item));
   DL_CLEAR;
@@ -1026,12 +1045,12 @@ CWindow &uxdevice::CWindow::text_shadow(double x0, double y0, double x1,
 }
 
 CWindow &uxdevice::CWindow::text_shadow(double cx0, double cy0, double radius0,
-                                       double cx1, double cy1, double radius1,
-                                       const ColorStops &cs, int r,
-                                       double xOffset, double yOffset) {
+                                        double cx1, double cy1, double radius1,
+                                        const ColorStops &cs, int r,
+                                        double xOffset, double yOffset) {
   DL_SPIN;
   auto item = DL.emplace_back(make_shared<TEXTSHADOW>(
-      cx0, cy0, radius0, cx1, cy1, radius1, cs, r, xOffset, yOffset));
+                                cx0, cy0, radius0, cx1, cy1, radius1, cs, r, xOffset, yOffset));
   item->invoke(context);
   context.set_unit(std::dynamic_pointer_cast<TEXTSHADOW>(item));
   DL_CLEAR;
@@ -1044,7 +1063,9 @@ CWindow &uxdevice::CWindow::text_shadow(double cx0, double cy0, double radius0,
 CWindow &uxdevice::CWindow::text_shadow_none(void) {
   DL_SPIN;
   auto item = DL.emplace_back(make_shared<CLEARUNIT>(
-      [=]() { context.currentUnits.textshadow.reset(); }));
+  [=]() {
+    context.currentUnits.textshadow.reset();
+  }));
   item->invoke(context);
   DL_CLEAR;
   return *this;
@@ -1292,7 +1313,7 @@ CWindow &uxdevice::CWindow::cap(lineCap c) {
   using namespace std::placeholders;
   DL_SPIN;
   CAIRO_OPTION func =
-      std::bind(cairo_set_line_cap, _1, static_cast<cairo_line_cap_t>(c));
+    std::bind(cairo_set_line_cap, _1, static_cast<cairo_line_cap_t>(c));
   auto item = DL.emplace_back(make_shared<OPTION_FUNCTION>(func));
   item->invoke(context);
   DL_CLEAR;
@@ -1306,7 +1327,7 @@ CWindow &uxdevice::CWindow::join(lineJoin j) {
   using namespace std::placeholders;
   DL_SPIN;
   CAIRO_FUNCTION func =
-      std::bind(cairo_set_line_join, _1, static_cast<cairo_line_join_t>(j));
+    std::bind(cairo_set_line_join, _1, static_cast<cairo_line_join_t>(j));
   auto item = DL.emplace_back(make_shared<OPTION_FUNCTION>(func));
   item->invoke(context);
   DL_CLEAR;
@@ -1347,7 +1368,7 @@ CWindow &uxdevice::CWindow::dashes(const std::vector<double> &dashes,
   using namespace std::placeholders;
   DL_SPIN;
   CAIRO_FUNCTION func =
-      std::bind(cairo_set_dash, _1, dashes.data(), dashes.size(), offset);
+    std::bind(cairo_set_dash, _1, dashes.data(), dashes.size(), offset);
   auto item = DL.emplace_back(make_shared<OPTION_FUNCTION>(func));
   item->invoke(context);
   DL_CLEAR;
@@ -1374,7 +1395,7 @@ CWindow &uxdevice::CWindow::op(op_t _op) {
   using namespace std::placeholders;
   DL_SPIN;
   CAIRO_FUNCTION func =
-      std::bind(cairo_set_operator, _1, static_cast<cairo_operator_t>(_op));
+    std::bind(cairo_set_operator, _1, static_cast<cairo_operator_t>(_op));
   auto item = DL.emplace_back(make_shared<OPTION_FUNCTION>(func));
   item->invoke(context);
   DL_CLEAR;
@@ -1387,7 +1408,9 @@ CWindow &uxdevice::CWindow::op(op_t _op) {
 CWindow &uxdevice::CWindow::source(Paint &p) {
   using namespace std::placeholders;
   DL_SPIN;
-  auto fn = [](cairo_t *cr, Paint &p) { p.emit(cr); };
+  auto fn = [](cairo_t *cr, Paint &p) {
+    p.emit(cr);
+  };
   CAIRO_FUNCTION func = std::bind(fn, _1, p);
   auto item = DL.emplace_back(make_shared<OPTION_FUNCTION>(func));
   item->invoke(context);

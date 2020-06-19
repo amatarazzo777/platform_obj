@@ -1,4 +1,3 @@
-
 #include "uxdevice.hpp"
 
 // error macro for this source
@@ -8,9 +7,9 @@
 
 #define ERROR_CHECK(obj)                                                       \
   {                                                                            \
-    cairo_status_t stat = errorCheck(obj);                                     \
+    cairo_status_t stat = error_check(obj);                                     \
     if (stat)                                                                  \
-      errorState(__func__, __LINE__, __FILE__, stat);                          \
+      error_state(__func__, __LINE__, __FILE__, stat);                          \
   }
 /**
 \internal
@@ -149,7 +148,7 @@ void uxdevice::DisplayContext::render(void) {
     // simply continue as there is no redraw needed
     if (current) {
       cairo_region_overlap_t ovrlp =
-          cairo_region_contains_rectangle(current, &r.rect);
+        cairo_region_contains_rectangle(current, &r.rect);
       if (ovrlp == CAIRO_REGION_OVERLAP_IN)
         continue;
     } else {
@@ -201,18 +200,18 @@ void uxdevice::DisplayContext::render(void) {
 \brief The allocates an xcb and cairo image surface.
 */
 uxdevice::DRAWBUFFER uxdevice::DisplayContext::allocate_buffer(int width,
-                                                              int height) {
+    int height) {
 #if 0
   XCB_SPIN;
   cairo_surface_t *rendered =
-  cairo_surface_create_similar (xcbSurface,
-                                CAIRO_CONTENT_COLOR_ALPHA,
-                                width, height);
+    cairo_surface_create_similar (xcbSurface,
+                                  CAIRO_CONTENT_COLOR_ALPHA,
+                                  width, height);
   XCB_CLEAR;
 #endif // 0
 
   cairo_surface_t *rendered =
-      cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
+    cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
   ERROR_CHECK(rendered);
 
   cairo_t *cr = cairo_create(rendered);
@@ -239,10 +238,11 @@ a region area paint is requested for the object's area.
 
 */
 void uxdevice::DisplayContext::add_drawable(
-    std::shared_ptr<DrawingOutput> _obj) {
+  std::shared_ptr<DrawingOutput> _obj) {
   viewportRectangle = {(double)offsetx, (double)offsety,
                        (double)offsetx + (double)windowWidth,
-                       (double)offsety + (double)windowHeight};
+                       (double)offsety + (double)windowHeight
+                      };
   _obj->intersect(viewportRectangle);
   if (_obj->overlap == CAIRO_REGION_OVERLAP_OUT) {
     DRAWABLES_OFF_SPIN;
@@ -266,7 +266,8 @@ void uxdevice::DisplayContext::partition_visibility(void) {
 
   viewportRectangle = {(double)offsetx, (double)offsety,
                        (double)offsetx + (double)windowWidth,
-                       (double)offsety + (double)windowHeight};
+                       (double)offsety + (double)windowHeight
+                      };
   if (viewportOff.empty()) {
     DRAWABLES_OFF_CLEAR;
     return;
@@ -321,7 +322,9 @@ void uxdevice::DisplayContext::clear(void) {
   bClearFrame = true;
 
   REGIONS_SPIN;
-  _regions.remove_if([](auto &n) { return !n.bOSsurface; });
+  _regions.remove_if([](auto &n) {
+    return !n.bOSsurface;
+  });
 
   offsetx = 0;
   offsety = 0;
@@ -361,8 +364,8 @@ void uxdevice::DisplayContext::state(std::shared_ptr<DrawingOutput> obj) {
   std::size_t onum = reinterpret_cast<std::size_t>(obj.get());
 
   _regions.emplace_back(
-      CairoRegion(onum, obj->inkRectangle.x, obj->inkRectangle.y,
-                  obj->inkRectangle.width, obj->inkRectangle.height));
+    CairoRegion(onum, obj->inkRectangle.x, obj->inkRectangle.y,
+                obj->inkRectangle.width, obj->inkRectangle.height));
   REGIONS_CLEAR;
 }
 /**
@@ -385,7 +388,9 @@ of a newly resized window area occurs first.
 void uxdevice::DisplayContext::state_surface(int x, int y, int w, int h) {
   REGIONS_SPIN;
   auto it = std::find_if(_regions.begin(), _regions.end(),
-                         [](auto &n) { return !n.bOSsurface; });
+  [](auto &n) {
+    return !n.bOSsurface;
+  });
   if (it != _regions.end())
     _regions.insert(it, CairoRegion{true, x, y, w, h});
   else
@@ -459,7 +464,8 @@ void uxdevice::DisplayContext::plot(CairoRegion &plotArea) {
       XCB_CLEAR;
       n->functorsLock(false);
       ERROR_CHECK(cr);
-    } break;
+    }
+    break;
     case CAIRO_REGION_OVERLAP_PART: {
       n->functorsLock(true);
       XCB_SPIN;
@@ -467,7 +473,8 @@ void uxdevice::DisplayContext::plot(CairoRegion &plotArea) {
       XCB_CLEAR;
       n->functorsLock(false);
       ERROR_CHECK(cr);
-    } break;
+    }
+    break;
     }
     if (bClearFrame)
       bDone = true;
@@ -485,20 +492,20 @@ void uxdevice::DisplayContext::plot(CairoRegion &plotArea) {
 \brief The routine stores error conditions.
 */
 void uxdevice::DisplayContext::error_state(const std::string_view &sfunc,
-                                          const std::size_t linenum,
-                                          const std::string_view &sfile,
-                                          const cairo_status_t stat) {
+    const std::size_t linenum,
+    const std::string_view &sfile,
+    const cairo_status_t stat) {
   error_state(sfunc, linenum, sfile,
-             std::string_view(cairo_status_to_string(stat)));
+              std::string_view(cairo_status_to_string(stat)));
 }
 /**
 \internal
 \brief The routine stores error conditions.
 */
 void uxdevice::DisplayContext::error_state(const std::string_view &sfunc,
-                                          const std::size_t linenum,
-                                          const std::string_view &sfile,
-                                          const std::string &desc) {
+    const std::size_t linenum,
+    const std::string_view &sfile,
+    const std::string &desc) {
   error_state(sfunc, linenum, sfile, std::string_view(desc));
 }
 /**
@@ -506,9 +513,9 @@ void uxdevice::DisplayContext::error_state(const std::string_view &sfunc,
 \brief The routine stores error conditions.
 */
 void uxdevice::DisplayContext::error_state(const std::string_view &sfunc,
-                                          const std::size_t linenum,
-                                          const std::string_view &sfile,
-                                          const std::string_view &desc) {
+    const std::size_t linenum,
+    const std::string_view &sfile,
+    const std::string_view &desc) {
   ERRORS_SPIN;
   std::stringstream ss;
   ss << sfile << "\n" << sfunc << "(" << linenum << ") -  " << desc << "\n";
