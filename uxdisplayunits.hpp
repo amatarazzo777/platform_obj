@@ -144,9 +144,10 @@ public:
   CLEAR_FUNCTION fn = {};
 };
 
-class ANTIALIAS : public DisplayUnit {
+
+using antialias = class antialias : public DisplayUnit {
 public:
-  ANTIALIAS(alias_t _antialias)
+  antialias(alias_t _antialias)
       : setting(static_cast<cairo_antialias_t>(_antialias)) {}
 
   void invoke(DisplayContext &context) {
@@ -157,26 +158,138 @@ public:
   cairo_antialias_t setting;
 };
 
-class FONT : public DisplayUnit {
+#define PAINT_OBJ(X_NAME)                                                      \
+  using X_NAME = class X_NAME : public DisplayUnit, public Paint {             \
+  public:                                                                      \
+    X_NAME(u_int32_t c) : Paint(c) {}                                          \
+    X_NAME(double r, double g, double b) : Paint(r, g, b) {}                   \
+    X_NAME(double r, double g, double b, double a) : Paint(r, g, b, a) {}      \
+    X_NAME(const std::string &n) : Paint(n) {}                                 \
+    X_NAME(const std::string &n, double width, double height)                  \
+        : Paint(n, width, height) {}                                           \
+    X_NAME(double x0, double y0, double x1, double y1, const ColorStops &_cs)  \
+        : Paint(x0, y0, x1, y1, _cs) {}                                        \
+    X_NAME(double cx0, double cy0, double radius0, double cx1, double cy1,     \
+           double radius1, const ColorStops &cs)                               \
+        : Paint(cx0, cy0, radius0, cx1, cy1, radius1, cs) {}                   \
+    void emit(cairo_t *cr) {                                                   \
+      Paint::emit(cr);                                                         \
+      cairo_set_line_width(cr, lineWidth);                                     \
+    }                                                                          \
+    void emit(cairo_t *cr, double x, double y, double w, double h) {           \
+      Paint::emit(cr);                                                         \
+      cairo_set_line_width(cr, lineWidth);                                     \
+    }                                                                          \
+    double lineWidth = 1;                                                      \
+    unsigned short radius = 3;                                                 \
+    double x = 1, y = 1;                                                       \
+  }
+
+PAINT_OBJ(source);
+PAINT_OBJ(text_outline);
+PAINT_OBJ(text_fill);
+PAINT_OBJ(text_shadow);
+PAINT_OBJ(FILL);
+PAINT_OBJ(STROKE);
+
+using source_default = class source_default : public DisplayUnit {
 public:
-  FONT(const std::string &s)
-      : description(s), pointSize(DEFAULT_TEXTSIZE), bProvidedName(false),
-        bProvidedSize(false), bProvidedDescription(true) {}
-  FONT(const std::string &s, const double &pt)
-      : description(s), pointSize(pt) {}
+  source_default() {}
+};
 
-  FONT &operator=(const FONT &other) = delete;
-  FONT(const FONT &);
+using text_outline_none =  class text_outline_none : public DisplayUnit {
+public:
+  text_outline_none() {}
+};
 
-  ~FONT() {
+using text_fill_none  = class text_fill_none : public DisplayUnit {
+public:
+  text_fill_none() {}
+};
+
+using text_shadow_none  = class text_shadow_none : public DisplayUnit {
+public:
+  text_shadow_none() {}
+};
+
+using text_alignment = class text_alignment : public DisplayUnit  {
+public:
+  enum setting {
+    left = PangoAlignment::PANGO_ALIGN_LEFT,
+    center = PangoAlignment::PANGO_ALIGN_CENTER,
+    right = PangoAlignment::PANGO_ALIGN_RIGHT,
+    justified = 4
+  };
+  setting _setting = setting::left;
+  text_alignment(setting opt) : _setting(opt) {}
+  void emit(PangoLayout *layout) {
+    // only change setting if changed, this saves on unnecessary
+    // layout context rendering internal to pango
+    if (_setting == setting::justified && !pango_layout_get_justify(layout)) {
+      pango_layout_set_justify(layout, true);
+    } else if (static_cast<setting>(pango_layout_get_alignment(layout)) !=
+               _setting) {
+      pango_layout_set_justify(layout, false);
+      pango_layout_set_alignment(layout, static_cast<PangoAlignment>(_setting));
+    }
+  }
+};
+using coordinates = class coordinates : public DisplayUnit {
+public:
+  coordinates(double _x, double _y) : x(_x), y(_y) {}
+  coordinates(double _x, double _y, double _w, double _h)
+      : x(_x), y(_y), w(_w), h(_h) {}
+  double x = 0, y = 0, w = 0, h = 0;
+};
+
+using index_by = class index_by : public DisplayUnit {
+public:
+  index_by(const std::string &s) : skey(s) {}
+  index_by(const std::size_t n) : nkey(n) {}
+  std::string skey = "";
+  std::size_t nkey = 0;
+};
+
+std::unordered_map<std::string, std::list<std::reference_wrapper<DisplayUnit>>>
+    mappedString = {};
+std::unordered_map<std::size_t, std::list<std::reference_wrapper<DisplayUnit>>>
+    mappedInteger = {};
+
+using line_width = class line_width : public DisplayUnit {
+public:
+  line_width(double lw) {}
+};
+
+using indent = class indent : public DisplayUnit {
+public:
+  indent(double space);
+};
+
+using ellipse = class ellipse : public DisplayUnit {
+public:
+  ellipse(ellipsize_t e);
+};
+
+using line_space = class line_space : public DisplayUnit {
+public:
+  line_space(double dSpace);
+};
+
+using tab_stops = class tab_stops : public DisplayUnit {
+public:
+  tab_stops(const std::vector<double> &tabs);
+};
+
+using text_font = class text_font : public DisplayUnit {
+public:
+  text_font(const std::string &s) : description(s) {}
+  ~text_font() {
     if (fontDescription)
       pango_font_description_free(fontDescription);
   }
-  std::string description = DEFAULT_TEXTFACE;
-  double pointSize = DEFAULT_TEXTSIZE;
-  bool bProvidedName = false;
-  bool bProvidedSize = false;
-  bool bProvidedDescription = false;
+  text_font &operator=(const text_font &other) = delete;
+  text_font(const text_font &);
+  std::string description ={};
   std::atomic<PangoFontDescription *> fontDescription = nullptr;
   void invoke(DisplayContext &context) {
     if (!fontDescription) {
@@ -187,145 +300,12 @@ public:
         context.error_state(__func__, __LINE__, __FILE__, std::string_view(s));
       }
     }
-    bprocessed = true;
   }
-};
-
-class STROKE : public DisplayUnit, public Paint {
-public:
-  STROKE(const Paint &c) : Paint(c) {}
-  STROKE(u_int32_t c) : Paint(c) {}
-  STROKE(double _r, double _g, double _b) : Paint(_r, _g, _b) {}
-  STROKE(double _r, double _g, double _b, double _a) : Paint(_r, _g, _b, _a) {}
-  STROKE(const std::string &n) : Paint(n) {}
-  STROKE(const std::string &n, double w, double h) : Paint(n, w, h) {}
-  STROKE(double x0, double y0, double x1, double y1, const ColorStops &cs)
-      : Paint(x0, y0, x1, y1, cs) {}
-  STROKE(double cx0, double cy0, double radius0, double cx1, double cy1,
-         double radius1, const ColorStops &cs)
-      : Paint(cx0, cy0, radius0, cx1, cy1, radius1, cs) {}
-  ~STROKE() {}
-  void invoke(DisplayContext &context) { bprocessed = true; }
-};
-
-class FILL : public DisplayUnit, public Paint {
-public:
-  FILL(const Paint &c) : Paint(c) {}
-  FILL(u_int32_t c) : Paint(c) {}
-  FILL(double _r, double _g, double _b) : Paint(_r, _g, _b) {}
-  FILL(double _r, double _g, double _b, double _a) : Paint(_r, _g, _b, _a) {}
-  FILL(const std::string &n) : Paint(n) {}
-  FILL(const std::string &n, double w, double h) : Paint(n, w, h) {}
-  FILL(double x0, double y0, double x1, double y1, const ColorStops &cs)
-      : Paint(x0, y0, x1, y1, cs) {}
-  FILL(double cx0, double cy0, double radius0, double cx1, double cy1,
-       double radius1, const ColorStops &cs)
-      : Paint(cx0, cy0, radius0, cx1, cy1, radius1, cs) {}
-  ~FILL() {}
-  void invoke(DisplayContext &context) { bprocessed = true; }
-};
-
-class ALIGN : public DisplayUnit {
-public:
-  ALIGN(alignment_t _aln) : setting(_aln) {}
-  ~ALIGN() {}
-  void emit(PangoLayout *layout);
-  alignment_t setting = alignment_t::left;
-  void invoke(DisplayContext &context) { bprocessed = true; }
-};
-
-class TEXTSHADOW : public DisplayUnit, public Paint {
-public:
-  TEXTSHADOW(const Paint &c, int r, double xOffset, double yOffset)
-      : Paint(c), radius(r), x(xOffset), y(yOffset) {}
-  TEXTSHADOW(u_int32_t c, int r, double xOffset, double yOffset)
-      : Paint(c), radius(r), x(xOffset), y(yOffset) {}
-  TEXTSHADOW(double _r, double _g, double _b, int r, double xOffset,
-             double yOffset)
-      : Paint(_r, _g, _b), radius(r), x(xOffset), y(yOffset) {}
-  TEXTSHADOW(double _r, double _g, double _b, double _a, int r, double xOffset,
-             double yOffset)
-      : Paint(_r, _g, _b, _a), radius(r), x(xOffset), y(yOffset) {}
-  TEXTSHADOW(const std::string &n, int r, double xOffset, double yOffset)
-      : Paint(n), radius(r), x(xOffset), y(yOffset) {}
-  TEXTSHADOW(const std::string &n, double w, double h, int r, double xOffset,
-             double yOffset)
-      : Paint(n, w, h), radius(r), x(xOffset), y(yOffset) {}
-  TEXTSHADOW(double x0, double y0, double x1, double y1, const ColorStops &cs,
-             int r, double xOffset, double yOffset)
-      : Paint(x0, y0, x1, y1, cs), radius(r), x(xOffset), y(yOffset) {}
-  TEXTSHADOW(double cx0, double cy0, double radius0, double cx1, double cy1,
-             double radius1, const ColorStops &cs, int r, double xOffset,
-             double yOffset)
-      : Paint(cx0, cy0, radius0, cx1, cy1, radius1, cs), radius(r), x(xOffset),
-        y(yOffset) {}
-
-  ~TEXTSHADOW() {}
-  void invoke(DisplayContext &context) { bprocessed = true; }
-
-public:
-  unsigned short radius = 3;
-  double x = 1, y = 1;
-};
-
-class TEXTOUTLINE : public Paint, public DisplayUnit {
-public:
-  TEXTOUTLINE(const Paint &c, double _lineWidth)
-      : Paint(c), lineWidth(_lineWidth) {}
-  TEXTOUTLINE(u_int32_t c, double _lineWidth)
-      : Paint(c), lineWidth(_lineWidth) {}
-  TEXTOUTLINE(double _r, double _g, double _b, double _lineWidth)
-      : Paint(_r, _g, _b), lineWidth(_lineWidth) {}
-  TEXTOUTLINE(double _r, double _g, double _b, double _a, double _lineWidth)
-      : Paint(_r, _g, _b, _a), lineWidth(_lineWidth) {}
-  TEXTOUTLINE(const std::string &n, double _lineWidth)
-      : Paint(n), lineWidth(_lineWidth) {}
-  TEXTOUTLINE(const std::string &n, double w, double h, double _lineWidth)
-      : Paint(n, w, h), lineWidth(_lineWidth) {}
-  TEXTOUTLINE(double x0, double y0, double x1, double y1, const ColorStops &cs,
-              double _lineWidth)
-      : Paint(x0, y0, x1, y1, cs), lineWidth(_lineWidth) {}
-  TEXTOUTLINE(double cx0, double cy0, double radius0, double cx1, double cy1,
-              double radius1, const ColorStops &cs, double _lineWidth)
-      : Paint(cx0, cy0, radius0, cx1, cy1, radius1, cs), lineWidth(_lineWidth) {
-  }
-  void emit(cairo_t *cr) {
-    Paint::emit(cr);
-    cairo_set_line_width(cr, lineWidth);
-  }
-  void emit(cairo_t *cr, double x, double y, double w, double h) {
-    Paint::emit(cr);
-    cairo_set_line_width(cr, lineWidth);
-  }
-
-  void invoke(DisplayContext &context) { bprocessed = true; }
-
-public:
-  double lineWidth = .5;
-};
-
-class TEXTFILL : public Paint, public DisplayUnit {
-public:
-  TEXTFILL(const Paint &c) : Paint(c) {}
-  TEXTFILL(u_int32_t c) : Paint(c) {}
-  TEXTFILL(double _r, double _g, double _b) : Paint(_r, _g, _b) {}
-  TEXTFILL(double _r, double _g, double _b, double _a)
-      : Paint(_r, _g, _b, _a) {}
-  TEXTFILL(const std::string &n) : Paint(n) {}
-  TEXTFILL(const std::string &n, double w, double h) : Paint(n, w, h) {}
-  TEXTFILL(double x0, double y0, double x1, double y1, const ColorStops &cs)
-      : Paint(x0, y0, x1, y1, cs) {}
-  TEXTFILL(double cx0, double cy0, double radius0, double cx1, double cy1,
-           double radius1, const ColorStops &cs)
-      : Paint(cx0, cy0, radius0, cx1, cy1, radius1, cs) {}
-
-  ~TEXTFILL() {}
-  void invoke(DisplayContext &context) { bprocessed = true; }
-};
+}; // namespace uxdevice
 
 class TEXT_RENDER : public DrawingOutput {
 public:
-  TEXT_RENDER(std::string _data) : data(_data) {}
+  TEXT_RENDER(std::shared_ptr<std::string> data) : _text(data) {}
   TEXT_RENDER(const TEXT_RENDER &other) = delete;
   TEXT_RENDER &operator=(const TEXT_RENDER &other) = delete;
   bool is_output(void) { return true; }
@@ -335,34 +315,36 @@ public:
 private:
   bool set_layout_options(cairo_t *cr);
   void create_shadow(void);
+  void setup_draw(DisplayContext &context);
 
-  std::atomic<cairo_surface_t *> shadowImage = nullptr;
-  std::atomic<cairo_t *> shadowCr = nullptr;
-  std::atomic<PangoLayout *> layout = nullptr;
-  PangoRectangle ink_rect = PangoRectangle();
-  PangoRectangle logical_rect = PangoRectangle();
-  Matrix mat = {};
+  std::atomic<cairo_surface_t *> _shadow_image = nullptr;
+  std::atomic<cairo_t *> _shadow_cr = nullptr;
+  std::atomic<PangoLayout *> _layout = nullptr;
+  PangoRectangle _ink_rect = PangoRectangle();
+  PangoRectangle _logical_rect = PangoRectangle();
+  Matrix _matrix = {};
 
   // local parameter pointers
-  std::shared_ptr<SOURCE> source = nullptr;
-  std::shared_ptr<TEXTOUTLINE> textoutline = nullptr;
-  std::shared_ptr<TEXTFILL> textfill = nullptr;
-  std::shared_ptr<TEXTSHADOW> textshadow = nullptr;
-  std::shared_ptr<STRING> text = nullptr;
-  std::shared_ptr<FONT> font = nullptr;
-  std::shared_ptr<ALIGN> align = nullptr;
-  std::string data;
+  std::shared_ptr<source> _source = nullptr;
+  std::shared_ptr<text_outline> _text_outline = nullptr;
+  std::shared_ptr<text_fill> _text_fill = nullptr;
+  std::shared_ptr<text_shadow> _text_shadow = nullptr;
+  std::shared_ptr<text_font> _text_font = nullptr;
+  std::shared_ptr<text_alignment> _text_alignment = nullptr;
+  std::shared_ptr<coordinates> _coordinates = nullptr;
+  std::shared_ptr<std::string> _text = nullptr;
+
 };
 
-class IMAGE : public DisplayUnit {
+class image : public DisplayUnit {
 public:
-  IMAGE(const std::string &data) : _data(data) {}
-  IMAGE(const IMAGE &other) { *this = other; }
-  IMAGE &operator=(const IMAGE &other) {
+  image(const std::string &data) : _data(data) {}
+  image(const image &other) { *this = other; }
+  image &operator=(const image &other) {
     _image = cairo_surface_reference(other._image);
     return *this;
   }
-  ~IMAGE() {
+  ~image() {
     if (_image)
       cairo_surface_destroy(_image);
   }

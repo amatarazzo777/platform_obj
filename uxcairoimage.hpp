@@ -15,7 +15,7 @@ cairo_status_t read_contents(const gchar *file_name, guint8 **contents,
                              gsize *length);
 
 cairo_surface_t *image_surface_SVG(bool bDataPassed, std::string &data,
-                                 double width = -1, double height = -1);
+                                   double width = -1, double height = -1);
 
 #if defined(USE_STACKBLUR)
 void blurImage(cairo_surface_t *img, unsigned int radius);

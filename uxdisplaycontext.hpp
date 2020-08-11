@@ -15,16 +15,15 @@
 
 namespace uxdevice {
 
-class STRING;
-class IMAGE;
-class FONT;
-class ANTIALIAS;
-class TEXTSHADOW;
-class TEXTFILL;
-class TEXTOUTLINE;
-class TEXTAREA;
-class SOURCE;
-class ALIGN;
+class image;
+class text_font;
+class antialias;
+class text_shadow;
+class text_fill;
+class text_outline;
+class coordinates;
+class source;
+class text_alignment;
 class TEXT_RENDER;
 class FUNCTION;
 class OPTION_FUNCTION;
@@ -50,17 +49,17 @@ typedef struct _DRAWBUFFER {
 
 class CurrentUnits {
 public:
-  std::shared_ptr<STRING> text = nullptr;
-  std::shared_ptr<FONT> font = nullptr;
-  std::shared_ptr<ANTIALIAS> antialias = nullptr;
-  std::shared_ptr<TEXTSHADOW> textshadow = nullptr;
-  std::shared_ptr<TEXTFILL> textfill = nullptr;
-  std::shared_ptr<TEXTOUTLINE> textoutline = nullptr;
-  std::shared_ptr<SOURCE> source = nullptr;
+  std::shared_ptr<text_font> _text_font = nullptr;
+  std::shared_ptr<antialias> _antialias = nullptr;
+  std::shared_ptr<text_shadow> _text_shadow = nullptr;
+  std::shared_ptr<text_fill> _text_fill = nullptr;
+  std::shared_ptr<text_outline> _text_outline = nullptr;
+  std::shared_ptr<source> _source = nullptr;
+  std::shared_ptr<std::string> _text = nullptr;
+  std::shared_ptr<text_alignment> _text_alignment = nullptr;
+  std::shared_ptr<coordinates> _coordinates = nullptr;
 
-  std::shared_ptr<ALIGN> align = nullptr;
-
-  CairoOptionFn options = {};
+  CairoOptionFn _options = {};
 };
 
 class DisplayContext {
@@ -126,7 +125,6 @@ public:
     xcbSurface = other.xcbSurface;
     preclear = other.preclear;
 
-
     return *this;
   }
 
@@ -174,11 +172,11 @@ public:
   std::list<std::string> _errors = {};
 
   void error_state(const std::string_view &sfunc, const std::size_t linenum,
-                  const std::string_view &sfile, const cairo_status_t stat);
+                   const std::string_view &sfile, const cairo_status_t stat);
   void error_state(const std::string_view &sfunc, const std::size_t linenum,
-                  const std::string_view &sfile, const std::string_view &desc);
+                   const std::string_view &sfile, const std::string_view &desc);
   void error_state(const std::string_view &sfunc, const std::size_t linenum,
-                  const std::string_view &sfile, const std::string &desc);
+                   const std::string_view &sfile, const std::string &desc);
   bool error_state(void);
   std::string error_text(bool bclear = true);
 
@@ -189,23 +187,27 @@ public:
 
   CurrentUnits currentUnits = CurrentUnits();
 
-  void setUnit(std::shared_ptr<FONT> _font) { currentUnits.font = _font; };
-  void setUnit(std::shared_ptr<ANTIALIAS> _antialias) {
-    currentUnits.antialias = _antialias;
-  };
-  void setUnit(std::shared_ptr<TEXTSHADOW> _textshadow) {
-    currentUnits.textshadow = _textshadow;
-  };
-  void setUnit(std::shared_ptr<TEXTFILL> _textfill) {
-    currentUnits.textfill = _textfill;
-  };
-  void setUnit(std::shared_ptr<TEXTOUTLINE> _textoutline) {
-    currentUnits.textoutline = _textoutline;
-  };
-  void setUnit(std::shared_ptr<SOURCE> _source) { currentUnits.source = _source; };
 
-  void setUnit(std::shared_ptr<ALIGN> _align) { currentUnits.align = _align; };
+  void set_unit(std::shared_ptr<std::string> _text) { currentUnits._text = _text; };
+  void set_unit(std::shared_ptr<text_font> _font) { currentUnits._text_font = _font; };
+  void set_unit(std::shared_ptr<antialias> _antialias) {
+    currentUnits._antialias = _antialias;
+  };
+  void set_unit(std::shared_ptr<text_shadow> _text_shadow) {
+    currentUnits._text_shadow = _text_shadow;
+  };
+  void set_unit(std::shared_ptr<text_fill> _text_fill) {
+    currentUnits._text_fill = _text_fill;
+  };
+  void set_unit(std::shared_ptr<text_outline> _text_outline) {
+    currentUnits._text_outline = _text_outline;
+  };
+  void set_unit(std::shared_ptr<source> _source) {
+    currentUnits._source = _source;
+  };
 
+  void set_unit(std::shared_ptr<text_alignment> _align) { currentUnits._text_alignment = _align; };
+  void set_unit(std::shared_ptr<coordinates> _pos) { currentUnits._coordinates = _pos; };
 
 public:
   short windowX = 0;
@@ -278,6 +280,5 @@ public:
     }
   }
   bool preclear = false;
-
 };
 } // namespace uxdevice

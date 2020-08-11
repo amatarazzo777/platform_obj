@@ -3,11 +3,11 @@
 using namespace std;
 using namespace uxdevice;
 
-void drawText(CWindow &vis, bool bfast);
-void drawshapes(CWindow &vis);
-void drawimages(CWindow &vis);
-void drawText(CWindow &vis, bool bfast, string stxt);
-void drawlines(CWindow &vis);
+void drawText(SurfaceArea &vis, bool bfast);
+void drawshapes(SurfaceArea &vis);
+void drawimages(SurfaceArea &vis);
+void drawText(SurfaceArea &vis, bool bfast, string stxt);
+void drawlines(SurfaceArea &vis);
 
 void eventDispatch(const event &evt);
 void handleError(const std::string errText) {
@@ -19,44 +19,44 @@ void handleError(const std::string errText) {
 // description but larger in the source description perhaps unless the c++ RAW
 // literanl input format is used for literal string data.
 const char *stripes =
-  "data:image/"
-  "png;base64,iVBORw0KGgoAAAANSUhEUgAAACsAAAARCAYAAABEvFULAAAABmJLR0QA/wD/"
-  "AP+"
-  "gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH5AQZFBsOzDGg0AAABQZJREFUSMe"
-  "llttvVFUUxn9r98x0oLRAW8pNLKUBrG1pC3ItEIqAQNSoGCEQQQNG/"
-  "gvfjD74QIwmPpCIGgWCJiogQaQgUAWDUC4lpUCBWq51GEovM9Nz9vLhdJiZthQMK5mH2Ze1v"
-  "rXWt759ZMtW52Z3F6PFgOn9Jcx1wXOT/"
-  "wPB9P1UcxxYstJQkLsIS4RvvvwbgMwQLHvZ0NqiXG9W7kfQ7i7/"
-  "fCAIBaNFSiuEvLyxBGQqrl5j357L3Lnln0ngmFIiyOdfO3bWPEP4X+"
-  "XiBSUWTQKYPlt4vmQmRvJAY5w5X8v5eiURrK9ZC8EgxOPJpFzXP5tfALl5wsg8wfOUC2eV+"
-  "5Gkn564f/"
-  "aFuUJl1WQaG5u41qxEwhCL+"
-  "r7l488cm6iM40A0mg4kFoW31huyh1Yi5CCEuH5jP8ePWh60Dww6FfyUEmHaDCEzMJYMGQ0Yh"
-  "KEIQ4npr/"
-  "zyo0esN6brQmeHf7dihjC9qhohBDh4XEVauoNeppkDBAGLp618v+OypFY4USHwg8+"
-  "cZwhKNY1NRzhxTHlSS/hQC5MmCwtrSjDkI6RnfPpsLQ31SmcHbHg/"
-  "m4BU+Em2RvO8wwfauXtbJdVhKhcTrXzU3tNYIAjViwzjxz2HIT9tr7HpCHWHFWNg3bvjkQ+"
-  "3+DSYWCxUzBDNHTlBRbJR7aSh4ar8dUxFTP92DwbUWn8wrU2uGQMD+UmtenaOX/"
-  "HSCiFkFgEGxeWXvYdouwNyIzrWO3miTe7dU7KzhbnVUzWZoQNYLGH2/"
-  "HROIuEnr1ZRsTBndo0qcZQ44GL1AUoHFxpuyfEjfsUCwf6JpiaZKAyAfPSpYzMcP/"
-  "NEpRYsNhQWZXL2dJQZVTUKcPRYrVxpenJ+"
-  "JgIuf9UwJn9x70WLkkDiz0dLSzMH9loZTBYTJp984TzMIzcfhgwRrjUrnutrpOtCeZVwqVHp"
-  "if9/Tib43qupjBqDFhaJZA0pxJFiFFfBlXB7HQf2Wjo7BqZKIAiyc1/"
-  "A5hX4OldeOYyAVGmk46hkZQ1n+7Z7TzU8rtv/"
-  "oUl9bHJGwJtrpmAYB1iEIM3XD1K73w44I3I3tsxTXJQOlDiq3VhusX9Pp4Tb+"
-  "svOYLra19ZsGKJnT0el/qQ+8l5PHNa/"
-  "NwpHSlLT4VDtHzRfTr8nu48G7LlTPqXEPBpQaYXotMpxcrzuBq0t6S/doywWhU2b56mnt/"
-  "lq62UZTAne3jgeR4pTVg2eXuPwwau03fXjmcbzSiDocyLxig1k9SdVhJBWV1fr6jVLNL/"
-  "g8WAzQ+BqE44UMiK3P8DqRQZr/ZjfbWtF6UgdUTJkAotfXMCq1cX0xCHjpVfMB0/"
-  "SUmPgYuM9KS2bBMSZPPlZyiqU0kqPCUWeRMJK+/3+/"
-  "Gxq7JKysiJi7lW5fbOP7gqsfC1Lz5zqERG40HCTsvLCvpFpunSaG/"
-  "+AGeg5HKytu3YekrZInQghMqSQgFSRP2K+rli5UN/ZNF3fWGs0lSId7eBxh/"
-  "Lycu1LnStNSlDmsmqtUWt9/"
-  "loi6XKFw5+9mmwSmjh2vLBuY4b2FeS+1t0FP++y7Nh+QO6GfdBge6d5KFnB+"
-  "WzcPF1HjUlKjqfNZJDPMxPTfamFHq1nWGg+r68xCrDz2zPpdNHmh5+"
-  "pBmD0OFi6tEaDMpspJfJYSjiOX+XdP/"
-  "igw+11JJvkg16xfLFmhvyVSxe7RLHMmmfIGZHs4LAcej9SXOp+t5JQh4O/HektABgZ/"
-  "jDuf4YrMMm0cOGnAAAAAElFTkSuQmCC";
+    "data:image/"
+    "png;base64,iVBORw0KGgoAAAANSUhEUgAAACsAAAARCAYAAABEvFULAAAABmJLR0QA/wD/"
+    "AP+"
+    "gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH5AQZFBsOzDGg0AAABQZJREFUSMe"
+    "llttvVFUUxn9r98x0oLRAW8pNLKUBrG1pC3ItEIqAQNSoGCEQQQNG/"
+    "gvfjD74QIwmPpCIGgWCJiogQaQgUAWDUC4lpUCBWq51GEovM9Nz9vLhdJiZthQMK5mH2Ze1v"
+    "rXWt759ZMtW52Z3F6PFgOn9Jcx1wXOT/"
+    "wPB9P1UcxxYstJQkLsIS4RvvvwbgMwQLHvZ0NqiXG9W7kfQ7i7/"
+    "fCAIBaNFSiuEvLyxBGQqrl5j357L3Lnln0ngmFIiyOdfO3bWPEP4X+"
+    "XiBSUWTQKYPlt4vmQmRvJAY5w5X8v5eiURrK9ZC8EgxOPJpFzXP5tfALl5wsg8wfOUC2eV+"
+    "5Gkn564f/"
+    "aFuUJl1WQaG5u41qxEwhCL+"
+    "r7l488cm6iM40A0mg4kFoW31huyh1Yi5CCEuH5jP8ePWh60Dww6FfyUEmHaDCEzMJYMGQ0Yh"
+    "KEIQ4npr/"
+    "zyo0esN6brQmeHf7dihjC9qhohBDh4XEVauoNeppkDBAGLp618v+OypFY4USHwg8+"
+    "cZwhKNY1NRzhxTHlSS/hQC5MmCwtrSjDkI6RnfPpsLQ31SmcHbHg/"
+    "m4BU+Em2RvO8wwfauXtbJdVhKhcTrXzU3tNYIAjViwzjxz2HIT9tr7HpCHWHFWNg3bvjkQ+"
+    "3+DSYWCxUzBDNHTlBRbJR7aSh4ar8dUxFTP92DwbUWn8wrU2uGQMD+UmtenaOX/"
+    "HSCiFkFgEGxeWXvYdouwNyIzrWO3miTe7dU7KzhbnVUzWZoQNYLGH2/"
+    "HROIuEnr1ZRsTBndo0qcZQ44GL1AUoHFxpuyfEjfsUCwf6JpiaZKAyAfPSpYzMcP/"
+    "NEpRYsNhQWZXL2dJQZVTUKcPRYrVxpenJ+"
+    "JgIuf9UwJn9x70WLkkDiz0dLSzMH9loZTBYTJp984TzMIzcfhgwRrjUrnutrpOtCeZVwqVHp"
+    "if9/Tib43qupjBqDFhaJZA0pxJFiFFfBlXB7HQf2Wjo7BqZKIAiyc1/"
+    "A5hX4OldeOYyAVGmk46hkZQ1n+7Z7TzU8rtv/"
+    "oUl9bHJGwJtrpmAYB1iEIM3XD1K73w44I3I3tsxTXJQOlDiq3VhusX9Pp4Tb+"
+    "svOYLra19ZsGKJnT0el/qQ+8l5PHNa/"
+    "NwpHSlLT4VDtHzRfTr8nu48G7LlTPqXEPBpQaYXotMpxcrzuBq0t6S/doywWhU2b56mnt/"
+    "lq62UZTAne3jgeR4pTVg2eXuPwwau03fXjmcbzSiDocyLxig1k9SdVhJBWV1fr6jVLNL/"
+    "g8WAzQ+BqE44UMiK3P8DqRQZr/ZjfbWtF6UgdUTJkAotfXMCq1cX0xCHjpVfMB0/"
+    "SUmPgYuM9KS2bBMSZPPlZyiqU0kqPCUWeRMJK+/3+/"
+    "Gxq7JKysiJi7lW5fbOP7gqsfC1Lz5zqERG40HCTsvLCvpFpunSaG/"
+    "+AGeg5HKytu3YekrZInQghMqSQgFSRP2K+rli5UN/ZNF3fWGs0lSId7eBxh/"
+    "Lycu1LnStNSlDmsmqtUWt9/"
+    "loi6XKFw5+9mmwSmjh2vLBuY4b2FeS+1t0FP++y7Nh+QO6GfdBge6d5KFnB+"
+    "WzcPF1HjUlKjqfNZJDPMxPTfamFHq1nWGg+r68xCrDz2zPpdNHmh5+"
+    "pBmD0OFi6tEaDMpspJfJYSjiOX+XdP/"
+    "igw+11JJvkg16xfLFmhvyVSxe7RLHMmmfIGZHs4LAcej9SXOp+t5JQh4O/HektABgZ/"
+    "jDuf4YrMMm0cOGnAAAAAElFTkSuQmCC";
 
 // inline SVG, you may build this at run time or parameterize certain aspects
 // of the style or and of its data. Not all of the blocks below are required,
@@ -66,7 +66,7 @@ const char *stripes =
 // parsing. Files may be drawn in the inkscape application and transposed at
 // this layer.
 std::string sSVG =
-  R"data(<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+    R"data(<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
    xmlns:dc="http://purl.org/dc/elements/1.1/"
    xmlns:cc="http://creativecommons.org/ns#"
@@ -206,7 +206,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 #define _C color(gen)
 #define _A opac(gen)
 
-  CWindow vis = CWindow(
+  SurfaceArea vis = SurfaceArea(
       {500, 500}, "Information Title",
       Paint(coord(gen), coord(gen), coord(gen), coord(gen),
             {{_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}}));
@@ -246,7 +246,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
   return 0;
 }
 
-void drawText(CWindow &vis, bool bfast, string stxt) {
+void drawText(SurfaceArea &vis, bool bfast, string stxt) {
 
   std::uniform_real_distribution<> scrn(0, 400.0);
   std::uniform_real_distribution<> dcir(25.0, 100.0);
@@ -259,61 +259,39 @@ void drawText(CWindow &vis, bool bfast, string stxt) {
 #define _C color(gen)
 #define _A opac(gen)
 
-  // set the font name according to pango spi. see pango font description.
+  // set the font name according to pango api. see pango font description.
   std::uniform_int_distribution<> fill(1, 2);
 
   if (bfast) {
     std::time_t t = std::time(nullptr);
-    vis << source("blue") << std::put_time(std::localtime(&t), L"%A %c")
-        << '\n';
-    vis.text(coordinates{0, 0});
-    vis.text(stxt, source("blue"));
+    char mbstr[100];
+    std::strftime(mbstr, sizeof(mbstr), "%A %c", std::localtime(&t));
+
+    vis << coordinates{0, 0} << source("blue") << mbstr << '\n';
 
   } else {
 
-    vis.text(
-        index_by{"text"}, stxt,
-        text_fill{
-            coord(gen),
-            coord(gen),
-            coord(gen),
-            coord(gen),
-            {{_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}}},
-        text_outline{
-            coord(gen),
-            coord(gen),
-            coord(gen),
-            coord(gen),
-            {{_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}}},
-        text_shadow{"green"}, line_width{lw(gen)}, alignment_t::left,
-        {10, 10, 300, 300});
+    vis << text_fill{coord(gen),
+                     coord(gen),
+                     coord(gen),
+                     coord(gen),
+                     {{_C, _C, _C, _C, _A},
+                      {_C, _C, _C, _C, _A},
+                      {_C, _C, _C, _C, _A}}}
+        << text_outline{coord(gen),
+                        coord(gen),
+                        coord(gen),
+                        coord(gen),
+                        {{_C, _C, _C, _C, _A},
+                         {_C, _C, _C, _C, _A},
+                         {_C, _C, _C, _C, _A}}}
+        << text_shadow{"green"} << line_width{lw(gen)} << alignment_t::left
+        << coordinates{10, 10, 300, 300} << stxt << index_by{"text"};
 
-    vis["text"].set<text_shadow>("darkgreen");
-    vis["text"].set(text_shadow{"darkgreen"}, alignment_t::right);
-    auto &o = vis["text"].get<text_shadow>();
-    o.rotate(PI / 180 * 2);
-
-
-    vis.text(
-        index_by{"text"}, stxt,
-        text_fill{
-        coord(gen), coord(gen), coord(gen), coord(gen),
-        {{_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}}},
-        text_outline{
-            coord(gen),
-            coord(gen),
-            coord(gen),
-            coord(gen),
-            {{_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}}},
-        text_shadow{"green"}, line_width{lw(gen)}, alignment_t::left,
-        {10, 10, 300, 300});
-    vis.object("text").set<text_shadow>("darkgreen");
-
-    vis.text(stxt);
   }
 }
 
-void drawText(CWindow &vis, bool bfast) {
+void drawText(SurfaceArea &vis, bool bfast) {
 
   std::uniform_real_distribution<> scrn(0, 400.0);
   std::uniform_real_distribution<> dcir(25.0, 100.0);
@@ -323,32 +301,59 @@ void drawText(CWindow &vis, bool bfast) {
   std::uniform_real_distribution<> coord(425.0, 600.0);
   std::uniform_int_distribution<> shape(1, 4);
 
-  // area is a rounded box 120,120 are the corner pixel sizes.
-  // rectangle is x-0,y=0 width=800, height = 600
-  // vis.rotate(PI / 180 * (-35 - (dStep * 35)));
-  // vis.drawArea();
-  std::string stxt;
+  // set the font name according to pango spi. see pango font description.
+  vis << text_font("50px") << text_alignment::left;
+  std::uniform_int_distribution<> fill(1, 3);
+  vis << coordinates({coord(gen), coord(gen), coord(gen), coord(gen)});
+
+  if (bfast) {
+    vis << text_shadow_none{}
+        << text_fill_none{}
+        << text_outline_none{}
+        << source{coord(gen),
+                    coord(gen),
+                    coord(gen),
+                    coord(gen),
+                    {{_C, _C, _C, _C, _A},
+                     {_C, _C, _C, _C, _A},
+                     {_C, _C, _C, _C, _A}}};
+
+  } else {
+
+    vis << text_shadow("black")
+
+
+   << text_fill(
+        coord(gen), coord(gen), coord(gen), coord(gen),
+        {{_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}})
+
+    << text_outline(
+        coord(gen), coord(gen), coord(gen), coord(gen),
+        {{_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}});
+
+
+  }
 
   std::uniform_int_distribution<> info(1, 5);
   switch (info(gen)) {
   case 1:
-    stxt = "Silver colored crafts from another galaxy seem "
+    vis << "Silver colored crafts from another galaxy seem "
            "curiously welcomed as the memorizing audio waves "
            "produced a canny type of music. A simple ten note. ";
     break;
   case 2:
-    stxt = "The color of text can be a choice. Yet the appearance is a common "
+    vis << "The color of text can be a choice. Yet the appearance is a common "
            "desire.";
     break;
   case 3:
-    stxt = "Planets orbit the mass, but this is inconsequential of "
+    vis << "Planets orbit the mass, but this is inconsequential of "
            "the heat provided. As children, we find a balance. ";
     break;
   case 4:
-    stxt = "The sun sets casting its refraction upon the mountain side. ";
+    vis << "The sun sets casting its refraction upon the mountain side. ";
     break;
   case 5:
-    stxt =
+    vis <<
         "The sun sets casting its refraction upon the mountain side. "
         "The glistening oil coats upon the ravens are a remark of healthiness. "
         "One that is pronounced during the day and in the moonlight. "
@@ -361,38 +366,11 @@ void drawText(CWindow &vis, bool bfast) {
     break;
   }
 
-  // set the font name according to pango spi. see pango font description.
-  vis.text(text_font("50px"));
-  std::uniform_int_distribution<> fill(1, 3);
 
-  if (bfast) {
-    vis.text(stxt, text_font("50px"),
-             source{coord(gen),
-                    coord(gen),
-                    coord(gen),
-                    coord(gen),
-                    {{_C, _C, _C, _C, _A},
-                     {_C, _C, _C, _C, _A},
-                     {_C, _C, _C, _C, _A}}});
-
-  } else {
-
-    vis.text(text_shadow("black"));
-    vis.text(text_alignment::left);
-
-    vis.text(text_fill(
-        coord(gen), coord(gen), coord(gen), coord(gen),
-        {{_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}}));
-
-    vis.text(text_outline(
-        coord(gen), coord(gen), coord(gen), coord(gen),
-        {{_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}}));
-    vix.text(coordinates({coord(gen), coord(gen), coord(gen), coord(gen)}));
-    vis.text(stxt, text_font("50px"));
-  }
 }
 
-void drawlines(CWindow &vis) {
+void drawlines(SurfaceArea &vis) {
+#if 0
   std::uniform_real_distribution<> scrn(0, 1000);
   std::uniform_real_distribution<> dcir(5.0, 20.0);
   std::uniform_real_distribution<> dimen(25.0, 300.0);
@@ -402,7 +380,7 @@ void drawlines(CWindow &vis) {
   std::uniform_real_distribution<> coord(55.0, 100.0);
   std::uniform_int_distribution<> shape(1, 1);
 
-  vis.move(scrn(gen), scrn(gen));
+  vis.move_to(scrn(gen), scrn(gen));
   auto &myshape = vis.group("testgroup");
 
   for (int c = 0; c < NUM_SEGMENTS; c++) {
@@ -427,22 +405,14 @@ void drawlines(CWindow &vis) {
       Paint(coord(gen), coord(gen), coord(gen), coord(gen),
             {{_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}});
 
-  auto pf = Paint(coord(gen), coord(gen), coord(gen), coord(gen),
-             {{_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}});
+  auto pf =
+      Paint(coord(gen), coord(gen), coord(gen), coord(gen),
+            {{_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}});
 
   myshape.stroke_preserve(ps).fill(pf);
 
   auto &myshape1 = vis.group("testgroup2");
-  myshape1.move(10, 10).relative().hline(10).vline(10).hline(-10).vline(-10);
+  myshape1.move_to(10, 10).relative().hline(10).vline(10).hline(-10).vline(-10);
   myshape1.stroke_preserve(ps).fill(pf);
-
-  vis.fn<int,int,int,int>("fntest", [](int x, int y, int w, int h)
-                    {
-    move(x, y).relative().hline(w).vline(h).hline(-w).vline(-h);
-    stroke_preserve(ps).fill(pf);}
-                    ));
-
-  vis.fn("fntest")(200, 30, 40, 50);
-
-  myshape1.fn(appset["iconbutterfly"])(10, 3, 4);
+  #endif
 }

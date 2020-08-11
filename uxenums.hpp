@@ -50,7 +50,6 @@ enum class line_join_t {
   bevel = CAIRO_LINE_JOIN_BEVEL
 };
 
-
 enum op_t {
   opClear = CAIRO_OPERATOR_CLEAR,
   opSource = CAIRO_OPERATOR_SOURCE,

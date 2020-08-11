@@ -50,7 +50,7 @@ public:
       : type(et), virtualKey(vk), isVirtualKey(true) {}
 
   event_t(const eventType &et, const short &mx, const short &my,
-        const short &mb_dis)
+          const short &mb_dis)
       : type(et), x(mx), y(my) {
 
     if (et == eventType::wheel)
@@ -61,8 +61,8 @@ public:
   event_t(const eventType &et, const short &_w, const short &_h)
       : type(et), x(_w), y(_h), w(_w), h(_h) {}
 
-  event_t(const eventType &et, const short &_x, const short &_y, const short &_w,
-        const short &_h)
+  event_t(const eventType &et, const short &_x, const short &_y,
+          const short &_w, const short &_h)
       : type(et), x(_x), y(_y), w(_w), h(_h) {}
   event_t(const eventType &et, const short &_distance)
       : type(et), distance(_distance) {}

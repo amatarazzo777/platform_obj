@@ -50,7 +50,7 @@ uxdevice::ColorStop::ColorStop(double o, const std::string &s) {
   _bAutoOffset = false;
   _bRGBA = false;
   _offset = o;
-  parseColor(s);
+  parse_color(s);
 }
 
 uxdevice::ColorStop::ColorStop(double o, const std::string &s, double a) {
@@ -58,10 +58,10 @@ uxdevice::ColorStop::ColorStop(double o, const std::string &s, double a) {
   _bRGBA = true;
   _offset = o;
   _a = a;
-  parseColor(s);
+  parse_color(s);
 }
 
-void uxdevice::ColorStop::parseColor(const std::string &s) {
+void uxdevice::ColorStop::parse_color(const std::string &s) {
   PangoColor pangoColor;
   if (pango_color_parse(&pangoColor, s.data())) {
     _r = pangoColor.red / 65535.0;
@@ -148,10 +148,10 @@ bool uxdevice::Paint::create(void) {
     // color.
   } else if (_description.size() > 0) {
 
-    if (isLinearGradient(_description)) {
+    if (is_linear_gradient(_description)) {
       _gradientType = gradientType::linear;
 
-    } else if (isRadialGradient(_description)) {
+    } else if (is_radial_gradient(_description)) {
       _gradientType = gradientType::radial;
 
     } else if (patch(_description)) {
@@ -306,10 +306,10 @@ the color name string.
 
 */
 void uxdevice::Paint::emit(cairo_t *cr) {
-  if (!isLoaded())
+  if (!is_loaded())
     create();
 
-  if (isLoaded()) {
+  if (is_loaded()) {
     switch (_type) {
     case paintType::none:
       break;
@@ -334,7 +334,7 @@ void uxdevice::Paint::emit(cairo_t *cr) {
 
 void uxdevice::Paint::emit(cairo_t *cr, double x, double y, double w,
                            double h) {
-  if (!isLoaded()) {
+  if (!is_loaded()) {
     create();
 
     // adjust to user space
@@ -342,7 +342,7 @@ void uxdevice::Paint::emit(cairo_t *cr, double x, double y, double w,
       translate(-x, -y);
   }
 
-  if (isLoaded()) {
+  if (is_loaded()) {
     switch (_type) {
     case paintType::none:
       break;

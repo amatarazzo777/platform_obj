@@ -70,214 +70,213 @@ local operating system.
 */
 typedef std::list<short int> CoordinateList;
 
-#define PAINT_OBJ(X) \
-using X = class X : public Paint { \
-public: \
-  X(u_int32_t c): Paint(u_int32_t c){} \
-  X(double r, double g, double b): Paint(double r, double g, double b){}\
-  X(double r, double g, double b, double a): Paint(double r, double g, double b, double a){}\
-  X(const std::string &n): Paint(const std::string &n){}\
-  X(const std::string &n, double width, double height): Paint(const std::string &n, double width, double height){}\
-  X(double x0, double y0, double x1, double y1, const ColorStops &_cs): Paint(double x0, double y0, double x1, double y1, const ColorStops &_cs){}\
-  X(double cx0, double cy0, double radius0, double cx1, double cy1,\
-        double radius1, const ColorStops &cs)):\
-         Paint(double cx0, double cy0, double radius0, double cx1, double cy1,\
-        double radius1, const ColorStops &cs){}\
-\
-}
-PAINT_OBJ(source);
-PAINT_OBJ(text_outline);
-PAINT_OBJ(text_fill);
-PAINT_OBJ(text_shadow);
-
-using text_alignment = enum class text_alignment {
-  left = PangoAlignment::PANGO_ALIGN_LEFT,
-  center = PangoAlignment::PANGO_ALIGN_CENTER,
-  right = PangoAlignment::PANGO_ALIGN_RIGHT,
-  justified = 4
-};
-using coordinates = class coordinates {
+class SurfaceArea {
 public:
-  coordinates(double _x, double _y) : x(_x),y(_y) {}
-  coordinates(double _x, double _y, double _w,double _h) : x(_x),y(_y),w(_w),h(_h) {}
-  double x = 0, y = 0, w = 0, h = 0;
+  SurfaceArea();
+  SurfaceArea(const std::string &sSurfaceAreaTitle);
 
-};
-using index_by = class index_by {
-public:
-  index_by(std::string) {}
-  index_by(std::size_t) {}
-};
-using line_width = class line_width {
-public:
-  line_width(double lw) {}
-};
+  SurfaceArea(const eventHandler &evtDispatcher);
+  SurfaceArea(const CoordinateList &coordinates);
 
+  SurfaceArea(const CoordinateList &coordinates,
+              const std::string &sSurfaceAreaTitle);
+  SurfaceArea(const CoordinateList &coordinates,
+              const std::string &sSurfaceAreaTitle, const Paint &background);
 
-using indent = class indent {
-public:
-  indent(double space);
-};
-
-using ellipse = class ellipse {
-public:
-  ellipse(ellipsize_t e);
-};
-
-using line_space= class line_space {
-public:
-  line_space(double dSpace);
-};
-
-using tab_stops= class tab_stops {
-public:
-  tab_stops(const std::vector<double> &tabs);
-};
-
-
-using text_font = class text_font {
-public:
-  text_font(const std::string &s);
-};
-
-
-
-class CWindow {
-public:
-  CWindow();
-  CWindow(const std::string &sCWindowTitle);
-
-  CWindow(const eventHandler &evtDispatcher);
-  CWindow(const CoordinateList &coordinates);
-
-  CWindow(const CoordinateList &coordinates, const std::string &sCWindowTitle);
-  CWindow(const CoordinateList &coordinates, const std::string &sCWindowTitle,
-          const Paint &background);
-
-  CWindow(const CoordinateList &coordinates, const std::string &sCWindowTitle,
-          const eventHandler &evtDispatcher, const Paint &background);
-
-  template <typename T> CWindow& operator<<(const T &data) {
+  SurfaceArea(const CoordinateList &coordinates,
+              const std::string &sSurfaceAreaTitle,
+              const eventHandler &evtDispatcher, const Paint &background);
+  ~SurfaceArea();
+  template <typename T> SurfaceArea &operator<<(const T &data) {
     std::ostringstream s;
     s << data;
     std::string sData = s.str();
 
-
     return *this;
   }
-  CWindow& operator<<(const source &data) {
+  SurfaceArea &operator<<(const std::string &data) {
+    stream_input(data);
+    return *this;
+  }
+  SurfaceArea &operator<<(const char *data) {
+    stream_input(data);
+    return *this;
+  }
+  SurfaceArea &operator<<(const source &data) {
+    stream_input(data);
+    return *this;
+  }
+  SurfaceArea &operator<<(const text_outline &data) {
+    stream_input(data);
+    return *this;
+  }
+  SurfaceArea &operator<<(const text_fill &data) {
+    stream_input(data);
+    return *this;
+  }
+  SurfaceArea &operator<<(const text_shadow &data) {
+    stream_input(data);
+    return *this;
+  }
+  SurfaceArea &operator<<(const text_outline_none &data) {
+    stream_input(data);
+    return *this;
+  }
+  SurfaceArea &operator<<(const text_fill_none &data) {
+    stream_input(data);
+    return *this;
+  }
+  SurfaceArea &operator<<(const text_shadow_none &data) {
+    stream_input(data);
+    return *this;
+  }
+  SurfaceArea &operator<<(const text_alignment &data) {
+    stream_input(data);
+    return *this;
+  }
+  SurfaceArea &operator<<(const alignment_t &data) {
+    stream_input(data);
+    return *this;
+  }
+  SurfaceArea &operator<<(const coordinates &data) {
+    stream_input(data);
+    return *this;
+  }
+  SurfaceArea &operator<<(const index_by &data) { return *this; }
+
+  SurfaceArea &operator<<(const indent &data) {
+    stream_input(data);
     return *this;
   }
 
-  bool processing(void) {
-    return bProcessing;
+  SurfaceArea &operator<<(const ellipse &data) {
+    stream_input(data);
+    return *this;
   }
+  SurfaceArea &operator<<(const line_space &data) {
+    stream_input(data);
+    return *this;
+  }
+  SurfaceArea &operator<<(const tab_stops &data) {
+    stream_input(data);
+    return *this;
+  }
+  SurfaceArea &operator<<(const text_font &data) {
+    stream_input(data);
+    return *this;
+  }
+  SurfaceArea &operator<<(const line_width &data) {
+    stream_input(data);
+    return *this;
+  }
+  SurfaceArea &operator[](const std::string &s) {return *this;}
+  SurfaceArea &operator[](const std::size_t &s) {return *this;}
+  SurfaceArea &group(const std::string &sgroupname) {return *this;}
+  template <typename T> T &get(void) { return *this; }
+
+  bool processing(void) { return bProcessing; }
   void listen(eventType etype, const eventHandler &evtDispatcher);
-  CWindow &group(std::string &_name);
+  SurfaceArea &group(std::string &_name);
 
-  CWindow &device_offset(double x, double y);
-  CWindow &device_scale(double x, double y);
-  CWindow &brush(Paint &b);
+  SurfaceArea &device_offset(double x, double y);
+  SurfaceArea &device_scale(double x, double y);
+  SurfaceArea &brush(Paint &b);
   void clear(void);
   void notify_complete(void);
 
-  template<typename T, typename ...Args>
-  CWindow &text(const T&val, const Args&... args) {
-    text(val);
-    text(args...);
-    return *this;
-  }
-
-  CWindow &text(const std::string &_val);
-  CWindow &text(const std::stringstream &_val);
-  CWindow &text(const source &_val);
-  CWindow &text(const text_outline &_val);
-  CWindow &text(const text_fill &_val);
-  CWindow &text(const text_shadow &_val);
-  CWindow &text(const text_alignment &_val);
-  CWindow &text(const coordinates &_val);
-  CWindow &text(const index_by &_val);
-  CWindow &text(const line_width &_val);
-
-  CWindow &text(const indent &_val);
-
-  CWindow &text(const ellipse &_val);
-  CWindow &text(const line_space &_val);
-
-  CWindow &text(const tab_stops &_val);
-
-  CWindow &text(const text_font &_val);
-
-  CWindow &image(const std::string &s);
-  CWindow &antialias(alias_t _a);
 
 
-  CWindow &save(void);
-  CWindow &restore(void);
 
-  CWindow &push(content_t _content = content_t::all);
-  CWindow &pop(bool bToSource = false);
 
-  CWindow &translate(double x, double y);
-  CWindow &rotate(double angle);
-  CWindow &scale(double x, double y);
-  CWindow &transform(const Matrix &mat);
-  CWindow &matrix(const Matrix &mat);
-  CWindow &identity(void);
-  CWindow &device(double &x, double &y);
-  CWindow &device_distance(double &x, double &y);
-  CWindow &user(double &x, double &y);
-  CWindow &user_distance(double &x, double &y);
+  SurfaceArea &save(void);
+  SurfaceArea &restore(void);
 
-  CWindow &source(Paint &p);
+  SurfaceArea &push(content_t _content = content_t::all);
+  SurfaceArea &pop(bool bToSource = false);
 
-  CWindow &cap(line_cap_t c);
-  CWindow &join(line_join_t j);
-  CWindow &line_width(double dWidth);
-  CWindow &miter_limit(double dLimit);
-  CWindow &dashes(const std::vector<double> &dashes, double offset);
-  CWindow &tollerance(double _t);
-  CWindow &op(op_t _op);
+  SurfaceArea &translate(double x, double y);
+  SurfaceArea &rotate(double angle);
+  SurfaceArea &scale(double x, double y);
+  SurfaceArea &transform(const Matrix &mat);
+  SurfaceArea &matrix(const Matrix &mat);
+  SurfaceArea &identity(void);
+  SurfaceArea &device(double &x, double &y);
+  SurfaceArea &device_distance(double &x, double &y);
+  SurfaceArea &user(double &x, double &y);
+  SurfaceArea &user_distance(double &x, double &y);
 
-  CWindow &close_path(void);
-  CWindow &arc(double xc, double yc, double radius, double angle1,
-               double angle2);
-  CWindow &arc_neg(double xc, double yc, double radius, double angle1,
+  SurfaceArea &cap(line_cap_t c);
+  SurfaceArea &join(line_join_t j);
+  SurfaceArea &miter_limit(double dLimit);
+  SurfaceArea &dashes(const std::vector<double> &dashes, double offset);
+  SurfaceArea &tollerance(double _t);
+  SurfaceArea &op(op_t _op);
+
+  SurfaceArea &close_path(void);
+  SurfaceArea &arc(double xc, double yc, double radius, double angle1,
                    double angle2);
-  CWindow &curve(double x1, double y1, double x2, double y2, double x3,
-                 double y3);
-  CWindow &line(double x, double y);
-  CWindow &hline(double x);
-  CWindow &vline(double y);
-  CWindow &move(double x, double y);
-  CWindow &rectangle(double x, double y, double width, double height);
+  SurfaceArea &arc_neg(double xc, double yc, double radius, double angle1,
+                       double angle2);
+  SurfaceArea &curve(double x1, double y1, double x2, double y2, double x3,
+                     double y3);
+  SurfaceArea &line(double x, double y);
+  SurfaceArea &hline(double x);
+  SurfaceArea &vline(double y);
+  SurfaceArea &move_to(double x, double y);
+  SurfaceArea &rectangle(double x, double y, double width, double height);
   point location(void);
 
-  CWindow &mask(Paint &p);
-  CWindow &mask(Paint &p, double x, double y);
-  CWindow &paint(double alpha = 1.0);
-  CWindow &relative(void);
-  CWindow &absolute(void);
+  SurfaceArea &mask(Paint &p);
+  SurfaceArea &mask(Paint &p, double x, double y);
+  SurfaceArea &paint(double alpha = 1.0);
+  SurfaceArea &relative(void);
+  SurfaceArea &absolute(void);
 
-  void stroke(const Paint &p);
-  void stroke(u_int32_t c);
-  void stroke(const std::string &c);
-  void stroke(const std::string &c, double w, double h);
-  void stroke(double _r, double _g, double _b);
-  void stroke(double _r, double _g, double _b, double _a);
-  void stroke(double x0, double y0, double x1, double y1, const ColorStops &cs);
-  void stroke(double cx0, double cy0, double radius0, double cx1, double cy1,
-              double radius1, const ColorStops &cs);
+  SurfaceArea &stroke(const Paint &p);
+  SurfaceArea &stroke(u_int32_t c);
+  SurfaceArea &stroke(const std::string &c);
+  SurfaceArea &stroke(const std::string &c, double w, double h);
+  SurfaceArea &stroke(double _r, double _g, double _b);
+  SurfaceArea &stroke(double _r, double _g, double _b, double _a);
+  SurfaceArea &stroke(double x0, double y0, double x1, double y1,
+                      const ColorStops &cs);
+  SurfaceArea &stroke(double cx0, double cy0, double radius0, double cx1,
+                      double cy1, double radius1, const ColorStops &cs);
 
-  void fill(const Paint &p);
-  void fill(u_int32_t c);
-  void fill(const std::string &c);
-  void fill(const std::string &c, double w, double h);
-  void fill(double _r, double _g, double _b);
-  void fill(double _r, double _g, double _b, double _a);
-  void fill(double x0, double y0, double x1, double y1, const ColorStops &cs);
-  void fill(double cx0, double cy0, double radius0, double cx1, double cy1,
-            double radius1, const ColorStops &cs);
+  SurfaceArea &stroke_preserve(const Paint &p);
+  SurfaceArea &stroke_preserve(u_int32_t c);
+  SurfaceArea &stroke_preserve(const std::string &c);
+  SurfaceArea &stroke_preserve(const std::string &c, double w, double h);
+  SurfaceArea &stroke_preserve(double _r, double _g, double _b);
+  SurfaceArea &stroke_preserve(double _r, double _g, double _b, double _a);
+  SurfaceArea &stroke_preserve(double x0, double y0, double x1, double y1,
+                               const ColorStops &cs);
+  SurfaceArea &stroke_preserve(double cx0, double cy0, double radius0,
+                               double cx1, double cy1, double radius1,
+                               const ColorStops &cs);
+
+  SurfaceArea &fill(const Paint &p);
+  SurfaceArea &fill(u_int32_t c);
+  SurfaceArea &fill(const std::string &c);
+  SurfaceArea &fill(const std::string &c, double w, double h);
+  SurfaceArea &fill(double _r, double _g, double _b);
+  SurfaceArea &fill(double _r, double _g, double _b, double _a);
+  SurfaceArea &fill(double x0, double y0, double x1, double y1,
+                    const ColorStops &cs);
+  SurfaceArea &fill(double cx0, double cy0, double radius0, double cx1,
+                    double cy1, double radius1, const ColorStops &cs);
+
+  SurfaceArea &fill_preserve(const Paint &p);
+  SurfaceArea &fill_preserve(u_int32_t c);
+  SurfaceArea &fill_preserve(const std::string &c);
+  SurfaceArea &fill_preserve(const std::string &c, double w, double h);
+  SurfaceArea &fill_preserve(double _r, double _g, double _b);
+  SurfaceArea &fill_preserve(double _r, double _g, double _b, double _a);
+  SurfaceArea &fill_preserve(double x0, double y0, double x1, double y1,
+                             const ColorStops &cs);
+  SurfaceArea &fill_preserve(double cx0, double cy0, double radius0, double cx1,
+                             double cy1, double radius1, const ColorStops &cs);
+
   bounds stroke(void);
   bool in_stroke(double x, double y);
   bool in_fill(double x, double y);
@@ -292,6 +291,31 @@ private:
   void message_loop(void);
   void render_loop(void);
   void dispatch_event(const event_t &e);
+  void close_window(void);
+  SurfaceArea &stream_input(const antialias &_val);
+  SurfaceArea &stream_input(const std::string &_val);
+  SurfaceArea &stream_input(const std::stringstream &_val);
+  SurfaceArea &stream_input(const source &_val);
+  SurfaceArea &stream_input(const text_outline &_val);
+  SurfaceArea &stream_input(const text_fill &_val);
+  SurfaceArea &stream_input(const text_shadow &_val);
+  SurfaceArea &stream_input(const text_outline_none &_val);
+  SurfaceArea &stream_input(const text_fill_none &_val);
+  SurfaceArea &stream_input(const text_shadow_none &_val);
+  SurfaceArea &stream_input(const text_alignment &_val);
+  SurfaceArea &stream_input(const alignment_t &_val);
+  SurfaceArea &stream_input(const coordinates &_val);
+  SurfaceArea &stream_input(const index_by &_val);
+  SurfaceArea &stream_input(const line_width &_val);
+
+  SurfaceArea &stream_input(const indent &_val);
+
+  SurfaceArea &stream_input(const ellipse &_val);
+  SurfaceArea &stream_input(const line_space &_val);
+
+  SurfaceArea &stream_input(const tab_stops &_val);
+
+  SurfaceArea &stream_input(const text_font &_val);
 
   DisplayContext context = DisplayContext();
   std::atomic<bool> bProcessing = false;
@@ -323,7 +347,7 @@ private:
   std::list<eventHandler> oncontextmenu = {};
   std::list<eventHandler> onwheel = {};
 
-  std::vector<eventHandler> &get_event_vector(eventType evtType);
+  std::list<eventHandler> &get_event_vector(eventType evtType);
 };
 
 } // namespace uxdevice
