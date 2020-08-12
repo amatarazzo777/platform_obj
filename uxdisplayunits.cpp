@@ -153,8 +153,8 @@ bool uxdevice::TEXT_RENDER::set_layout_options(cairo_t *cr) {
     pango_layout_set_height(_layout, _coordinates->h * PANGO_SCALE);
 
   std::string_view sinternal = std::string_view(pango_layout_get_text(_layout));
-  if (_text->compare(sinternal) != 0)
-    pango_layout_set_text(_layout, _text->data(), -1);
+  if (_text->data.compare(sinternal) != 0)
+    pango_layout_set_text(_layout, _text->data.data(), -1);
 
   // any changes
   if (layoutSerial != pango_layout_get_serial(_layout)) {
@@ -241,7 +241,7 @@ void uxdevice::TEXT_RENDER::setup_draw(DisplayContext &context) {
     bUsePathLayout = true;
     bOutline = true;
   }
-  cairo_get_matrix(context.cr, &mat._matrix);
+  //cairo_get_matrix(context.cr, &mat._matrix);
 
   // if the text is filled with a texture or gradient
   if (_text_fill) {
@@ -271,7 +271,7 @@ void uxdevice::TEXT_RENDER::setup_draw(DisplayContext &context) {
     // These are the clipping versions that have coordinates.
     if (bFilled && bOutline) {
       fn = [=](cairo_t *cr, coordinates a) {
-        cairo_set_matrix(context.cr, &mat._matrix);
+        //cairo_set_matrix(context.cr, &mat._matrix);
 
         DrawingOutput::invoke(cr);
         if (set_layout_options(cr))
@@ -288,7 +288,7 @@ void uxdevice::TEXT_RENDER::setup_draw(DisplayContext &context) {
       // text is only filled.
     } else if (bFilled) {
       fn = [=](cairo_t *cr, coordinates a) {
-        cairo_set_matrix(context.cr, &mat._matrix);
+        //cairo_set_matrix(context.cr, &mat._matrix);
         DrawingOutput::invoke(cr);
         if (set_layout_options(cr))
           pango_cairo_update_layout(cr, _layout);
@@ -302,7 +302,7 @@ void uxdevice::TEXT_RENDER::setup_draw(DisplayContext &context) {
       // text is only outlined.
     } else if (bOutline) {
       fn = [=](cairo_t *cr, coordinates a) {
-        cairo_set_matrix(context.cr, &mat._matrix);
+        //cairo_set_matrix(context.cr, &mat._matrix);
         DrawingOutput::invoke(cr);
         if (set_layout_options(cr))
           pango_cairo_update_layout(cr, _layout);
@@ -321,7 +321,7 @@ void uxdevice::TEXT_RENDER::setup_draw(DisplayContext &context) {
     //  which uses the raster of the font system
     //        --- see pango_cairo_show_layout
     fn = [=](cairo_t *cr, coordinates a) {
-      cairo_set_matrix(context.cr, &mat._matrix);
+      //cairo_set_matrix(context.cr, &mat._matrix);
       DrawingOutput::invoke(cr);
       if (set_layout_options(cr))
         pango_cairo_update_layout(cr, _layout);
@@ -365,7 +365,7 @@ void uxdevice::TEXT_RENDER::setup_draw(DisplayContext &context) {
     ERROR_CHECK(_buf.rendered);
 
     auto drawfn = [=](DisplayContext &context) {
-      cairo_set_matrix(context.cr, &mat._matrix);
+      //cairo_set_matrix(context.cr, &mat._matrix);
       DrawingOutput::invoke(context.cr);
       cairo_set_source_surface(context.cr, _buf.rendered, _coordinates->x, _coordinates->y);
       double tw, th;
@@ -376,7 +376,7 @@ void uxdevice::TEXT_RENDER::setup_draw(DisplayContext &context) {
       cairo_fill(context.cr);
     };
     auto fnClipping = [=](DisplayContext &context) {
-      cairo_set_matrix(context.cr, &mat._matrix);
+      //cairo_set_matrix(context.cr, &mat._matrix);
       DrawingOutput::invoke(context.cr);
       cairo_set_source_surface(context.cr, _buf.rendered, _coordinates->x, _coordinates->y);
       cairo_rectangle(context.cr, _intersection.x, _intersection.y,
@@ -486,18 +486,18 @@ void uxdevice::image::invoke(DisplayContext &context) {
   auto fnCache = [=](DisplayContext &context) {
     // set directly callable rendering function.
     auto fn = [=](DisplayContext &context) {
-      if (!image->valid())
+      if (!isValid())
         return;
       DrawingOutput::invoke(context.cr);
-      cairo_set_source_surface(context.cr, image->_image, a.x, a.y);
+      cairo_set_source_surface(context.cr, _image, a.x, a.y);
       cairo_rectangle(context.cr, a.x, a.y, a.w, a.h);
       cairo_fill(context.cr);
     };
     auto fnClipping = [=](DisplayContext &context) {
-      if (!image->valid())
+      if (!isValid())
         return;
       DrawingOutput::invoke(context.cr);
-      cairo_set_source_surface(context.cr, image->_image, a.x, a.y);
+      cairo_set_source_surface(context.cr, _image, a.x, a.y);
       cairo_rectangle(context.cr, _intersection.x, _intersection.y,
                       _intersection.width, _intersection.height);
       cairo_fill(context.cr);
@@ -524,7 +524,7 @@ void uxdevice::image::invoke(DisplayContext &context) {
 \internal
 \brief reads the image and creates a cairo surface image.
 */
-bool uxdevice::image::isValid(DisplayContext &context) {
+bool uxdevice::image::isValid(void) {
 
 return true;
 }
@@ -537,7 +537,7 @@ return true;
 void uxdevice::DRAW_FUNCTION::invoke(DisplayContext &context) {
   using namespace std::placeholders;
 
-  options = context.currentUnits.options;
+  options = context.currentUnits._options;
 
   // set the ink area.
 
@@ -554,9 +554,9 @@ void uxdevice::DRAW_FUNCTION::invoke(DisplayContext &context) {
       cairo_clip(context.cr);
       func(context.cr);
       cairo_reset_clip(context.cr);
-      evaluateCache(context);
+      evaluate_cache(context);
     };
-    functorsLock(true);
+    functors_lock(true);
     fnDraw = std::bind(fn, _1);
     fnDrawClipped = std::bind(fnClipping, _1);
     functors_lock(false);

@@ -138,6 +138,10 @@ public:
     stream_input(data);
     return *this;
   }
+  SurfaceArea &operator<<(const alignment_t &data) {
+    stream_input(static_cast<text_alignment::setting>(data));
+    return *this;
+  }
   SurfaceArea &operator<<(const coordinates &data) {
     stream_input(data);
     return *this;
@@ -236,8 +240,8 @@ public:
   SurfaceArea &close_path(void);
   SurfaceArea &arc(double xc, double yc, double radius, double angle1,
                    double angle2);
-  SurfaceArea &arc_neg(double xc, double yc, double radius, double angle1,
-                       double angle2);
+  SurfaceArea &negative_arc(double xc, double yc, double radius,
+                                        double angle1, double angle2);
   SurfaceArea &curve(double x1, double y1, double x2, double y2, double x3,
                      double y3);
   SurfaceArea &line(double x, double y);

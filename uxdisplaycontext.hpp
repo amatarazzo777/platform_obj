@@ -33,6 +33,7 @@ class tab_stops;
 class TEXT_RENDER;
 class FUNCTION;
 class OPTION_FUNCTION;
+class STRING;
 class DRAW_FUNCTION;
 class DisplayUnit;
 class DrawingOutput;
@@ -61,7 +62,7 @@ public:
   std::shared_ptr<text_fill> _text_fill = nullptr;
   std::shared_ptr<text_outline> _text_outline = nullptr;
   std::shared_ptr<source> _source = nullptr;
-  std::shared_ptr<std::string> _text = nullptr;
+  std::shared_ptr<STRING> _text = nullptr;
   std::shared_ptr<text_alignment> _text_alignment = nullptr;
   std::shared_ptr<coordinates> _coordinates = nullptr;
   std::shared_ptr<index_by> _index_by = nullptr;
@@ -199,7 +200,7 @@ public:
   CurrentUnits currentUnits = CurrentUnits();
 
 
-  void set_unit(std::shared_ptr<std::string> _text) { currentUnits._text = _text; };
+  void set_unit(std::shared_ptr<STRING> _text) { currentUnits._text = _text; };
   void set_unit(std::shared_ptr<text_font> _font) { currentUnits._text_font = _font; };
   void set_unit(std::shared_ptr<antialias> _antialias) {
     currentUnits._antialias = _antialias;

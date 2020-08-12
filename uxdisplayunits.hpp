@@ -250,10 +250,12 @@ public:
   std::size_t nkey = 0;
 };
 
+#if 0
 std::unordered_map<std::string, std::list<std::reference_wrapper<DisplayUnit>>>
     mappedString = {};
 std::unordered_map<std::size_t, std::list<std::reference_wrapper<DisplayUnit>>>
     mappedInteger = {};
+#endif
 
 using line_width = class line_width : public DisplayUnit {
 public:
@@ -288,7 +290,7 @@ public:
       pango_font_description_free(fontDescription);
   }
   text_font &operator=(const text_font &other) = delete;
-  text_font(const text_font &);
+  text_font(const text_font &) {}
   std::string description ={};
   std::atomic<PangoFontDescription *> fontDescription = nullptr;
   void invoke(DisplayContext &context) {
@@ -329,17 +331,24 @@ public:
 
 using line_dashes = class line_dashes : public DisplayUnit {
 public:
-  line_dashes(const std::vector<double> &_val, double _offset=0) : dashes(_val), offset(_offset)  {}
+  line_dashes(const std::vector<double> &_val, double _offset=0) : data(_val), offset(_offset)  {}
   ~line_dashes() {
   }
-  std::vector<double> dashes={};
+  std::vector<double> data={};
   double offset={};
 };
 
+class STRING : public DisplayUnit {
+public:
+  STRING(const std::string &s) : data(s) {}
+  ~STRING() {}
+  std::string data;
+  void invoke(DisplayContext &context) { bprocessed = true; }
+};
 
 class TEXT_RENDER : public DrawingOutput {
 public:
-  TEXT_RENDER(std::shared_ptr<std::string> data) : _text(data) {}
+  TEXT_RENDER(std::shared_ptr<STRING> data) : _text(data) {}
   TEXT_RENDER(const TEXT_RENDER &other) = delete;
   TEXT_RENDER &operator=(const TEXT_RENDER &other) = delete;
   bool is_output(void) { return true; }
@@ -366,11 +375,11 @@ private:
   std::shared_ptr<text_font> _text_font = nullptr;
   std::shared_ptr<text_alignment> _text_alignment = nullptr;
   std::shared_ptr<coordinates> _coordinates = nullptr;
-  std::shared_ptr<std::string> _text = nullptr;
+  std::shared_ptr<STRING> _text = nullptr;
 
 };
 
-class image : public DisplayUnit {
+class image : public DrawingOutput {
 public:
   image(const std::string &data) : _data(data) {}
   image(const image &other) { *this = other; }

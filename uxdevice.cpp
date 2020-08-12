@@ -559,18 +559,16 @@ void uxdevice::SurfaceArea::notify_complete(void) {
 */
 SurfaceArea &uxdevice::SurfaceArea::stream_input(const std::string &s) {
   DL_SPIN;
-  auto item = DL.emplace_back(make_shared<std::string>(s));
-  item->invoke(context);
-  context.set_unit(std::dynamic_pointer_cast<std::string>(item));
+  auto item = DL.emplace_back(make_shared<STRING>(s));
+  context.set_unit(std::dynamic_pointer_cast<STRING>(item));
   DL_CLEAR;
   return *this;
 }
 
 SurfaceArea &uxdevice::SurfaceArea::stream_input(const std::stringstream &_val) {
   DL_SPIN;
-  auto item = DL.emplace_back(make_shared<std::string>(_val.str()));
-  item->invoke(context);
-  context.set_unit(std::dynamic_pointer_cast<std::string>(item));
+  auto item = DL.emplace_back(make_shared<STRING>(_val.str()));
+  context.set_unit(std::dynamic_pointer_cast<STRING>(item));
   DL_CLEAR;
   return *this;
 }
@@ -805,7 +803,7 @@ SurfaceArea &uxdevice::SurfaceArea::stream_input(const line_dashes &val) {
   using namespace std::placeholders;
   DL_SPIN;
   CAIRO_FUNCTION func =
-      std::bind(cairo_set_dash, _1, val.data(), val.data().size(), val.offset);
+      std::bind(cairo_set_dash, _1, val.data.data(), val.data.size(), val.offset);
   auto item = DL.emplace_back(make_shared<OPTION_FUNCTION>(func));
   item->invoke(context);
   DL_CLEAR;
@@ -931,6 +929,7 @@ SurfaceArea &uxdevice::SurfaceArea::close_path() {
 
 SurfaceArea &uxdevice::SurfaceArea::surface_brush(Paint &b) {
   context.surface_brush(b);
+  return *this;
 }
 
 /**
@@ -1194,6 +1193,10 @@ SurfaceArea &uxdevice::SurfaceArea::move_to(double x, double y) {
   DL_CLEAR;
   return *this;
 }
+
+
+void uxdevice::SurfaceArea::listen(eventType etype, const eventHandler &evtDispatcher) {}
+
 
 /***************************************************************************/
 
