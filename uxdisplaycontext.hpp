@@ -24,6 +24,12 @@ class text_outline;
 class coordinates;
 class source;
 class text_alignment;
+class index_by;
+class line_width;
+class indent;
+class ellipse;
+class line_space;
+class tab_stops;
 class TEXT_RENDER;
 class FUNCTION;
 class OPTION_FUNCTION;
@@ -58,7 +64,12 @@ public:
   std::shared_ptr<std::string> _text = nullptr;
   std::shared_ptr<text_alignment> _text_alignment = nullptr;
   std::shared_ptr<coordinates> _coordinates = nullptr;
-
+  std::shared_ptr<index_by> _index_by = nullptr;
+  std::shared_ptr<line_width> _line_width = nullptr;
+  std::shared_ptr<indent> _indent = nullptr;
+  std::shared_ptr<ellipse> _ellipse = nullptr;
+  std::shared_ptr<line_space> _line_space = nullptr;
+  std::shared_ptr<tab_stops> _tab_stops = nullptr;
   CairoOptionFn _options = {};
 };
 
@@ -208,6 +219,24 @@ public:
 
   void set_unit(std::shared_ptr<text_alignment> _align) { currentUnits._text_alignment = _align; };
   void set_unit(std::shared_ptr<coordinates> _pos) { currentUnits._coordinates = _pos; };
+  void set_unit(std::shared_ptr<index_by> _val) {
+    currentUnits._index_by = _val;
+  };
+  void set_unit(std::shared_ptr<line_width> _val) {
+    currentUnits._line_width = _val;
+  };
+  void set_unit(std::shared_ptr<indent> _val) {
+    currentUnits._indent = _val;
+  };
+  void set_unit(std::shared_ptr<ellipse> _val) {
+    currentUnits._ellipse = _val;
+  };
+  void set_unit(std::shared_ptr<line_space> _val) {
+    currentUnits._line_space = _val;
+  };
+  void set_unit(std::shared_ptr<tab_stops> _val) {
+    currentUnits._tab_stops = _val;
+  };
 
 public:
   short windowX = 0;

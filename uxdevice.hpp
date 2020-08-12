@@ -134,7 +134,7 @@ public:
     stream_input(data);
     return *this;
   }
-  SurfaceArea &operator<<(const alignment_t &data) {
+  SurfaceArea &operator<<(const text_alignment::setting &data) {
     stream_input(data);
     return *this;
   }
@@ -169,6 +169,31 @@ public:
     stream_input(data);
     return *this;
   }
+  SurfaceArea &operator<<(const stroke_path &data) {
+    stream_input(data);
+    return *this;
+  }
+  SurfaceArea &operator<<(const fill_path &data) {
+    stream_input(data);
+    return *this;
+  }
+  SurfaceArea &operator<<(const line_cap &data) {
+    stream_input(data);
+    return *this;
+  }
+  SurfaceArea &operator<<(const line_join &data) {
+    stream_input(data);
+    return *this;
+  }
+  SurfaceArea &operator<<(const miter_limit &data) {
+    stream_input(data);
+    return *this;
+  }
+  SurfaceArea &operator<<(const line_dashes &data) {
+    stream_input(data);
+    return *this;
+  }
+
   SurfaceArea &operator[](const std::string &s) {return *this;}
   SurfaceArea &operator[](const std::size_t &s) {return *this;}
   SurfaceArea &group(const std::string &sgroupname) {return *this;}
@@ -180,7 +205,7 @@ public:
 
   SurfaceArea &device_offset(double x, double y);
   SurfaceArea &device_scale(double x, double y);
-  SurfaceArea &brush(Paint &b);
+  SurfaceArea &surface_brush(Paint &b);
   void clear(void);
   void notify_complete(void);
 
@@ -205,10 +230,6 @@ public:
   SurfaceArea &user(double &x, double &y);
   SurfaceArea &user_distance(double &x, double &y);
 
-  SurfaceArea &cap(line_cap_t c);
-  SurfaceArea &join(line_join_t j);
-  SurfaceArea &miter_limit(double dLimit);
-  SurfaceArea &dashes(const std::vector<double> &dashes, double offset);
   SurfaceArea &tollerance(double _t);
   SurfaceArea &op(op_t _op);
 
@@ -232,50 +253,6 @@ public:
   SurfaceArea &relative(void);
   SurfaceArea &absolute(void);
 
-  SurfaceArea &stroke(const Paint &p);
-  SurfaceArea &stroke(u_int32_t c);
-  SurfaceArea &stroke(const std::string &c);
-  SurfaceArea &stroke(const std::string &c, double w, double h);
-  SurfaceArea &stroke(double _r, double _g, double _b);
-  SurfaceArea &stroke(double _r, double _g, double _b, double _a);
-  SurfaceArea &stroke(double x0, double y0, double x1, double y1,
-                      const ColorStops &cs);
-  SurfaceArea &stroke(double cx0, double cy0, double radius0, double cx1,
-                      double cy1, double radius1, const ColorStops &cs);
-
-  SurfaceArea &stroke_preserve(const Paint &p);
-  SurfaceArea &stroke_preserve(u_int32_t c);
-  SurfaceArea &stroke_preserve(const std::string &c);
-  SurfaceArea &stroke_preserve(const std::string &c, double w, double h);
-  SurfaceArea &stroke_preserve(double _r, double _g, double _b);
-  SurfaceArea &stroke_preserve(double _r, double _g, double _b, double _a);
-  SurfaceArea &stroke_preserve(double x0, double y0, double x1, double y1,
-                               const ColorStops &cs);
-  SurfaceArea &stroke_preserve(double cx0, double cy0, double radius0,
-                               double cx1, double cy1, double radius1,
-                               const ColorStops &cs);
-
-  SurfaceArea &fill(const Paint &p);
-  SurfaceArea &fill(u_int32_t c);
-  SurfaceArea &fill(const std::string &c);
-  SurfaceArea &fill(const std::string &c, double w, double h);
-  SurfaceArea &fill(double _r, double _g, double _b);
-  SurfaceArea &fill(double _r, double _g, double _b, double _a);
-  SurfaceArea &fill(double x0, double y0, double x1, double y1,
-                    const ColorStops &cs);
-  SurfaceArea &fill(double cx0, double cy0, double radius0, double cx1,
-                    double cy1, double radius1, const ColorStops &cs);
-
-  SurfaceArea &fill_preserve(const Paint &p);
-  SurfaceArea &fill_preserve(u_int32_t c);
-  SurfaceArea &fill_preserve(const std::string &c);
-  SurfaceArea &fill_preserve(const std::string &c, double w, double h);
-  SurfaceArea &fill_preserve(double _r, double _g, double _b);
-  SurfaceArea &fill_preserve(double _r, double _g, double _b, double _a);
-  SurfaceArea &fill_preserve(double x0, double y0, double x1, double y1,
-                             const ColorStops &cs);
-  SurfaceArea &fill_preserve(double cx0, double cy0, double radius0, double cx1,
-                             double cy1, double radius1, const ColorStops &cs);
 
   bounds stroke(void);
   bool in_stroke(double x, double y);
@@ -292,6 +269,8 @@ private:
   void render_loop(void);
   void dispatch_event(const event_t &e);
   void close_window(void);
+  bool bRelative=false;
+
   SurfaceArea &stream_input(const antialias &_val);
   SurfaceArea &stream_input(const std::string &_val);
   SurfaceArea &stream_input(const std::stringstream &_val);
@@ -303,19 +282,21 @@ private:
   SurfaceArea &stream_input(const text_fill_none &_val);
   SurfaceArea &stream_input(const text_shadow_none &_val);
   SurfaceArea &stream_input(const text_alignment &_val);
-  SurfaceArea &stream_input(const alignment_t &_val);
+  SurfaceArea &stream_input(const text_alignment::setting &_val);
   SurfaceArea &stream_input(const coordinates &_val);
   SurfaceArea &stream_input(const index_by &_val);
   SurfaceArea &stream_input(const line_width &_val);
-
   SurfaceArea &stream_input(const indent &_val);
-
   SurfaceArea &stream_input(const ellipse &_val);
   SurfaceArea &stream_input(const line_space &_val);
-
   SurfaceArea &stream_input(const tab_stops &_val);
-
   SurfaceArea &stream_input(const text_font &_val);
+  SurfaceArea &stream_input(const stroke_path &_val);
+  SurfaceArea &stream_input(const fill_path &_val);
+  SurfaceArea &stream_input(const line_cap &_val);
+  SurfaceArea &stream_input(const line_join &_val);
+  SurfaceArea &stream_input(const miter_limit &_val);
+  SurfaceArea &stream_input(const line_dashes &val);
 
   DisplayContext context = DisplayContext();
   std::atomic<bool> bProcessing = false;

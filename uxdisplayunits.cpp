@@ -154,7 +154,7 @@ bool uxdevice::TEXT_RENDER::set_layout_options(cairo_t *cr) {
 
   std::string_view sinternal = std::string_view(pango_layout_get_text(_layout));
   if (_text->compare(sinternal) != 0)
-    pango_layout_set_text(_layout, _text->data.data(), -1);
+    pango_layout_set_text(_layout, _text->data(), -1);
 
   // any changes
   if (layoutSerial != pango_layout_get_serial(_layout)) {
@@ -343,7 +343,7 @@ void uxdevice::TEXT_RENDER::setup_draw(DisplayContext &context) {
     ERROR_CHECK(context.cr);
     context.lock(false);
 
-    _buf = context.allocateBuffer(_inkRectangle.width, _inkRectangle.height);
+    _buf = context.allocate_buffer(_inkRectangle.width, _inkRectangle.height);
 
     set_layout_options(_buf.cr);
     ERROR_CHECK(_buf.cr);
@@ -435,19 +435,19 @@ void uxdevice::TEXT_RENDER::setup_draw(DisplayContext &context) {
 \internal
 \brief reads the image and creates a cairo surface image.
 */
-void uxdevice::IMAGE::invoke(DisplayContext &context) {
+void uxdevice::image::invoke(DisplayContext &context) {
 
   if (bLoaded)
     return;
-  coordinates = context.current_units.coordinates;
-  if (!coordinates) {
-    const char *s = "An image requires an area size to be defined. ";
+  _coordinates = context.currentUnits._coordinates;
+  if (!_coordinates) {
+    const char *s = "An image requires coordinates to be defined. ";
     ERROR_DRAW_PARAM(s);
     return;
   }
 
   auto fnthread = [=, &context]() {
-    _image = readImage(_data, area->w, area->h);
+    _image = read_image(_data, _coordinates->w, _coordinates->h);
 
     if (_image)
       bLoaded = true;
@@ -462,12 +462,11 @@ void uxdevice::IMAGE::invoke(DisplayContext &context) {
 
   using namespace std::placeholders;
 
-  area = context.currentUnits.area;
-  image = context.currentUnits.image;
-  options = context.currentUnits.options;
-  if (!(area && image && image->valid())) {
-    const char *s = "A draw image object must include the following "
-                    "attributes. A an area and an image.";
+  _coordinates = context.currentUnits._coordinates;
+  options = context.currentUnits._options;
+  if (!(_coordinates && _data.size() && isValid())) {
+    const char *s = "An image object must include the following "
+                    "attributes. _coordinates and an image name.";
     ERROR_DRAW_PARAM(s);
     auto fn = [=](DisplayContext &context) {};
 
@@ -478,7 +477,7 @@ void uxdevice::IMAGE::invoke(DisplayContext &context) {
     return;
   }
   // set the ink area.
-  const coordinates &a = *coordinates;
+  const coordinates &a = *_coordinates;
   inkRectangle = {(int)a.x, (int)a.y, (int)a.w, (int)a.h};
   _inkRectangle = {(double)inkRectangle.x, (double)inkRectangle.y,
                    (double)inkRectangle.width, (double)inkRectangle.height
@@ -520,6 +519,16 @@ void uxdevice::IMAGE::invoke(DisplayContext &context) {
 
   bprocessed = true;
 }
+
+/**
+\internal
+\brief reads the image and creates a cairo surface image.
+*/
+bool uxdevice::image::isValid(DisplayContext &context) {
+
+return true;
+}
+
 
 /**
 \internal

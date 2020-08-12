@@ -657,7 +657,7 @@ SurfaceArea &uxdevice::SurfaceArea::stream_input(const text_alignment &_val) {
   DL_CLEAR;
   return *this;
 }
-SurfaceArea &uxdevice::SurfaceArea::stream_input(const alignment_t &_val) {
+SurfaceArea &uxdevice::SurfaceArea::stream_input(const text_alignment::setting &_val) {
   DL_SPIN;
   auto item = DL.emplace_back(make_shared<text_alignment>(_val));
   item->invoke(context);
@@ -737,170 +737,200 @@ SurfaceArea &uxdevice::SurfaceArea::stream_input(const text_font &_val) {
   return *this;
 }
 
-/**
-\brief
-*/
-SurfaceArea &uxdevice::SurfaceArea::image(const std::string &s) {
+SurfaceArea &uxdevice::SurfaceArea::stream_input(const stroke_path &_val) {
   DL_SPIN;
-  auto item = DL.emplace_back(make_shared<IMAGE>(s));
+  auto item = DL.emplace_back(make_shared<stroke_path>(_val));
   item->invoke(context);
-  context.set_unit(std::dynamic_pointer_cast<IMAGE>(item));
-  DL_CLEAR;
-  return *this;
-}
-/**
-\brief
-*/
-SurfaceArea &uxdevice::SurfaceArea::stroke(const Paint &p) {
-  DL_SPIN;
-  auto item = DL.emplace_back(make_shared<STROKE>(p));
-  item->invoke(context);
-  context.set_unit(std::dynamic_pointer_cast<STROKE>(item));
-  DL_CLEAR;
-  return *this;
-}
-SurfaceArea &uxdevice::SurfaceArea::stroke(u_int32_t c) {
-  DL_SPIN;
-  auto item = DL.emplace_back(make_shared<STROKE>(c));
-  item->invoke(context);
-  context.set_unit(std::dynamic_pointer_cast<STROKE>(item));
-  DL_CLEAR;
-  return *this;
-}
-SurfaceArea &uxdevice::SurfaceArea::stroke(const string &c) {
-  DL_SPIN;
-  auto item = DL.emplace_back(make_shared<STROKE>(c));
-  item->invoke(context);
-  context.set_unit(std::dynamic_pointer_cast<STROKE>(item));
-  DL_CLEAR;
-  return *this;
-}
-SurfaceArea &uxdevice::SurfaceArea::stroke(const std::string &c, double w,
-                                           double h) {
-  DL_SPIN;
-  auto item = DL.emplace_back(make_shared<STROKE>(c, w, h));
-  item->invoke(context);
-  context.set_unit(std::dynamic_pointer_cast<STROKE>(item));
   DL_CLEAR;
   return *this;
 }
 
-SurfaceArea &uxdevice::SurfaceArea::stroke(double _r, double _g, double _b) {
+/**
+\brief
+*/
+SurfaceArea &uxdevice::SurfaceArea::stream_input(const fill_path &_val) {
   DL_SPIN;
-  auto item = DL.emplace_back(make_shared<STROKE>(_r, _g, _b));
+  auto item = DL.emplace_back(make_shared<fill_path>(_val));
   item->invoke(context);
-  context.set_unit(std::dynamic_pointer_cast<STROKE>(item));
-  DL_CLEAR;
-  return *this;
-}
-SurfaceArea &uxdevice::SurfaceArea::stroke(double _r, double _g, double _b,
-                                           double _a) {
-  DL_SPIN;
-  auto item = DL.emplace_back(make_shared<STROKE>(_r, _g, _b, _a));
-  item->invoke(context);
-  context.set_unit(std::dynamic_pointer_cast<STROKE>(item));
-  DL_CLEAR;
-  return *this;
-}
-SurfaceArea &uxdevice::SurfaceArea::stroke(double x0, double y0, double x1,
-                                           double y1, const ColorStops &cs) {
-  DL_SPIN;
-  auto item = DL.emplace_back(make_shared<STROKE>(x0, y0, x1, y1, cs));
-  item->invoke(context);
-  context.set_unit(std::dynamic_pointer_cast<STROKE>(item));
-  DL_CLEAR;
-  return *this;
-}
-SurfaceArea &uxdevice::SurfaceArea::stroke(double cx0, double cy0,
-                                           double radius0, double cx1,
-                                           double cy1, double radius1,
-                                           const ColorStops &cs) {
-  DL_SPIN;
-  auto item = DL.emplace_back(
-      make_shared<STROKE>(cx0, cy0, radius0, cx1, cy1, radius1, cs));
-  item->invoke(context);
-  context.set_unit(std::dynamic_pointer_cast<STROKE>(item));
   DL_CLEAR;
   return *this;
 }
 /**
 \brief
 */
-SurfaceArea &uxdevice::SurfaceArea::fill(const Paint &p) {
+SurfaceArea &uxdevice::SurfaceArea::stream_input(const line_cap &_val) {
+  using namespace std::placeholders;
   DL_SPIN;
-  auto item = DL.emplace_back(make_shared<FILL>(p));
+  CAIRO_OPTION func =
+      std::bind(cairo_set_line_cap, _1, static_cast<cairo_line_cap_t>(_val.data));
+  auto item = DL.emplace_back(make_shared<OPTION_FUNCTION>(func));
   item->invoke(context);
-  context.set_unit(std::dynamic_pointer_cast<FILL>(item));
   DL_CLEAR;
   return *this;
 }
 
-SurfaceArea &uxdevice::SurfaceArea::fill(u_int32_t c) {
+/**
+\brief
+*/
+SurfaceArea &uxdevice::SurfaceArea::stream_input(const line_join &_val) {
+  using namespace std::placeholders;
   DL_SPIN;
-  auto item = DL.emplace_back(make_shared<FILL>(c));
+  CAIRO_FUNCTION func =
+      std::bind(cairo_set_line_join, _1, static_cast<cairo_line_join_t>(_val.data));
+  auto item = DL.emplace_back(make_shared<OPTION_FUNCTION>(func));
   item->invoke(context);
-  context.set_unit(std::dynamic_pointer_cast<FILL>(item));
   DL_CLEAR;
   return *this;
 }
 
-SurfaceArea &uxdevice::SurfaceArea::fill(const string &c) {
+
+
+/**
+\brief
+*/
+SurfaceArea &uxdevice::SurfaceArea::stream_input(const miter_limit &_val) {
+  using namespace std::placeholders;
   DL_SPIN;
-  auto item = DL.emplace_back(make_shared<FILL>(c));
+  CAIRO_FUNCTION func = std::bind(cairo_set_miter_limit, _1, _val.data);
+  auto item = DL.emplace_back(make_shared<OPTION_FUNCTION>(func));
   item->invoke(context);
-  context.set_unit(std::dynamic_pointer_cast<FILL>(item));
-  DL_CLEAR;
-  return *this;
-}
-SurfaceArea &uxdevice::SurfaceArea::fill(const std::string &c, double w,
-                                         double h) {
-  DL_SPIN;
-  auto item = DL.emplace_back(make_shared<FILL>(c, w, h));
-  item->invoke(context);
-  context.set_unit(std::dynamic_pointer_cast<FILL>(item));
   DL_CLEAR;
   return *this;
 }
 
-SurfaceArea &uxdevice::SurfaceArea::fill(double _r, double _g, double _b) {
+/**
+\brief
+*/
+SurfaceArea &uxdevice::SurfaceArea::stream_input(const line_dashes &val) {
+  using namespace std::placeholders;
   DL_SPIN;
-  auto item = DL.emplace_back(make_shared<FILL>(_r, _g, _b));
+  CAIRO_FUNCTION func =
+      std::bind(cairo_set_dash, _1, val.data(), val.data().size(), val.offset);
+  auto item = DL.emplace_back(make_shared<OPTION_FUNCTION>(func));
   item->invoke(context);
-  context.set_unit(std::dynamic_pointer_cast<FILL>(item));
   DL_CLEAR;
   return *this;
 }
-SurfaceArea &uxdevice::SurfaceArea::fill(double _r, double _g, double _b,
-                                         double _a) {
+
+/**
+\brief
+*/
+SurfaceArea &uxdevice::SurfaceArea::tollerance(double _t) {
+  using namespace std::placeholders;
   DL_SPIN;
-  auto item = DL.emplace_back(make_shared<FILL>(_r, _g, _b, _a));
+  CAIRO_FUNCTION func = std::bind(cairo_set_tolerance, _1, _t);
+  auto item = DL.emplace_back(make_shared<OPTION_FUNCTION>(func));
   item->invoke(context);
-  context.set_unit(std::dynamic_pointer_cast<FILL>(item));
   DL_CLEAR;
   return *this;
 }
-SurfaceArea &uxdevice::SurfaceArea::fill(double x0, double y0, double x1,
-                                         double y1, const ColorStops &cs) {
+
+/**
+\brief
+*/
+SurfaceArea &uxdevice::SurfaceArea::op(op_t _op) {
+  using namespace std::placeholders;
   DL_SPIN;
-  auto item = DL.emplace_back(make_shared<FILL>(x0, y0, x1, y1, cs));
+  CAIRO_FUNCTION func =
+      std::bind(cairo_set_operator, _1, static_cast<cairo_operator_t>(_op));
+  auto item = DL.emplace_back(make_shared<OPTION_FUNCTION>(func));
   item->invoke(context);
-  context.set_unit(std::dynamic_pointer_cast<FILL>(item));
   DL_CLEAR;
   return *this;
 }
-SurfaceArea &uxdevice::SurfaceArea::fill(double cx0, double cy0, double radius0,
-                                         double cx1, double cy1, double radius1,
-                                         const ColorStops &cs) {
+
+
+/**
+\brief
+*/
+SurfaceArea &uxdevice::SurfaceArea::arc(double xc, double yc, double radius,
+                                        double angle1, double angle2) {
+  using namespace std::placeholders;
   DL_SPIN;
-  auto item = DL.emplace_back(
-      make_shared<PEN>(cx0, cy0, radius0, cx1, cy1, radius1, cs));
+  CAIRO_FUNCTION func;
+  func = std::bind(cairo_arc, _1, xc, yc, radius, angle1, angle2);
+  auto item = DL.emplace_back(make_shared<DRAW_FUNCTION>(func));
   item->invoke(context);
-  context.set_unit(std::dynamic_pointer_cast<FILL>(item));
   DL_CLEAR;
   return *this;
 }
+
+SurfaceArea &uxdevice::SurfaceArea::negative_arc(double xc, double yc, double radius,
+                                        double angle1, double angle2) {
+  using namespace std::placeholders;
+  DL_SPIN;
+  CAIRO_FUNCTION func;
+  func = std::bind(cairo_arc_negative, _1, xc, yc, radius, angle1, angle2);
+
+  auto item = DL.emplace_back(make_shared<DRAW_FUNCTION>(func));
+  item->invoke(context);
+  DL_CLEAR;
+  return *this;
+}
+/**
+\brief
+*/
+SurfaceArea &uxdevice::SurfaceArea::curve(double x1, double y1, double x2,
+                                          double y2, double x3, double y3) {
+  using namespace std::placeholders;
+  DL_SPIN;
+  CAIRO_FUNCTION func;
+  if (bRelative) {
+    func = std::bind(cairo_rel_curve_to, _1, x1, y1, x2, y2, x3, y3);
+  } else {
+    func = std::bind(cairo_curve_to, _1, x1, y1, x2, y2, x3, y3);
+  }
+  auto item = DL.emplace_back(make_shared<DRAW_FUNCTION>(func));
+  item->invoke(context);
+  DL_CLEAR;
+  return *this;
+}
+
+/**
+\brief
+*/
+SurfaceArea &uxdevice::SurfaceArea::line(double x, double y) {
+  using namespace std::placeholders;
+  DL_SPIN;
+  CAIRO_FUNCTION func;
+  if (bRelative) {
+    func = std::bind(cairo_rel_line_to, _1, x, y);
+  } else {
+    func = std::bind(cairo_line_to, _1, x, y);
+  }
+  auto item = DL.emplace_back(make_shared<DRAW_FUNCTION>(func));
+  item->invoke(context);
+  DL_CLEAR;
+  return *this;
+}
+/**
+\brief
+*/
+SurfaceArea &uxdevice::SurfaceArea::rectangle(double x, double y, double width,
+                                              double height) {
+  using namespace std::placeholders;
+  DL_SPIN;
+  CAIRO_FUNCTION func = std::bind(cairo_rectangle, _1, x, y, width, height);
+  auto item = DL.emplace_back(make_shared<FUNCTION>(func));
+  item->invoke(context);
+  DL_CLEAR;
+  return *this;
+}
+
+SurfaceArea &uxdevice::SurfaceArea::close_path() {
+  using namespace std::placeholders;
+  DL_SPIN;
+  CAIRO_FUNCTION func;
+  func = std::bind(cairo_close_path, _1);
+  auto item = DL.emplace_back(make_shared<FUNCTION>(func));
+  item->invoke(context);
+  DL_CLEAR;
+  return *this;
+}
+
+
 SurfaceArea &uxdevice::SurfaceArea::surface_brush(Paint &b) {
-  context.surfaceBrush(b);
+  context.surface_brush(b);
 }
 
 /**
@@ -928,11 +958,11 @@ SurfaceArea &uxdevice::SurfaceArea::restore(void) {
   return *this;
 }
 
-SurfaceArea &uxdevice::SurfaceArea::push(content c) {
+SurfaceArea &uxdevice::SurfaceArea::push(content_t c) {
   using namespace std::placeholders;
   DL_SPIN;
   CAIRO_FUNCTION func;
-  if (c == content::all) {
+  if (c == content_t::all) {
     func = std::bind(cairo_push_group, _1);
   } else {
     func = std::bind(cairo_push_group_with_content, _1,
@@ -987,14 +1017,16 @@ SurfaceArea &uxdevice::SurfaceArea::rotate(double angle) {
 \brief
 */
 SurfaceArea &uxdevice::SurfaceArea::device_offset(double x, double y) {
-  context.deviceOffset(x, y);
+  context.device_offset(x, y);
+  return *this;
 }
 
 /**
 \brief
 */
 SurfaceArea &uxdevice::SurfaceArea::device_scale(double x, double y) {
-  context.deviceScale(x, y);
+  context.device_scale(x, y);
+  return *this;
 }
 
 /**
@@ -1126,249 +1158,8 @@ SurfaceArea &uxdevice::SurfaceArea::user_distance(double &x, double &y) {
   return *this;
 }
 
-/**
-\brief
-*/
-SurfaceArea &uxdevice::SurfaceArea::cap(lineCap c) {
-  using namespace std::placeholders;
-  DL_SPIN;
-  CAIRO_OPTION func =
-      std::bind(cairo_set_line_cap, _1, static_cast<cairo_line_cap_t>(c));
-  auto item = DL.emplace_back(make_shared<OPTION_FUNCTION>(func));
-  item->invoke(context);
-  DL_CLEAR;
-  return *this;
-}
 
-/**
-\brief
-*/
-SurfaceArea &uxdevice::SurfaceArea::join(lineJoin j) {
-  using namespace std::placeholders;
-  DL_SPIN;
-  CAIRO_FUNCTION func =
-      std::bind(cairo_set_line_join, _1, static_cast<cairo_line_join_t>(j));
-  auto item = DL.emplace_back(make_shared<OPTION_FUNCTION>(func));
-  item->invoke(context);
-  DL_CLEAR;
-  return *this;
-}
 
-/**
-\brief
-*/
-SurfaceArea &uxdevice::SurfaceArea::line_width(double dWidth) {
-  using namespace std::placeholders;
-  DL_SPIN;
-  CAIRO_FUNCTION func = std::bind(cairo_set_line_width, _1, dWidth);
-  auto item = DL.emplace_back(make_shared<OPTION_FUNCTION>(func));
-  item->invoke(context);
-  DL_CLEAR;
-  return *this;
-}
-
-/**
-\brief
-*/
-SurfaceArea &uxdevice::SurfaceArea::miter_limit(double dLimit) {
-  using namespace std::placeholders;
-  DL_SPIN;
-  CAIRO_FUNCTION func = std::bind(cairo_set_miter_limit, _1, dLimit);
-  auto item = DL.emplace_back(make_shared<OPTION_FUNCTION>(func));
-  item->invoke(context);
-  DL_CLEAR;
-  return *this;
-}
-
-/**
-\brief
-*/
-SurfaceArea &uxdevice::SurfaceArea::dashes(const std::vector<double> &dashes,
-                                           double offset) {
-  using namespace std::placeholders;
-  DL_SPIN;
-  CAIRO_FUNCTION func =
-      std::bind(cairo_set_dash, _1, dashes.data(), dashes.size(), offset);
-  auto item = DL.emplace_back(make_shared<OPTION_FUNCTION>(func));
-  item->invoke(context);
-  DL_CLEAR;
-  return *this;
-}
-
-/**
-\brief
-*/
-SurfaceArea &uxdevice::SurfaceArea::tollerance(double _t) {
-  using namespace std::placeholders;
-  DL_SPIN;
-  CAIRO_FUNCTION func = std::bind(cairo_set_tolerance, _1, _t);
-  auto item = DL.emplace_back(make_shared<OPTION_FUNCTION>(func));
-  item->invoke(context);
-  DL_CLEAR;
-  return *this;
-}
-
-/**
-\brief
-*/
-SurfaceArea &uxdevice::SurfaceArea::op(op_t _op) {
-  using namespace std::placeholders;
-  DL_SPIN;
-  CAIRO_FUNCTION func =
-      std::bind(cairo_set_operator, _1, static_cast<cairo_operator_t>(_op));
-  auto item = DL.emplace_back(make_shared<OPTION_FUNCTION>(func));
-  item->invoke(context);
-  DL_CLEAR;
-  return *this;
-}
-
-/**
-\brief
-*/
-SurfaceArea &uxdevice::SurfaceArea::source(Paint &p) {
-  using namespace std::placeholders;
-  DL_SPIN;
-  auto fn = [](cairo_t *cr, Paint &p) { p.emit(cr); };
-  CAIRO_FUNCTION func = std::bind(fn, _1, p);
-  auto item = DL.emplace_back(make_shared<OPTION_FUNCTION>(func));
-  item->invoke(context);
-  DL_CLEAR;
-  return *this;
-}
-
-/**
-\brief
-*/
-SurfaceArea &uxdevice::SurfaceArea::arc(double xc, double yc, double radius,
-                                        double angle1, double angle2,
-                                        bool bNegative) {
-  using namespace std::placeholders;
-  DL_SPIN;
-  CAIRO_FUNCTION func;
-  func = std::bind(cairo_arc, _1, xc, yc, radius, angle1, angle2);
-  auto item = DL.emplace_back(make_shared<DRAW_FUNCTION>(func));
-  item->invoke(context);
-  DL_CLEAR;
-  return *this;
-}
-
-SurfaceArea &uxdevice::SurfaceArea::negative_arc(double xc, double yc, double radius,
-                                        double angle1, double angle2,
-                                        bool bNegative) {
-  using namespace std::placeholders;
-  DL_SPIN;
-  CAIRO_FUNCTION func;
-  func = std::bind(cairo_arc_negative, _1, xc, yc, radius, angle1, angle2);
-
-  auto item = DL.emplace_back(make_shared<DRAW_FUNCTION>(func));
-  item->invoke(context);
-  DL_CLEAR;
-  return *this;
-}
-/**
-\brief
-*/
-SurfaceArea &uxdevice::SurfaceArea::curve(double x1, double y1, double x2,
-                                          double y2, double x3, double y3) {
-  using namespace std::placeholders;
-  DL_SPIN;
-  CAIRO_FUNCTION func;
-  if (bRelative) {
-    func = std::bind(cairo_rel_curve_to, _1, x1, y1, x2, y2, x3, y3);
-  } else {
-    func = std::bind(cairo_curve_to, _1, x1, y1, x2, y2, x3, y3);
-  }
-  auto item = DL.emplace_back(make_shared<DRAW_FUNCTION>(func));
-  item->invoke(context);
-  DL_CLEAR;
-  return *this;
-}
-
-/**
-\brief
-*/
-SurfaceArea &uxdevice::SurfaceArea::line(double x, double y) {
-  using namespace std::placeholders;
-  DL_SPIN;
-  CAIRO_FUNCTION func;
-  if (bRelative) {
-    func = std::bind(cairo_rel_line_to, _1, x, y);
-  } else {
-    func = std::bind(cairo_line_to, _1, x, y);
-  }
-  auto item = DL.emplace_back(make_shared<DRAW_FUNCTION>(func));
-  item->invoke(context);
-  DL_CLEAR;
-  return *this;
-}
-/**
-\brief
-*/
-SurfaceArea &uxdevice::SurfaceArea::rectangle(double x, double y, double width,
-                                              double height) {
-  using namespace std::placeholders;
-  DL_SPIN;
-  CAIRO_FUNCTION func = std::bind(cairo_rectangle, _1, x, y, width, height);
-  auto item = DL.emplace_back(make_shared<FUNCTION>(func));
-  item->invoke(context);
-  DL_CLEAR;
-  return *this;
-}
-
-SurfaceArea &uxdevice::SurfaceArea::close_path() {
-  using namespace std::placeholders;
-  DL_SPIN;
-  CAIRO_FUNCTION func;
-  func = std::bind(cairo_close_path, _1);
-  auto item = DL.emplace_back(make_shared<FUNCTION>(func));
-  item->invoke(context);
-  DL_CLEAR;
-  return *this;
-}
-
-/**
-\brief
-*/
-SurfaceArea &uxdevice::SurfaceArea::stroke(bool bPreserve) {
-  using namespace std::placeholders;
-  DL_SPIN;
-  CAIRO_FUNCTION func;
-  if (bPreserve) {
-    func = std::bind(cairo_stroke_preserve, _1);
-  } else {
-    func = std::bind(cairo_stroke, _1);
-  }
-  auto fn = [=, &p](cairo_t *cr) {
-    p.emit(cr);
-    func(cr);
-  };
-  auto item = DL.emplace_back(make_shared<FUNCTION>(fn));
-  item->invoke(context);
-  DL_CLEAR;
-  return *this;
-}
-/**
-\brief
-*/
-SurfaceArea &uxdevice::SurfaceArea::fill(bool bPreserve) {
-  using namespace std::placeholders;
-  DL_SPIN;
-  CAIRO_FUNCTION func;
-  if (bPreserve) {
-    func = std::bind(cairo_fill_preserve, _1);
-  } else {
-    func = std::bind(cairo_fill, _1);
-  }
-  auto fn = [=, &p](cairo_t *cr) {
-    p.emit(cr);
-    func(cr);
-  };
-
-  auto item = DL.emplace_back(make_shared<FUNCTION>(fn));
-  item->invoke(context);
-  DL_CLEAR;
-  return *this;
-}
 /**
 \brief
 */

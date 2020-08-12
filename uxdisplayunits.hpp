@@ -189,8 +189,8 @@ PAINT_OBJ(source);
 PAINT_OBJ(text_outline);
 PAINT_OBJ(text_fill);
 PAINT_OBJ(text_shadow);
-PAINT_OBJ(FILL);
-PAINT_OBJ(STROKE);
+PAINT_OBJ(fill_path);
+PAINT_OBJ(stroke_path);
 
 using source_default = class source_default : public DisplayUnit {
 public:
@@ -301,7 +301,41 @@ public:
       }
     }
   }
-}; // namespace uxdevice
+};
+
+
+using line_cap = class line_cap : public DisplayUnit {
+public:
+  line_cap(const line_cap_t _val) : data(_val) {}
+  ~line_cap() { }
+  line_cap_t data =line_cap_t::butt;
+};
+
+using line_join = class line_join : public DisplayUnit {
+public:
+  line_join(const line_join_t _val) : data(_val) {}
+  ~line_join() {
+  }
+  line_join_t data =line_join_t::miter;
+};
+
+using miter_limit = class miter_limit : public DisplayUnit {
+public:
+  miter_limit(const double _val) : data(_val) {}
+  ~miter_limit() {
+  }
+  double data=1.0;
+};
+
+using line_dashes = class line_dashes : public DisplayUnit {
+public:
+  line_dashes(const std::vector<double> &_val, double _offset=0) : dashes(_val), offset(_offset)  {}
+  ~line_dashes() {
+  }
+  std::vector<double> dashes={};
+  double offset={};
+};
+
 
 class TEXT_RENDER : public DrawingOutput {
 public:
@@ -350,10 +384,12 @@ public:
   }
 
   void invoke(DisplayContext &context);
+  bool isValid(void);
   std::atomic<cairo_surface_t *> _image = nullptr;
   std::string _data = "";
   bool bIsSVG = false;
   std::atomic<bool> bLoaded = false;
+  std::shared_ptr<coordinates> _coordinates = nullptr;
 };
 
 /**
