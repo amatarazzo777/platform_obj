@@ -198,6 +198,11 @@ void uxdevice::TEXT_RENDER::create_shadow(void) {
   }
 }
 
+
+void uxdevice::TEXT_RENDER::invoke(DisplayContext &context) {
+  setup_draw(context);
+}
+
 /**
 \internal
 \brief

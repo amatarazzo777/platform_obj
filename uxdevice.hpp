@@ -91,7 +91,7 @@ public:
     std::ostringstream s;
     s << data;
     std::string sData = s.str();
-
+    stream_input(sData);
     return *this;
   }
   SurfaceArea &operator<<(const std::string &data) {

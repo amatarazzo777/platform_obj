@@ -290,7 +290,7 @@ public:
       pango_font_description_free(fontDescription);
   }
   text_font &operator=(const text_font &other) = delete;
-  text_font(const text_font &) {}
+  text_font(const text_font &other) { description = other.description; }
   std::string description ={};
   std::atomic<PangoFontDescription *> fontDescription = nullptr;
   void invoke(DisplayContext &context) {

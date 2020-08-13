@@ -208,8 +208,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 
   SurfaceArea vis = SurfaceArea(
       {500, 500}, "Information Title",
-      Paint(coord(gen), coord(gen), coord(gen), coord(gen),
-            {{_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}}));
+      Paint("white"));
 
   vis.listen(eventType::keypress, [&vis](auto &evt) {
     string s = " ";
@@ -238,7 +237,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
     vis.clear();
     drawlines(vis);
     drawText(vis, FAST_TEXT);
-
+    drawText(vis, FAST_TEXT, "Hello ");
     vis.notify_complete();
     std::this_thread::sleep_for(std::chrono::milliseconds(DRAW_SLEEP));
   }
@@ -267,7 +266,8 @@ void drawText(SurfaceArea &vis, bool bfast, string stxt) {
     char mbstr[100];
     std::strftime(mbstr, sizeof(mbstr), "%A %c", std::localtime(&t));
 
-    vis << coordinates{0, 0} << source("blue") << mbstr << '\n';
+    vis << text_font("50px") << coordinates{0, 0,300,300} << source("blue");
+    vis << mbstr << "   " << stxt << '\n';
 
   } else {
 
@@ -298,7 +298,7 @@ void drawText(SurfaceArea &vis, bool bfast) {
   std::uniform_real_distribution<> color(.5, 1.0);
   std::uniform_real_distribution<> opac(.7, 1);
   std::uniform_real_distribution<> lw(0, 10.0);
-  std::uniform_real_distribution<> coord(425.0, 600.0);
+  std::uniform_real_distribution<> coord(80.0, 400.0);
   std::uniform_int_distribution<> shape(1, 4);
 
   // set the font name according to pango spi. see pango font description.
