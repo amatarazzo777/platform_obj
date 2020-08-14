@@ -208,7 +208,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 
   SurfaceArea vis = SurfaceArea(
       {500, 500}, "Information Title",
-      Paint("white"));
+      Paint("darkgreen"));
 
   vis.listen(eventType::keypress, [&vis](auto &evt) {
     string s = " ";
@@ -236,6 +236,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
   while (vis.processing()) {
     vis.clear();
     drawlines(vis);
+
+    vis << coordinates{100,100,200,200}
+        << image{"/home/anthony/development/platform/image/23.svg"};
+
     drawText(vis, FAST_TEXT);
     drawText(vis, FAST_TEXT, "Hello ");
     vis.notify_complete();
@@ -266,7 +270,7 @@ void drawText(SurfaceArea &vis, bool bfast, string stxt) {
     char mbstr[100];
     std::strftime(mbstr, sizeof(mbstr), "%A %c", std::localtime(&t));
 
-    vis << text_font("50px") << coordinates{0, 0,300,300} << source("blue");
+    vis << text_font("18px") << coordinates{0, 0,300,300} << source("blue");
     vis << mbstr << "   " << stxt << '\n';
 
   } else {

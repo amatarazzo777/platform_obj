@@ -441,37 +441,17 @@ void uxdevice::TEXT_RENDER::setup_draw(DisplayContext &context) {
 \brief reads the image and creates a cairo surface image.
 */
 void uxdevice::image::invoke(DisplayContext &context) {
+  using namespace std::placeholders;
 
   if (bLoaded)
     return;
-  _coordinates = context.currentUnits._coordinates;
-  if (!_coordinates) {
-    const char *s = "An image requires coordinates to be defined. ";
-    ERROR_DRAW_PARAM(s);
-    return;
-  }
-
-  auto fnthread = [=, &context]() {
-    _image = read_image(_data, _coordinates->w, _coordinates->h);
-
-    if (_image)
-      bLoaded = true;
-    else {
-      const char *s = "The image could not be processed or loaded. ";
-      ERROR_DRAW_PARAM(s);
-      ERROR_DESC(_data);
-    }
-  };
-
-  fnthread();
-
-  using namespace std::placeholders;
 
   _coordinates = context.currentUnits._coordinates;
   options = context.currentUnits._options;
-  if (!(_coordinates && _data.size() && isValid())) {
+
+  if (!(_coordinates && _data.size() )) {
     const char *s = "An image object must include the following "
-                    "attributes. _coordinates and an image name.";
+                    "attributes. coordinates and an image name.";
     ERROR_DRAW_PARAM(s);
     auto fn = [=](DisplayContext &context) {};
 
@@ -481,16 +461,37 @@ void uxdevice::image::invoke(DisplayContext &context) {
     fnDrawClipped = std::bind(fn, _1);
     return;
   }
+
   // set the ink area.
   const coordinates &a = *_coordinates;
-  inkRectangle = {(int)a.x, (int)a.y, (int)a.w, (int)a.h};
-  _inkRectangle = {(double)inkRectangle.x, (double)inkRectangle.y,
-                   (double)inkRectangle.width, (double)inkRectangle.height
-                  };
-  hasInkExtents = true;
-  auto fnCache = [=](DisplayContext &context) {
+
+  auto fnthread = [=, &context]() {
+    _image = read_image(_data, _coordinates->w, _coordinates->h);
+
+    if (_image) {
+
+      inkRectangle = {(int)a.x, (int)a.y, (int)a.w, (int)a.h};
+      _inkRectangle = {(double)inkRectangle.x, (double)inkRectangle.y,
+                       (double)inkRectangle.width, (double)inkRectangle.height
+                      };
+      hasInkExtents = true;
+      bLoaded = true;
+    } else {
+      const char *s = "The image could not be processed or loaded. ";
+      ERROR_DRAW_PARAM(s);
+      ERROR_DESC(_data);
+    }
+  };
+
+  fnthread();
+
+
+
+
+
+  auto fnCache = [&](DisplayContext &context) {
     // set directly callable rendering function.
-    auto fn = [=](DisplayContext &context) {
+    auto fn = [&](DisplayContext &context) {
       if (!isValid())
         return;
       DrawingOutput::invoke(context.cr);
@@ -498,7 +499,7 @@ void uxdevice::image::invoke(DisplayContext &context) {
       cairo_rectangle(context.cr, a.x, a.y, a.w, a.h);
       cairo_fill(context.cr);
     };
-    auto fnClipping = [=](DisplayContext &context) {
+    auto fnClipping = [&](DisplayContext &context) {
       if (!isValid())
         return;
       DrawingOutput::invoke(context.cr);
@@ -531,7 +532,7 @@ void uxdevice::image::invoke(DisplayContext &context) {
 */
 bool uxdevice::image::isValid(void) {
 
-return true;
+return bLoaded;
 }
 
 

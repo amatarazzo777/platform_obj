@@ -385,6 +385,11 @@ public:
   image(const image &other) { *this = other; }
   image &operator=(const image &other) {
     _image = cairo_surface_reference(other._image);
+    _data = other._data;
+    bIsSVG = other.bIsSVG;
+    if(_image)
+      bLoaded = true;
+    _coordinates = other._coordinates;
     return *this;
   }
   ~image() {

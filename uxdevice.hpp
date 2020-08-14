@@ -197,7 +197,10 @@ public:
     stream_input(data);
     return *this;
   }
-
+  SurfaceArea &operator<<(const image &data) {
+    stream_input(data);
+    return *this;
+  }
   SurfaceArea &operator[](const std::string &s) {return *this;}
   SurfaceArea &operator[](const std::size_t &s) {return *this;}
   SurfaceArea &group(const std::string &sgroupname) {return *this;}
@@ -301,6 +304,7 @@ private:
   SurfaceArea &stream_input(const line_join &_val);
   SurfaceArea &stream_input(const miter_limit &_val);
   SurfaceArea &stream_input(const line_dashes &val);
+  SurfaceArea &stream_input(const image &val);
 
   DisplayContext context = DisplayContext();
   std::atomic<bool> bProcessing = false;

@@ -832,6 +832,15 @@ SurfaceArea &uxdevice::SurfaceArea::stream_input(const line_dashes &val) {
   return *this;
 }
 
+SurfaceArea &uxdevice::SurfaceArea::stream_input(const image &val) {
+  DL_SPIN;
+  auto item = DL.emplace_back(make_shared<image>(val));
+  item->invoke(context);
+  DL_CLEAR;
+  context.add_drawable(std::dynamic_pointer_cast<DrawingOutput>(item));
+  return *this;
+}
+
 /**
 \brief
 */
