@@ -259,7 +259,13 @@ std::unordered_map<std::size_t, std::list<std::reference_wrapper<DisplayUnit>>>
 
 using line_width = class line_width : public DisplayUnit {
 public:
-  line_width(double lw) {}
+  line_width(double lw) : value(lw) {}
+
+  void invoke(DisplayContext &context) {
+    cairo_set_line_width(context.cr,value);
+  }
+
+  double value=1.0;
 };
 
 using indent = class indent : public DisplayUnit {
