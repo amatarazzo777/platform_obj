@@ -18,7 +18,7 @@ cairo_surface_t *image_surface_SVG(bool bDataPassed, std::string &data,
                                    double width = -1, double height = -1);
 
 #if defined(USE_STACKBLUR)
-void blurImage(cairo_surface_t *img, unsigned int radius);
+void blur_image(cairo_surface_t *img, unsigned int radius);
 
 #elif defined(USE_SVGREN)
 cairo_surface_t *blurImage(cairo_surface_t *img, unsigned int radius);

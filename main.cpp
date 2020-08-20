@@ -3,11 +3,14 @@
 using namespace std;
 using namespace uxdevice;
 
-void drawText(SurfaceArea &vis, bool bfast);
-void drawshapes(SurfaceArea &vis);
-void drawimages(SurfaceArea &vis);
-void drawText(SurfaceArea &vis, bool bfast, string stxt);
-void drawlines(SurfaceArea &vis);
+void show_time(SurfaceArea &vis, double x, double y);
+std::shared_ptr<std::string> insert_text(SurfaceArea &vis, bool bfast,
+                                         string &stxt);
+void draw_shapes(SurfaceArea &vis);
+void draw_images(SurfaceArea &vis);
+void draw_text(SurfaceArea &vis, bool bfast);
+void draw_lines(SurfaceArea &vis);
+std::string generate_text(void);
 
 void eventDispatch(const event &evt);
 void handleError(const std::string errText) {
@@ -344,17 +347,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 #define _C color(gen)
 #define _A opac(gen)
 
-  SurfaceArea vis = SurfaceArea(
-      {500, 500}, "Information Title",
-      Paint("darkgreen"));
+  SurfaceArea vis =
+      SurfaceArea({500, 500}, "Information Title", Paint("darkgreen"));
 
-  vis.listen(eventType::keypress, [&vis](auto &evt) {
+  vis << listen_keypress([&vis](auto &evt) {
     string s = " ";
     s[0] = evt.key;
-    drawText(vis, true, s);
+    // draw_text(vis, true, s);
   });
 
-  vis.listen(eventType::mousemove, [](auto &evt) {
+  vis << listen_mousemove([](auto &evt) {
     if (evt.y < my) {
       oy = oy - .1;
     } else {
@@ -367,27 +369,35 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
     my = evt.y;
   });
 
-  drawText(vis, FAST_TEXT);
-  drawlines(vis);
+  vis.clear();
+  draw_lines(vis);
+  std::shared_ptr<std::string> paragraph_text =
+      std::make_shared<std::string>("starting text");
+  std::shared_ptr<std::string> button_caption =
+      std::make_shared<std::string>("button text");
+
+  // easily index  properties for specific access later.
+  // creating shared objects allows for some interface architectures
+  // to be crafted easier.
+  vis << text_font("28px") << text_shadow("green")
+      << coordinates{0, 100, 600, 300} << source("white") << paragraph_text
+      << '\n';
+
+  vis[paragraph_text] =
+      "New text is changed without an indirect index, more simplified syntax. ";
+
+  for (int i = 0; i < 5; i++) {
+    vis << coordinates{i * 130.0, 200, 150, 240} << image{sSVG_BUTTON}
+        << text_shadow("black")
+        << text_fill(0, 0, 5, 30, {{"orange"}, {"yellow"}})
+        << text_outline(stripes) << text_font("16px") << line_width(5)
+        << coordinates{20.0 + i * 130.0, 210, 150, 240} << button_caption;
+  }
 
   vis.notify_complete();
   while (vis.processing()) {
-    vis.clear();
-    drawlines(vis);
-
-    for(int i=0;i<5;i++){
-    vis << coordinates{i*130.0,200,150,240}
-        << image{sSVG_BUTTON}
-        << text_shadow("black")
-        << text_fill(0,0,5,30,{{"orange"},{"yellow"}})
-        << text_outline(stripes)
-        << text_font("16px")
-        << line_width(5)
-        << coordinates{20.0+i*130.0,210,150,240}
-        << "Click This";
-  }
-    drawText(vis, FAST_TEXT);
-    drawText(vis, FAST_TEXT, "Hello ");
+    show_time(vis, 0, 0);
+    vis[paragraph_text] = generate_text();
     vis.notify_complete();
     std::this_thread::sleep_for(std::chrono::milliseconds(DRAW_SLEEP));
   }
@@ -395,7 +405,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
   return 0;
 }
 
-void drawText(SurfaceArea &vis, bool bfast, string stxt) {
+void show_time(SurfaceArea &vis, double x, double y) {
+  std::time_t t = std::time(nullptr);
+  char mbstr[100];
+  std::strftime(mbstr, sizeof(mbstr), "%A %c", std::localtime(&t));
+
+  vis << text_font("28px") << text_shadow("green")
+      << coordinates{x, y, 600, 300} << source("white") << mbstr << "  "
+      << '\n';
+}
+
+std::shared_ptr<std::string> insert_text(SurfaceArea &vis, bool bfast,
+                                         string &stxt) {
 
   std::uniform_real_distribution<> scrn(0, 400.0);
   std::uniform_real_distribution<> dcir(25.0, 100.0);
@@ -407,17 +428,14 @@ void drawText(SurfaceArea &vis, bool bfast, string stxt) {
 
 #define _C color(gen)
 #define _A opac(gen)
+  std::shared_ptr<std::string> ps = std::make_shared<std::string>(stxt);
 
   // set the font name according to pango api. see pango font description.
   std::uniform_int_distribution<> fill(1, 2);
 
   if (bfast) {
-    std::time_t t = std::time(nullptr);
-    char mbstr[100];
-    std::strftime(mbstr, sizeof(mbstr), "%A %c", std::localtime(&t));
-
-    vis << text_font("18px") << coordinates{0, 0,300,300} << source("blue");
-    vis << mbstr << "   " << stxt << '\n';
+    vis << text_fill_none{} << text_outline_none{} << text_shadow_none{}
+        << alignment_t::left << coordinates{10, 10, 300, 300} << ps;
 
   } else {
 
@@ -436,74 +454,34 @@ void drawText(SurfaceArea &vis, bool bfast, string stxt) {
                          {_C, _C, _C, _C, _A},
                          {_C, _C, _C, _C, _A}}}
         << text_shadow{"green"} << line_width{lw(gen)} << alignment_t::left
-        << coordinates{10, 10, 300, 300} << stxt << index_by{"text"};
-
+        << coordinates{10, 10, 300, 300} << ps;
   }
+  return ps;
 }
 
-void drawText(SurfaceArea &vis, bool bfast) {
-
-  std::uniform_real_distribution<> scrn(0, 400.0);
-  std::uniform_real_distribution<> dcir(25.0, 100.0);
-  std::uniform_real_distribution<> color(.5, 1.0);
-  std::uniform_real_distribution<> opac(.7, 1);
-  std::uniform_real_distribution<> lw(0, 10.0);
-  std::uniform_real_distribution<> coord(80.0, 400.0);
-  std::uniform_int_distribution<> shape(1, 4);
-
-  // set the font name according to pango spi. see pango font description.
-  vis << text_font("20px") << text_alignment::justified;
-  std::uniform_int_distribution<> fill(1, 3);
-  vis << coordinates({coord(gen), coord(gen), coord(gen), coord(gen)});
-
-  if (bfast) {
-    vis << text_shadow_none{}
-        << text_fill_none{}
-        << text_outline_none{}
-        << source{coord(gen),
-                    coord(gen),
-                    coord(gen),
-                    coord(gen),
-                    {{_C, _C, _C, _C, _A},
-                     {_C, _C, _C, _C, _A},
-                     {_C, _C, _C, _C, _A}}};
-
-  } else {
-
-    vis << text_shadow("black")
-
-
-   << text_fill(
-        coord(gen), coord(gen), coord(gen), coord(gen),
-        {{_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}})
-
-    << text_outline(
-        coord(gen), coord(gen), coord(gen), coord(gen),
-        {{_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}, {_C, _C, _C, _C, _A}});
-
-
-  }
+std::string generate_text(void) {
+  std::string ret;
 
   std::uniform_int_distribution<> info(1, 5);
   switch (info(gen)) {
   case 1:
-    vis << "Silver colored crafts from another galaxy seem "
-           "curiously welcomed as the memorizing audio waves "
-           "produced a canny type of music. A simple ten note. ";
+    ret = "Silver colored crafts from another galaxy seem "
+          "curiously welcomed as the memorizing audio waves "
+          "produced a canny type of music. A simple ten note. ";
     break;
   case 2:
-    vis << "The color of text can be a choice. Yet the appearance is a common "
-           "desire.";
+    ret = "The color of text can be a choice. Yet the appearance is a common "
+          "desire.";
     break;
   case 3:
-    vis << "Planets orbit the mass, but this is inconsequential of "
-           "the heat provided. As children, we find a balance. ";
+    ret = "Planets orbit the mass, but this is inconsequential of "
+          "the heat provided. As children, we find a balance. ";
     break;
   case 4:
-    vis << "The sun sets casting its refraction upon the mountain side. ";
+    ret = "The sun sets casting its refraction upon the mountain side. ";
     break;
   case 5:
-    vis <<
+    ret =
         "The sun sets casting its refraction upon the mountain side. "
         "The glistening oil coats upon the ravens are a remark of healthiness. "
         "One that is pronounced during the day and in the moonlight. "
@@ -511,16 +489,56 @@ void drawText(SurfaceArea &vis, bool bfast) {
         "things. "
         "The warmth of the sun decays as thousands of brilliant stars dictate "
         "the continual persistence of the system.  A remarkable sight. A "
-        "heavenly "
-        "home.";
+        "heavenly home.";
     break;
   }
+  return ret;
+}
+void draw_lines(SurfaceArea &vis) {
 
+  std::uniform_real_distribution<> scrn(0, 1000);
+  std::uniform_real_distribution<> dcir(5.0, 20.0);
+  std::uniform_real_distribution<> dimen(25.0, 300.0);
+  std::uniform_real_distribution<> color(0, 1.0);
+  std::uniform_real_distribution<> opac(.5, 1);
+  std::uniform_real_distribution<> lw(7, 30.0);
+  std::uniform_real_distribution<> coord(55.0, 100.0);
+  std::uniform_int_distribution<> shape(1, 1);
 
+  vis << move_to(scrn(gen), scrn(gen));
+
+  for (int c = 0; c < NUM_SEGMENTS; c++) {
+
+    switch (shape(gen)) {
+    case 1:
+      vis << line(scrn(gen), scrn(gen));
+      break;
+    case 2:
+      vis << arc(scrn(gen), scrn(gen), dimen(gen), dimen(gen), dimen(gen));
+      break;
+    case 3:
+      vis << curve(scrn(gen), scrn(gen), scrn(gen), scrn(gen), scrn(gen),
+                   scrn(gen));
+      break;
+    }
+  }
+  vis << close_path();
+
+  vis << line_width(lw(gen));
+  auto ps =
+      Paint(coord(gen), coord(gen), coord(gen), coord(gen),
+            {{_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}});
+
+  auto pf =
+      Paint(coord(gen), coord(gen), coord(gen), coord(gen),
+            {{_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}});
+
+  vis << stroke_shape_preserve(ps) << fill_shape(pf);
 }
 
-void drawlines(SurfaceArea &vis) {
 #if 0
+void draw_lines(SurfaceArea &vis) {
+
   std::uniform_real_distribution<> scrn(0, 1000);
   std::uniform_real_distribution<> dcir(5.0, 20.0);
   std::uniform_real_distribution<> dimen(25.0, 300.0);
@@ -564,5 +582,6 @@ void drawlines(SurfaceArea &vis) {
   auto &myshape1 = vis.group("testgroup2");
   myshape1.move_to(10, 10).relative().hline(10).vline(10).hline(-10).vline(-10);
   myshape1.stroke_preserve(ps).fill(pf);
-  #endif
+
 }
+#endif

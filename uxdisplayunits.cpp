@@ -49,12 +49,10 @@ void uxdevice::DrawingOutput::intersect(cairo_rectangle_t &r) {
   if (!hasInkExtents)
     return;
   cairo_rectangle_int_t rInt = {(int)r.x, (int)r.y, (int)r.width,
-                                (int)r.height
-                               };
+                                (int)r.height};
   cairo_region_t *rectregion = cairo_region_create_rectangle(&rInt);
   cairo_rectangle_int_t objrect = {inkRectangle.x, inkRectangle.y,
-                                   inkRectangle.width, inkRectangle.height
-                                  };
+                                   inkRectangle.width, inkRectangle.height};
 
   overlap = cairo_region_contains_rectangle(rectregion, &objrect);
   if (overlap == CAIRO_REGION_OVERLAP_PART) {
@@ -62,8 +60,7 @@ void uxdevice::DrawingOutput::intersect(cairo_rectangle_t &r) {
     cairo_region_intersect(dst, rectregion);
     cairo_region_get_extents(dst, &intersection);
     _intersection = {(double)intersection.x, (double)intersection.y,
-                     (double)intersection.width, (double)intersection.height
-                    };
+                     (double)intersection.width, (double)intersection.height};
     cairo_region_destroy(dst);
   }
 
@@ -77,8 +74,7 @@ void uxdevice::DrawingOutput::intersect(CairoRegion &rectregion) {
   cairo_region_intersect(dst, rectregion._ptr);
   cairo_region_get_extents(dst, &intersection);
   _intersection = {(double)intersection.x, (double)intersection.y,
-                   (double)intersection.width, (double)intersection.height
-                  };
+                   (double)intersection.width, (double)intersection.height};
   cairo_region_destroy(dst);
 }
 
@@ -98,14 +94,12 @@ void uxdevice::DrawingOutput::evaluate_cache(DisplayContext &context) {
   } else if (!oncethread) {
     auto currentPoint = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> diff =
-      currentPoint - lastRenderTime;
+        currentPoint - lastRenderTime;
     // if rendering requests are for more than 2 frames
     bool useCache = diff.count() < context.cacheThreshold;
     if (useCache) {
       oncethread = std::make_unique<std::thread>(
-      [=, &context]() {
-        fnCacheSurface(context);
-      });
+          [=, &context]() { fnCacheSurface(context); });
       oncethread->detach();
     }
   }
@@ -136,9 +130,10 @@ bool uxdevice::TEXT_RENDER::set_layout_options(cairo_t *cr) {
   guint layoutSerial = pango_layout_get_serial(_layout);
 
   const PangoFontDescription *originalDescription =
-    pango_layout_get_font_description(_layout);
+      pango_layout_get_font_description(_layout);
   if (!originalDescription ||
-      !pango_font_description_equal(originalDescription, _text_font->fontDescription))
+      !pango_font_description_equal(originalDescription,
+                                    _text_font->fontDescription))
     pango_layout_set_font_description(_layout, _text_font->fontDescription);
 
   if (_text_alignment) {
@@ -146,25 +141,25 @@ bool uxdevice::TEXT_RENDER::set_layout_options(cairo_t *cr) {
   }
 
   // set the width and height of the layout.
-  if (pango_layout_get_width(_layout) != _coordinates->w * PANGO_SCALE)
+  if (pango_layout_get_width(_layout) != _coordinates->w() * PANGO_SCALE)
     pango_layout_set_width(_layout, _coordinates->w * PANGO_SCALE);
 
-  if (pango_layout_get_height(_layout) != _coordinates->h * PANGO_SCALE)
-    pango_layout_set_height(_layout, _coordinates->h * PANGO_SCALE);
+  if (pango_layout_get_height(_layout) != _coordinates->h() * PANGO_SCALE)
+    pango_layout_set_height(_layout, _coordinates->h() * PANGO_SCALE);
 
   std::string_view sinternal = std::string_view(pango_layout_get_text(_layout));
-  if (_text->data.compare(sinternal) != 0)
-    pango_layout_set_text(_layout, _text->data.data(), -1);
+  if (std::get<std::string>(_text->_data).compare(sinternal) != 0)
+    pango_layout_set_text(_layout, std::get<std::string>(_text->_data).data(),
+                          -1);
 
   // any changes
   if (layoutSerial != pango_layout_get_serial(_layout)) {
     pango_layout_get_pixel_extents(_layout, &_ink_rect, &_logical_rect);
-    int tw = std::min((double)_logical_rect.width, _coordinates->w);
-    int th = std::min((double)_logical_rect.height, _coordinates->h);
-    inkRectangle = {(int)_coordinates->x, (int)_coordinates->y, tw, th};
+    int tw = std::min((double)_logical_rect.width, _coordinates->w());
+    int th = std::min((double)_logical_rect.height, _coordinates->h());
+    inkRectangle = {(int)_coordinates->x(), (int)_coordinates->y(), tw, th};
     _inkRectangle = {(double)inkRectangle.x, (double)inkRectangle.y,
-                     (double)inkRectangle.width, (double)inkRectangle.height
-                    };
+                     (double)inkRectangle.width, (double)inkRectangle.height};
 
     hasInkExtents = true;
     ret = true;
@@ -176,8 +171,8 @@ bool uxdevice::TEXT_RENDER::set_layout_options(cairo_t *cr) {
 void uxdevice::TEXT_RENDER::create_shadow(void) {
   if (!_shadow_image) {
     _shadow_image = cairo_image_surface_create(
-                    CAIRO_FORMAT_ARGB32, _inkRectangle.width + _text_shadow->x,
-                    _inkRectangle.height + _text_shadow->y);
+        CAIRO_FORMAT_ARGB32, _inkRectangle.width + _text_shadow->x,
+        _inkRectangle.height + _text_shadow->y);
     _shadow_cr = cairo_create(_shadow_image);
     // offset text by the parameter amounts
     cairo_move_to(_shadow_cr, _text_shadow->x, _text_shadow->y);
@@ -188,16 +183,15 @@ void uxdevice::TEXT_RENDER::create_shadow(void) {
     pango_cairo_show_layout(_shadow_cr, _layout);
 
 #if defined(USE_STACKBLUR)
-    blurImage(_shadow_image, _text_shadow->radius);
+    blur_image(_shadow_image, _text_shadow->radius);
 
 #elif defined(USE_SVGREN)
-    cairo_surface_t *blurred = blurImage(_shadow_image, _text_shadow->radius);
+    cairo_surface_t *blurred = blur_image(_shadow_image, _text_shadow->radius);
     cairo_surface_destroy(_shadow_image);
     _shadow_image = blurred;
 #endif
   }
 }
-
 
 void uxdevice::TEXT_RENDER::invoke(DisplayContext &context) {
   setup_draw(context);
@@ -222,10 +216,12 @@ void uxdevice::TEXT_RENDER::setup_draw(DisplayContext &context) {
   options = context.currentUnits._options;
 
   // check the context parameters before operating
-  if (!((_source || _text_outline || _text_fill) && _coordinates && _text && _text_font)) {
-    const char *s = "A draw text object must include the following "
-                    "attributes. A source or a text_outline or "
-                    " text_fill. As well, a coordinates, text and text_font object.";
+  if (!((_source || _text_outline || _text_fill) && _coordinates && _text &&
+        _text_font)) {
+    const char *s =
+        "A draw text object must include the following "
+        "attributes. A source or a text_outline or "
+        " text_fill. As well, a coordinates, text and text_font object.";
     ERROR_DRAW_PARAM(s);
     auto fn = [=](DisplayContext &context) {};
 
@@ -246,7 +242,7 @@ void uxdevice::TEXT_RENDER::setup_draw(DisplayContext &context) {
     bUsePathLayout = true;
     bOutline = true;
   }
-  //cairo_get_matrix(context.cr, &mat._matrix);
+  // cairo_get_matrix(context.cr, &mat._matrix);
 
   // if the text is filled with a texture or gradient
   if (_text_fill) {
@@ -260,8 +256,8 @@ void uxdevice::TEXT_RENDER::setup_draw(DisplayContext &context) {
   if (_text_shadow) {
     fnShadow = [=](cairo_t *cr, coordinates &a) {
       create_shadow();
-      cairo_set_source_surface(cr, _shadow_image, a.x, a.y);
-      cairo_rectangle(cr, a.x, a.y, a.w, a.h);
+      cairo_set_source_surface(cr, _shadow_image, a.x(), a.y());
+      cairo_rectangle(cr, a.x(), a.y(), a.w(), a.h());
       cairo_fill(cr);
     };
   } else {
@@ -276,45 +272,45 @@ void uxdevice::TEXT_RENDER::setup_draw(DisplayContext &context) {
     // These are the clipping versions that have coordinates.
     if (bFilled && bOutline) {
       fn = [=](cairo_t *cr, coordinates a) {
-        //cairo_set_matrix(context.cr, &mat._matrix);
+        // cairo_set_matrix(context.cr, &mat._matrix);
 
         DrawingOutput::invoke(cr);
         if (set_layout_options(cr))
           pango_cairo_update_layout(cr, _layout);
         fnShadow(cr, a);
-        cairo_move_to(cr, a.x, a.y);
+        cairo_move_to(cr, a.x(), a.y());
         pango_cairo_layout_path(cr, _layout);
-        _text_fill->emit(cr, a.x, a.y, a.w, a.h);
+        _text_fill->emit(cr, a.x(), a.y(), a.w(), a.h());
         cairo_fill_preserve(cr);
-        _text_outline->emit(cr, a.x, a.y, a.w, a.h);
+        _text_outline->emit(cr, a.x(), a.y(), a.w(), a.h());
         cairo_stroke(cr);
       };
 
       // text is only filled.
     } else if (bFilled) {
       fn = [=](cairo_t *cr, coordinates a) {
-        //cairo_set_matrix(context.cr, &mat._matrix);
+        // cairo_set_matrix(context.cr, &mat._matrix);
         DrawingOutput::invoke(cr);
         if (set_layout_options(cr))
           pango_cairo_update_layout(cr, _layout);
         fnShadow(cr, a);
-        cairo_move_to(cr, a.x, a.y);
+        cairo_move_to(cr, a.x(), a.y());
         pango_cairo_layout_path(cr, _layout);
-        _text_fill->emit(cr, a.x, a.y, a.w, a.h);
+        _text_fill->emit(cr, a.x(), a.y(), a.w(), a.h());
         cairo_fill(cr);
       };
 
       // text is only outlined.
     } else if (bOutline) {
       fn = [=](cairo_t *cr, coordinates a) {
-        //cairo_set_matrix(context.cr, &mat._matrix);
+        // cairo_set_matrix(context.cr, &mat._matrix);
         DrawingOutput::invoke(cr);
         if (set_layout_options(cr))
           pango_cairo_update_layout(cr, _layout);
         fnShadow(cr, a);
-        cairo_move_to(cr, a.x, a.y);
+        cairo_move_to(cr, a.x(), a.y());
         pango_cairo_layout_path(cr, _layout);
-        _text_outline->emit(cr, a.x, a.y, a.w, a.h);
+        _text_outline->emit(cr, a.x(), a.y(), a.w(), a.h());
         cairo_stroke(cr);
       };
     }
@@ -326,13 +322,13 @@ void uxdevice::TEXT_RENDER::setup_draw(DisplayContext &context) {
     //  which uses the raster of the font system
     //        --- see pango_cairo_show_layout
     fn = [=](cairo_t *cr, coordinates a) {
-      //cairo_set_matrix(context.cr, &mat._matrix);
+      // cairo_set_matrix(context.cr, &mat._matrix);
       DrawingOutput::invoke(cr);
       if (set_layout_options(cr))
         pango_cairo_update_layout(cr, _layout);
       fnShadow(cr, a);
-      cairo_move_to(cr, a.x, a.y);
-      _source->emit(cr, a.x, a.y, a.w, a.h);
+      cairo_move_to(cr, a.x(), a.y());
+      _source->emit(cr, a.x(), a.y(), a.w(), a.h());
       pango_cairo_show_layout(cr, _layout);
     };
   }
@@ -360,8 +356,8 @@ void uxdevice::TEXT_RENDER::setup_draw(DisplayContext &context) {
     if(textoutline)
       textoutline->translate(-a.x,-a.y);
 #endif // 0
-    a.x = 0;
-    a.y = 0;
+    a.x(0);
+    a.y(0);
 
     fn(_buf.cr, a);
     ERROR_CHECK(_buf.cr);
@@ -370,20 +366,22 @@ void uxdevice::TEXT_RENDER::setup_draw(DisplayContext &context) {
     ERROR_CHECK(_buf.rendered);
 
     auto drawfn = [=](DisplayContext &context) {
-      //cairo_set_matrix(context.cr, &mat._matrix);
+      // cairo_set_matrix(context.cr, &mat._matrix);
       DrawingOutput::invoke(context.cr);
-      cairo_set_source_surface(context.cr, _buf.rendered, _coordinates->x, _coordinates->y);
+      cairo_set_source_surface(context.cr, _buf.rendered, _coordinates->x(),
+                               _coordinates->y());
       double tw, th;
-      tw = std::min(_inkRectangle.width, _coordinates->w);
-      th = std::min(_inkRectangle.height, _coordinates->h);
+      tw = std::min(_inkRectangle.width, _coordinates->w());
+      th = std::min(_inkRectangle.height, _coordinates->h());
 
       cairo_rectangle(context.cr, _inkRectangle.x, _inkRectangle.y, tw, th);
       cairo_fill(context.cr);
     };
     auto fnClipping = [=](DisplayContext &context) {
-      //cairo_set_matrix(context.cr, &mat._matrix);
+      // cairo_set_matrix(context.cr, &mat._matrix);
       DrawingOutput::invoke(context.cr);
-      cairo_set_source_surface(context.cr, _buf.rendered, _coordinates->x, _coordinates->y);
+      cairo_set_source_surface(context.cr, _buf.rendered, _coordinates->x(),
+                               _coordinates->y());
       cairo_rectangle(context.cr, _intersection.x, _intersection.y,
                       _intersection.width, _intersection.height);
       cairo_fill(context.cr);
@@ -449,7 +447,7 @@ void uxdevice::image::invoke(DisplayContext &context) {
   _coordinates = context.currentUnits._coordinates;
   options = context.currentUnits._options;
 
-  if (!(_coordinates && _data.size() )) {
+  if (!(_coordinates && _data.size())) {
     const char *s = "An image object must include the following "
                     "attributes. coordinates and an image name.";
     ERROR_DRAW_PARAM(s);
@@ -466,14 +464,13 @@ void uxdevice::image::invoke(DisplayContext &context) {
   const coordinates &a = *_coordinates;
 
   auto fnthread = [=, &context]() {
-    _image = read_image(_data, _coordinates->w, _coordinates->h);
+    _image = read_image(_data, _coordinates->w(), _coordinates->h());
 
     if (_image) {
 
-      inkRectangle = {(int)a.x, (int)a.y, (int)a.w, (int)a.h};
+      inkRectangle = {(int)a.x(), (int)a.y(), (int)a.w(), (int)a.h()};
       _inkRectangle = {(double)inkRectangle.x, (double)inkRectangle.y,
-                       (double)inkRectangle.width, (double)inkRectangle.height
-                      };
+                       (double)inkRectangle.width, (double)inkRectangle.height};
       hasInkExtents = true;
       bLoaded = true;
     } else {
@@ -485,25 +482,21 @@ void uxdevice::image::invoke(DisplayContext &context) {
 
   fnthread();
 
-
-
-
-
   auto fnCache = [&](DisplayContext &context) {
     // set directly callable rendering function.
     auto fn = [&](DisplayContext &context) {
       if (!isValid())
         return;
       DrawingOutput::invoke(context.cr);
-      cairo_set_source_surface(context.cr, _image, a.x, a.y);
-      cairo_rectangle(context.cr, a.x, a.y, a.w, a.h);
+      cairo_set_source_surface(context.cr, _image, a.x(), a.y());
+      cairo_rectangle(context.cr, a.x(), a.y(), a.w(), a.h());
       cairo_fill(context.cr);
     };
     auto fnClipping = [&](DisplayContext &context) {
       if (!isValid())
         return;
       DrawingOutput::invoke(context.cr);
-      cairo_set_source_surface(context.cr, _image, a.x, a.y);
+      cairo_set_source_surface(context.cr, _image, a.x(), a.y());
       cairo_rectangle(context.cr, _intersection.x, _intersection.y,
                       _intersection.width, _intersection.height);
       cairo_fill(context.cr);
@@ -530,11 +523,7 @@ void uxdevice::image::invoke(DisplayContext &context) {
 \internal
 \brief reads the image and creates a cairo surface image.
 */
-bool uxdevice::image::isValid(void) {
-
-return bLoaded;
-}
-
+bool uxdevice::image::isValid(void) { return bLoaded; }
 
 /**
 \internal

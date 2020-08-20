@@ -199,9 +199,10 @@ public:
 
   CurrentUnits currentUnits = CurrentUnits();
 
-
   void set_unit(std::shared_ptr<STRING> _text) { currentUnits._text = _text; };
-  void set_unit(std::shared_ptr<text_font> _font) { currentUnits._text_font = _font; };
+  void set_unit(std::shared_ptr<text_font> _font) {
+    currentUnits._text_font = _font;
+  };
   void set_unit(std::shared_ptr<antialias> _antialias) {
     currentUnits._antialias = _antialias;
   };
@@ -218,17 +219,19 @@ public:
     currentUnits._source = _source;
   };
 
-  void set_unit(std::shared_ptr<text_alignment> _align) { currentUnits._text_alignment = _align; };
-  void set_unit(std::shared_ptr<coordinates> _pos) { currentUnits._coordinates = _pos; };
+  void set_unit(std::shared_ptr<text_alignment> _align) {
+    currentUnits._text_alignment = _align;
+  };
+  void set_unit(std::shared_ptr<coordinates> _pos) {
+    currentUnits._coordinates = _pos;
+  };
   void set_unit(std::shared_ptr<index_by> _val) {
     currentUnits._index_by = _val;
   };
   void set_unit(std::shared_ptr<line_width> _val) {
     currentUnits._line_width = _val;
   };
-  void set_unit(std::shared_ptr<indent> _val) {
-    currentUnits._indent = _val;
-  };
+  void set_unit(std::shared_ptr<indent> _val) { currentUnits._indent = _val; };
   void set_unit(std::shared_ptr<ellipse> _val) {
     currentUnits._ellipse = _val;
   };
@@ -245,6 +248,7 @@ public:
   unsigned short windowWidth = 0;
   unsigned short windowHeight = 0;
   bool windowOpen = false;
+  bool bRelative = false;
 
   std::atomic_flag lockBrush = ATOMIC_FLAG_INIT;
 #define BRUSH_SPIN while (lockBrush.test_and_set(std::memory_order_acquire))

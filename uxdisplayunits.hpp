@@ -1,18 +1,30 @@
 /**
 \author Anthony Matarazzo
-\file uxworkstate.hpp
+\file uxdisplayunits.hpp
 \date 5/12/20
 \version 1.0
- \details The class holds the context of parameters for
- any drawing operations that occur. Such as AREA, or STRING.
- These objects have named slot positions within the by
- contextUnit.
-
+ \details
 
 */
 #pragma once
 
 namespace uxdevice {
+
+class index_by {
+public:
+  index_by() {}
+  virtual ~index_by() {}
+
+  index_by(std::string _k) : key(_k) {}
+  index_by(std::size_t _k) : key(_k) {}
+
+  index_by &operator=(const index_by &other) {
+    key = other.key;
+    return *this;
+  }
+  index_by(const index_by &other) { *this = other; }
+  std::variant<std::string, std::size_t, bool> key = false;
+};
 
 /**
 \brief base class for all display units. defaulted
@@ -21,9 +33,30 @@ this and return true. This enables the checking of the surface
 for errors after invocation.
 
 */
-class DisplayUnit {
+typedef std::variant<std::string, std::shared_ptr<std::string>, double,
+                     std::vector<double>, std::size_t, Paint, line_cap_t,
+                     alias_t, filter_t, extend_t, line_join_t, op_t,
+                     alignment_t, ellipsize_t>
+    DisplayUnitStorage;
+
+class DisplayUnit : public index_by {
 public:
   DisplayUnit() {}
+  DisplayUnit(DisplayUnitStorage _val) : _data(_val) {}
+  DisplayUnit(DisplayUnitStorage _val, double _off)
+      : _data(_val), _offset(_off) {}
+
+  DisplayUnit(Paint &p, const double &d1, const double &d2) {}
+  DisplayUnit(const double &d1, const double &d2, const double &d3,
+              const double &d4)
+      : _data(std::vector<double>({d1, d2, d3, d4})) {}
+  DisplayUnit(const double &d1, const double &d2, const double &d3,
+              const double &d4, const double &d5)
+      : _data(std::vector<double>({d1, d2, d3, d4, d5})) {}
+  DisplayUnit(const double &d1, const double &d2, const double &d3,
+              const double &d4, const double &d5, const double &d6)
+      : _data(std::vector<double>({d1, d2, d3, d4, d5, d6})) {}
+
   virtual ~DisplayUnit() {}
   DisplayUnit &operator=(const DisplayUnit &other) {
     bprocessed = other.bprocessed;
@@ -32,11 +65,25 @@ public:
     return *this;
   }
   DisplayUnit(const DisplayUnit &other) { *this = other; }
+  DisplayUnit &operator=(const double &s) {
+    _data = s;
+    return *this;
+  }
+  DisplayUnit &operator=(const std::string &s) {
+    _data = s;
+    return *this;
+  }
+  DisplayUnit &operator=(const coordinates &s) {
+    //    _data = s;
+    return *this;
+  }
   virtual void invoke(DisplayContext &context) {}
   virtual bool is_output(void) { return false; }
   void error(const char *s) { _serror = s; }
   bool valid(void) { return _serror == nullptr; }
 
+  DisplayUnitStorage _data = {};
+  double _offset = {};
   bool bprocessed = false;
   bool viewportInked = false;
   const char *_serror = nullptr;
@@ -53,6 +100,21 @@ class DrawingOutput : public DisplayUnit {
 public:
   typedef DisplayContext::CairoRegion CairoRegion;
   DrawingOutput(){};
+  DrawingOutput(DisplayUnitStorage _val) : DisplayUnit(_val) {}
+  DrawingOutput(DisplayUnitStorage _val, double _off)
+      : DisplayUnit(_val, _off) {}
+
+  DrawingOutput(Paint &p, const double &d1, const double &d2)
+      : DisplayUnit(p, d1, d2) {}
+  DrawingOutput(const double &d1, const double &d2, const double &d3,
+                const double &d4)
+      : DisplayUnit({d1, d2, d3, d4}) {}
+  DrawingOutput(const double &d1, const double &d2, const double &d3,
+                const double &d4, const double &d5)
+      : DisplayUnit({d1, d2, d3, d4, d5}) {}
+  DrawingOutput(const double &d1, const double &d2, const double &d3,
+                const double &d4, const double &d5, const double &d6)
+      : DisplayUnit({d1, d2, d3, d4, d5, d6}) {}
   ~DrawingOutput() {
     if (oncethread)
       oncethread.reset();
@@ -126,37 +188,18 @@ public:
   cairo_rectangle_t _intersection = cairo_rectangle_t();
 };
 
-typedef std::function<void(void)> CLEAR_FUNCTION;
-
-class CLEARUNIT : public DisplayUnit {
-public:
-  CLEARUNIT(CLEAR_FUNCTION _fn) : fn(_fn) {}
-
-  CLEARUNIT &operator=(const CLEARUNIT &other) {
-    fn = other.fn;
-    return *this;
-  }
-  CLEARUNIT(const CLEARUNIT &other) { *this = other; }
-  void invoke(DisplayContext &context) {
-    fn();
-    bprocessed = true;
-  }
-  CLEAR_FUNCTION fn = {};
-};
-
-
 using antialias = class antialias : public DisplayUnit {
 public:
-  antialias(alias_t _antialias)
-      : setting(static_cast<cairo_antialias_t>(_antialias)) {}
+  antialias(alias_t _antialias) : DisplayUnit(_antialias) {}
 
   void invoke(DisplayContext &context) {
-    cairo_set_antialias(context.cr, setting);
+    if (std::holds_alternative<alias_t>(_data)) {
+      auto opt = std::get<alias_t>(_data);
+      cairo_set_antialias(context.cr, static_cast<cairo_antialias_t>(opt));
+    }
     bprocessed = true;
   }
-
-  cairo_antialias_t setting;
-};
+}; // namespace uxdevice
 
 #define PAINT_OBJ(X_NAME)                                                      \
   using X_NAME = class X_NAME : public DisplayUnit, public Paint {             \
@@ -197,158 +240,263 @@ public:
   source_default() {}
 };
 
-using text_outline_none =  class text_outline_none : public DisplayUnit {
+using text_outline_none = class text_outline_none : public DisplayUnit {
 public:
   text_outline_none() {}
+  void invoke(DisplayContext &context) {
+    context.currentUnits._text_outline.reset();
+  }
 };
 
-using text_fill_none  = class text_fill_none : public DisplayUnit {
+using text_fill_none = class text_fill_none : public DisplayUnit {
 public:
   text_fill_none() {}
+  void invoke(DisplayContext &context) {
+    context.currentUnits._text_fill.reset();
+  }
 };
 
-using text_shadow_none  = class text_shadow_none : public DisplayUnit {
+using text_shadow_none = class text_shadow_none : public DisplayUnit {
 public:
   text_shadow_none() {}
+  void invoke(DisplayContext &context) {
+    context.currentUnits._text_shadow.reset();
+  }
 };
 
-using text_alignment = class text_alignment : public DisplayUnit  {
+using text_alignment = class text_alignment : public DisplayUnit {
 public:
-  enum setting {
-    left = PangoAlignment::PANGO_ALIGN_LEFT,
-    center = PangoAlignment::PANGO_ALIGN_CENTER,
-    right = PangoAlignment::PANGO_ALIGN_RIGHT,
-    justified = 4
-  };
-  setting _setting = setting::left;
-  text_alignment(setting opt) : _setting(opt) {}
+  text_alignment(alignment_t opt) : DisplayUnit(opt) {}
   void emit(PangoLayout *layout) {
-    // only change setting if changed, this saves on unnecessary
-    // layout context rendering internal to pango
-    if (_setting == setting::justified && !pango_layout_get_justify(layout)) {
-      pango_layout_set_justify(layout, true);
-    } else if (static_cast<setting>(pango_layout_get_alignment(layout)) !=
-               _setting) {
-      pango_layout_set_justify(layout, false);
-      pango_layout_set_alignment(layout, static_cast<PangoAlignment>(_setting));
+    if (std::holds_alternative<alignment_t>(_data)) {
+      auto opt = std::get<alignment_t>(_data);
+
+      // only change setting if changed, this saves on unnecessary
+      // layout context rendering internal to pango
+      if (opt == alignment_t::justified && !pango_layout_get_justify(layout)) {
+        pango_layout_set_justify(layout, true);
+      } else if (static_cast<alignment_t>(pango_layout_get_alignment(layout)) !=
+                 opt) {
+        pango_layout_set_justify(layout, false);
+        pango_layout_set_alignment(layout, static_cast<PangoAlignment>(opt));
+      }
     }
   }
 };
 using coordinates = class coordinates : public DisplayUnit {
 public:
-  coordinates(double _x, double _y) : x(_x), y(_y) {}
+  coordinates() {}
+  coordinates(double _x, double _y) : DisplayUnit({_x, _y}) {}
   coordinates(double _x, double _y, double _w, double _h)
-      : x(_x), y(_y), w(_w), h(_h) {}
-  double x = 0, y = 0, w = 0, h = 0;
+      : DisplayUnit({_x, _y, _w, _h}) {}
+  coordinates(const coordinates &other) { *this = other; }
+  coordinates &operator=(const coordinates &other) {
+    _data = other._data;
+    return *this;
+  }
+  double &x(void) {
+    double *dret = nullptr;
+    if (std::holds_alternative<std::vector<double>>(_data)) {
+      auto &val = std::get<std::vector<double>>(_data);
+      dret = &val[0];
+    }
+    return *dret;
+  }
+  void x(const double &dval) {
+    if (std::holds_alternative<std::vector<double>>(_data)) {
+      auto &val = std::get<std::vector<double>>(_data);
+      val[0] = dval;
+    }
+  }
+  double &y(void) {
+    double *dret = nullptr;
+    if (std::holds_alternative<std::vector<double>>(_data)) {
+      auto &val = std::get<std::vector<double>>(_data);
+      dret = &val[1];
+    }
+    return *dret;
+  }
+  void y(const double &dval) {
+    if (std::holds_alternative<std::vector<double>>(_data)) {
+      auto &val = std::get<std::vector<double>>(_data);
+      val[1] = dval;
+    }
+  }
+  double &w(void) {
+    double *dret = nullptr;
+    if (std::holds_alternative<std::vector<double>>(_data)) {
+      auto &val = std::get<std::vector<double>>(_data);
+      dret = &val[2];
+    }
+    return *dret;
+  }
+  void w(const double &dval) {
+    if (std::holds_alternative<std::vector<double>>(_data)) {
+      auto &val = std::get<std::vector<double>>(_data);
+      val[2] = dval;
+    }
+  }
+  double &h(void) {
+    double *dret = nullptr;
+    if (std::holds_alternative<std::vector<double>>(_data)) {
+      auto &val = std::get<std::vector<double>>(_data);
+      dret = &val[3];
+    }
+    return *dret;
+  }
+  void h(const double &dval) {
+    if (std::holds_alternative<std::vector<double>>(_data)) {
+      auto &val = std::get<std::vector<double>>(_data);
+      val[3] = dval;
+    }
+  }
 };
-
-using index_by = class index_by : public DisplayUnit {
-public:
-  index_by(const std::string &s) : skey(s) {}
-  index_by(const std::size_t n) : nkey(n) {}
-  std::string skey = "";
-  std::size_t nkey = 0;
-};
-
-#if 0
-std::unordered_map<std::string, std::list<std::reference_wrapper<DisplayUnit>>>
-    mappedString = {};
-std::unordered_map<std::size_t, std::list<std::reference_wrapper<DisplayUnit>>>
-    mappedInteger = {};
-#endif
 
 using line_width = class line_width : public DisplayUnit {
 public:
-  line_width(double lw) : value(lw) {}
+  line_width(double lw) : DisplayUnit(lw) {}
 
   void invoke(DisplayContext &context) {
-    cairo_set_line_width(context.cr,value);
+    if (std::holds_alternative<double>(_data)) {
+      cairo_set_line_width(context.cr, std::get<double>(_data));
+    }
   }
-
-  double value=1.0;
 };
 
 using indent = class indent : public DisplayUnit {
 public:
-  indent(double space);
+  indent(double space) : DisplayUnit(space) {}
+  void emit(PangoLayout *layout) {
+    if (std::holds_alternative<double>(_data)) {
+      auto val = std::get<double>(_data);
+      int pangoUnits = val * PANGO_SCALE;
+      pango_layout_set_indent(layout, pangoUnits);
+    }
+  }
 };
 
-using ellipse = class ellipse : public DisplayUnit {
+using ellipsize = class ellipsize : public DisplayUnit {
 public:
-  ellipse(ellipsize_t e);
+  ellipsize(ellipsize_t e) : DisplayUnit(e){};
+  void emit(PangoLayout *layout) {
+    if (std::holds_alternative<ellipsize_t>(_data)) {
+      auto val = std::get<ellipsize_t>(_data);
+      pango_layout_set_ellipsize(layout, static_cast<PangoEllipsizeMode>(val));
+    }
+  }
 };
 
 using line_space = class line_space : public DisplayUnit {
 public:
-  line_space(double dSpace);
+  line_space(double dSpace) : DisplayUnit(dSpace){};
+  void emit(PangoLayout *layout) {
+    if (std::holds_alternative<double>(_data)) {
+      auto val = std::get<double>(_data);
+      pango_layout_set_line_spacing(layout, static_cast<float>(val));
+    }
+  }
 };
 
 using tab_stops = class tab_stops : public DisplayUnit {
 public:
-  tab_stops(const std::vector<double> &tabs);
+  tab_stops(const std::vector<double> &tabs) : DisplayUnit(tabs){};
+  void emit(PangoLayout *layout) {
+    if (std::holds_alternative<std::vector<double>>(_data)) {
+      auto &val = std::get<std::vector<double>>(_data);
+      PangoTabArray *tabs = pango_tab_array_new(val.size(), true);
+
+      int idx = 0;
+      for (auto &tabdef : val) {
+        int loc = static_cast<int>(tabdef);
+        pango_tab_array_set_tab(tabs, idx, PANGO_TAB_LEFT, loc);
+      }
+      pango_layout_set_tabs(layout, tabs);
+      pango_tab_array_free(tabs);
+    }
+  }
 };
 
 using text_font = class text_font : public DisplayUnit {
 public:
-  text_font(const std::string &s) : description(s) {}
+  text_font(const std::string &s) : DisplayUnit(s) {}
   ~text_font() {
     if (fontDescription)
       pango_font_description_free(fontDescription);
   }
   text_font &operator=(const text_font &other) = delete;
-  text_font(const text_font &other) { description = other.description; }
-  std::string description ={};
+  text_font(const text_font &other) { _data = other._data; }
+
   std::atomic<PangoFontDescription *> fontDescription = nullptr;
   void invoke(DisplayContext &context) {
     if (!fontDescription) {
-      fontDescription = pango_font_description_from_string(description.data());
-      if (!fontDescription) {
-        std::string s = "Font could not be loaded from description. ( ";
-        s += description + ")";
-        context.error_state(__func__, __LINE__, __FILE__, std::string_view(s));
+      if (std::holds_alternative<std::string>(_data)) {
+        auto &val = std::get<std::string>(_data);
+        fontDescription = pango_font_description_from_string(val.data());
+        if (!fontDescription) {
+          std::string s = "Font could not be loaded from description. ( ";
+          s += val + ")";
+          context.error_state(__func__, __LINE__, __FILE__,
+                              std::string_view(s));
+        }
       }
     }
   }
 };
 
-
 using line_cap = class line_cap : public DisplayUnit {
 public:
-  line_cap(const line_cap_t _val) : data(_val) {}
-  ~line_cap() { }
-  line_cap_t data =line_cap_t::butt;
+  line_cap(const line_cap_t _val) : DisplayUnit(_val) {}
+  ~line_cap() {}
+  void invoke(DisplayContext &context) {
+    if (std::holds_alternative<line_cap_t>(_data)) {
+      auto &val = std::get<line_cap_t>(_data);
+      cairo_set_line_cap(context.cr, static_cast<cairo_line_cap_t>(val));
+    }
+  }
 };
 
 using line_join = class line_join : public DisplayUnit {
 public:
-  line_join(const line_join_t _val) : data(_val) {}
-  ~line_join() {
+  line_join(const line_join_t _val) : DisplayUnit(_val) {}
+  ~line_join() {}
+  void invoke(DisplayContext &context) {
+    if (std::holds_alternative<line_join_t>(_data)) {
+      auto &val = std::get<line_join_t>(_data);
+      cairo_set_line_join(context.cr, static_cast<cairo_line_join_t>(val));
+    }
   }
-  line_join_t data =line_join_t::miter;
 };
 
 using miter_limit = class miter_limit : public DisplayUnit {
 public:
-  miter_limit(const double _val) : data(_val) {}
-  ~miter_limit() {
+  miter_limit(const double _val) : DisplayUnit(_val) {}
+  ~miter_limit() {}
+  void invoke(DisplayContext &context) {
+    if (std::holds_alternative<double>(_data)) {
+      auto &val = std::get<double>(_data);
+      cairo_set_miter_limit(context.cr, val);
+    }
   }
-  double data=1.0;
 };
 
 using line_dashes = class line_dashes : public DisplayUnit {
 public:
-  line_dashes(const std::vector<double> &_val, double _offset=0) : data(_val), offset(_offset)  {}
-  ~line_dashes() {
+  line_dashes(const std::vector<double> &_val, double _offset = 0)
+      : DisplayUnit(_val, _offset) {}
+  ~line_dashes() {}
+  void invoke(DisplayContext &context) {
+    if (std::holds_alternative<std::vector<double>>(_data)) {
+      auto &_val = std::get<std::vector<double>>(_data);
+      cairo_set_dash(context.cr, _val.data(), _val.size(), _offset);
+    }
   }
-  std::vector<double> data={};
-  double offset={};
 };
 
 class STRING : public DisplayUnit {
 public:
-  STRING(const std::string &s) : data(s) {}
+  STRING(const std::string &s) : DisplayUnit(s) {}
+  STRING(const std::shared_ptr<std::string> &s) : DisplayUnit(s) {}
   ~STRING() {}
-  std::string data;
   void invoke(DisplayContext &context) { bprocessed = true; }
 };
 
@@ -382,7 +530,6 @@ private:
   std::shared_ptr<text_alignment> _text_alignment = nullptr;
   std::shared_ptr<coordinates> _coordinates = nullptr;
   std::shared_ptr<STRING> _text = nullptr;
-
 };
 
 class image : public DrawingOutput {
@@ -393,7 +540,7 @@ public:
     _image = cairo_surface_reference(other._image);
     _data = other._data;
     bIsSVG = other.bIsSVG;
-    if(_image)
+    if (_image)
       bLoaded = true;
     _coordinates = other._coordinates;
     return *this;
@@ -449,4 +596,333 @@ public:
 
   CAIRO_OPTION fnOption;
 };
+
+using tollerance = class tollerance : public DisplayUnit {
+public:
+  tollerance(const double _t) : DisplayUnit(_t) {}
+  void invoke(DisplayContext &context) {
+    bprocessed = true;
+    if (std::holds_alternative<double>(_data)) {
+      auto &_val = std::get<double>(_data);
+      cairo_set_tolerance(context.cr, _val);
+    }
+  };
+
+  // draw and paint objects
+
+  using op = class op : public DisplayUnit {
+  public:
+    op(op_t _op) : DisplayUnit(_op) {}
+    void invoke(DisplayContext &context) {
+      bprocessed = true;
+      if (std::holds_alternative<op_t>(_data)) {
+        auto &_val = std::get<op_t>(_data);
+        cairo_set_operator(context.cr,
+                           static_cast<cairo_operator_t>(_val));
+      }
+    }
+  };
+
+  using close_path = class close_path : public DrawingOutput {
+  public:
+    void invoke(DisplayContext &context) {
+      bprocessed = true;
+      cairo_close_path(context.cr);
+    }
+  };
+
+  using arc = class arc : public DrawingOutput {
+  public:
+    arc(double xc, double yc, double radius, double angle1, double angle2)
+        : DrawingOutput(xc, yc, radius, angle1, angle2) {}
+
+    void invoke(DisplayContext &context) {
+      bprocessed = true;
+      if (std::holds_alternative<std::vector<double>>(_data)) {
+        auto &_val = std::get<std::vector<double>>(_data);
+        cairo_arc(context.cr, _val[0], _val[1], _val[2], _val[3], _val[4]);
+      }
+    }
+  };
+
+  using negative_arc = class negative_arc : public DrawingOutput {
+  public:
+    negative_arc(double xc, double yc, double radius, double angle1,
+                 double angle2)
+        : DrawingOutput(xc, yc, radius, angle1, angle2) {}
+
+    void invoke(DisplayContext &context) {
+      bprocessed = true;
+      if (std::holds_alternative<std::vector<double>>(_data)) {
+        auto &_val = std::get<std::vector<double>>(_data);
+        cairo_arc_negative(context.cr, _val[0], _val[1], _val[2], _val[3],
+                           _val[4]);
+      }
+    }
+  };
+
+  using curve = class curve : public DrawingOutput {
+  public:
+    curve(double x1, double y1, double x2, double y2, double x3, double y3)
+        : DrawingOutput(x1, y1, x2, y2, x3, y3) {}
+    void invoke(DisplayContext &context) {
+      bprocessed = true;
+      if (std::holds_alternative<std::vector<double>>(_data)) {
+        auto &_val = std::get<std::vector<double>>(_data);
+
+        if (context.bRelative)
+          cairo_rel_curve_to(context.cr, _val[0], _val[1], _val[2], _val[3],
+                             _val[4], _val[5]);
+        else
+          cairo_curve_to(context.cr, _val[0], _val[1], _val[2], _val[3],
+                         _val[4], _val[5]);
+      }
+    }
+  };
+
+  using line = class line : public DrawingOutput {
+  public:
+    line(double x, double y) : DrawingOutput(x, y) {}
+    void invoke(DisplayContext &context) {
+      bprocessed = true;
+      if (std::holds_alternative<std::vector<double>>(_data)) {
+        auto &_val = std::get<std::vector<double>>(_data);
+        if (context.bRelative)
+          cairo_rel_line_to(context.cr, _val[0], _val[1]);
+        else
+          cairo_line_to(context.cr, _val[0], _val[1]);
+      }
+    }
+  };
+  using hline = class hline : public DrawingOutput {
+  public:
+    hline(double x) : DrawingOutput(x) {}
+    void invoke(DisplayContext &context) {
+      bprocessed = true;
+      if (std::holds_alternative<double>(_data)) {
+        auto &_val = std::get<double>(_data);
+
+        if (cairo_has_current_point(context.cr)) {
+          double curx = 0.0, cury = 0.0;
+          cairo_get_current_point(context.cr, &curx, &cury);
+
+          if (context.bRelative)
+            cairo_rel_line_to(context.cr, _val, cury);
+          else
+            cairo_line_to(context.cr, _val, cury);
+        }
+      }
+    }
+  };
+  using vline = class vline : public DrawingOutput {
+  public:
+    vline(double y) : DrawingOutput(y) {}
+    void invoke(DisplayContext &context) {
+      bprocessed = true;
+      if (std::holds_alternative<double>(_data)) {
+        auto &_val = std::get<double>(_data);
+
+        if (cairo_has_current_point(context.cr)) {
+          double curx = 0.0, cury = 0.0;
+          cairo_get_current_point(context.cr, &curx, &cury);
+
+          if (context.bRelative)
+            cairo_rel_line_to(context.cr, curx, _val);
+          else
+            cairo_line_to(context.cr, curx, _val);
+        }
+      }
+    }
+  };
+  using move_to = class move_to : public DisplayUnit {
+  public:
+    move_to(double x, double y) : DisplayUnit(x, y) {}
+    void invoke(DisplayContext &context) {
+      bprocessed = true;
+      if (std::holds_alternative<std::vector<double>>(_data)) {
+        auto &_val = std::get<std::vector<double>>(_data);
+        if (context.bRelative)
+          cairo_rel_move_to(context.cr, _val[0], _val[1]);
+        else
+          cairo_move_to(context.cr, _val[0], _val[1]);
+      }
+    }
+  };
+  using rectangle = class rectangle : public DisplayUnit {
+  public:
+    rectangle(double x, double y, double width, double height)
+        : DisplayUnit(x, y, width, height) {}
+    void invoke(DisplayContext &context) {
+      bprocessed = true;
+      if (std::holds_alternative<std::vector<double>>(_data)) {
+        auto &_val = std::get<std::vector<double>>(_data);
+        cairo_rectangle(context.cr, _val[0], _val[1], _val[2], _val[3]);
+      }
+    }
+  };
+
+  using stroke_path_preserve = class stroke_path_preserve : public DisplayUnit {
+  public:
+    stroke_path_preserve(Paint &p) : DisplayUnit(p) {}
+    void invoke(DisplayContext &context) {
+      bprocessed = true;
+      if (std::holds_alternative<Paint>(_data)) {
+        auto &_val = std::get<Paint>(_data);
+        _val.emit(context.cr);
+        cairo_stroke_preserve(context.cr);
+      }
+    }
+  };
+  using stroke_path = class stroke_path : public DisplayUnit {
+  public:
+    stroke_path(Paint &p) : DisplayUnit(p) {}
+    void invoke(DisplayContext &context) {
+      bprocessed = true;
+      if (std::holds_alternative<Paint>(_data)) {
+        auto &_val = std::get<Paint>(_data);
+        _val.emit(context.cr);
+        cairo_stroke(context.cr);
+      }
+    }
+  };
+  using fill_path_preserve = class fill_path_preserve : public DisplayUnit {
+  public:
+    fill_path_preserve(Paint &p) : DisplayUnit(p) {}
+    void invoke(DisplayContext &context) {
+      bprocessed = true;
+      if (std::holds_alternative<Paint>(_data)) {
+        auto &_val = std::get<Paint>(_data);
+        _val.emit(context.cr);
+        cairo_fill_preserve(context.cr);
+      }
+    }
+  };
+  using fill_path = class fill_path : public DisplayUnit {
+  public:
+    fill_path(Paint &p) : DisplayUnit(p) {}
+    void invoke(DisplayContext &context) {
+      bprocessed = true;
+      if (std::holds_alternative<Paint>(_data)) {
+        auto &_val = std::get<Paint>(_data);
+        _val.emit(context.cr);
+        cairo_fill(context.cr);
+      }
+    }
+  };
+  using mask = class mask : public DisplayUnit {
+  public:
+    mask(Paint &p) : DisplayUnit(p) {}
+    mask(Paint &p, double x, double y) : DisplayUnit(p, x, y) {}
+  };
+
+  using paint = class paint : public DisplayUnit {
+  public:
+    paint(double alpha = 1.0) : DisplayUnit(alpha) {}
+    void invoke(DisplayContext &context) {
+      bprocessed = true;
+      if (std::holds_alternative<double>(_data)) {
+        auto &_val = std::get<double>(_data);
+        if (_val == 1.0) {
+          cairo_paint(context.cr);
+        } else {
+          cairo_paint_with_alpha(context.cr, _val);
+        }
+      }
+    }
+  };
+
+  using relative = class relative : public DisplayUnit {};
+  using absolute = class absolute : public DisplayUnit {};
+
+  // listeners are named from this base class.
+  using listener = class listener : public DisplayUnit {
+  public:
+    listener(const eventType &_etype, const eventHandler &_evtDispatcher)
+        : evtDispatcher(_evtDispatcher) {}
+    eventType etype = {};
+    eventHandler evtDispatcher = {};
+  };
+
+  // Named event listeners shorten the code a little and make the code more
+  // readable. pasting macros would be nice, however, its not the c++ standard
+  using listen_paint = class listen_paint : public listener {
+  public:
+    listen_paint(const eventHandler &_evtDispatcher)
+        : listener(eventType::paint, _evtDispatcher) {}
+  };
+  using listen_focus = class listen_focus : public listener {
+  public:
+    listen_focus(const eventHandler &_evtDispatcher)
+        : listener(eventType::focus, _evtDispatcher) {}
+  };
+  using listen_blur = class listen_blur : public listener {
+  public:
+    listen_blur(const eventHandler &_evtDispatcher)
+        : listener(eventType::blur, _evtDispatcher) {}
+  };
+  using listen_resize = class listen_resize : public listener {
+  public:
+    listen_resize(const eventHandler &_evtDispatcher)
+        : listener(eventType::resize, _evtDispatcher) {}
+  };
+  using listen_keydown = class listen_keydown : public listener {
+  public:
+    listen_keydown(const eventHandler &_evtDispatcher)
+        : listener(eventType::keydown, _evtDispatcher) {}
+  };
+  using listen_keyup = class listen_keyup : public listener {
+  public:
+    listen_keyup(const eventHandler &_evtDispatcher)
+        : listener(eventType::keyup, _evtDispatcher) {}
+  };
+  using listen_keypress = class listen_keypress : public listener {
+  public:
+    listen_keypress(const eventHandler &_evtDispatcher)
+        : listener(eventType::keypress, _evtDispatcher) {}
+  };
+  using listen_mouseenter = class listen_mouseenter : public listener {
+  public:
+    listen_mouseenter(const eventHandler &_evtDispatcher)
+        : listener(eventType::mouseenter, _evtDispatcher) {}
+  };
+  using listen_mousemove = class listen_mousemove : public listener {
+  public:
+    listen_mousemove(const eventHandler &_evtDispatcher)
+        : listener(eventType::mousemove, _evtDispatcher) {}
+  };
+  using listen_mousedown = class listen_mousedown : public listener {
+  public:
+    listen_mousedown(const eventHandler &_evtDispatcher)
+        : listener(eventType::mousedown, _evtDispatcher) {}
+  };
+  using listen_mouseup = class listen_mouseup : public listener {
+  public:
+    listen_mouseup(const eventHandler &_evtDispatcher)
+        : listener(eventType::mouseup, _evtDispatcher) {}
+  };
+  using listen_click = class listen_click : public listener {
+  public:
+    listen_click(const eventHandler &_evtDispatcher)
+        : listener(eventType::click, _evtDispatcher) {}
+  };
+  using listen_dblclick = class listen_dblclick : public listener {
+  public:
+    listen_dblclick(const eventHandler &_evtDispatcher)
+        : listener(eventType::dblclick, _evtDispatcher) {}
+  };
+  using listen_contextmenu = class listen_contextmenu : public listener {
+  public:
+    listen_contextmenu(const eventHandler &_evtDispatcher)
+        : listener(eventType::contextmenu, _evtDispatcher) {}
+  };
+  using listen_wheel = class listen_wheel : public listener {
+  public:
+    listen_wheel(const eventHandler &_evtDispatcher)
+        : listener(eventType::wheel, _evtDispatcher) {}
+  };
+  using listen_mouseleave = class listen_mouseleave : public listener {
+  public:
+    listen_mouseleave(const eventHandler &_evtDispatcher)
+        : listener(eventType::mouseleave, _evtDispatcher) {}
+  };
 } // namespace uxdevice

@@ -394,8 +394,8 @@ void uxdevice::DisplayContext::state_surface(int x, int y, int w, int h) {
 }
 /**
 \internal
-\brief The routine notifies the condition vraiable that work
-has been requested and should immedialy being to render.
+\brief The routine notifies the condition variable that work
+has been requested and should immediately being to render.
 Having this as a separate function provides the ability
 to add work without rendering occurring. However, message
 queue calls this when a resize occurs.
