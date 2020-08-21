@@ -556,7 +556,7 @@ void uxdevice::SurfaceArea::notify_complete(void) {
 }
 
 /**
-\brief callde by each of the stream input functions to index the item if a key
+\brief called by each of the stream input functions to index the item if a key
 exists. A key can be given as a string or an integer. The [] operator is used to
 access the data.
 */
@@ -612,6 +612,15 @@ uxdevice::SurfaceArea::stream_input(const std::stringstream &_val) {
   return *this;
 }
 
+/*
+  The macro provides a creation of necessary input stream routines that
+  maintains the display lists. These routines are private within the class
+  and are activated by the << operator. These are the underlying operations.
+
+  There are three distinct macros STREAM_DL,STREAM_UNIT and STREAM_DRAWABLE.
+  These separate macros provide functionality for attributes, properties, or
+  objects that draw.
+*/
 #define STREAM_DL(CLASS_NAME)                                                  \
   SurfaceArea &uxdevice::SurfaceArea::stream_input(const CLASS_NAME &_val) {   \
     stream_input(make_shared<CLASS_NAME>(_val));                               \
@@ -662,65 +671,71 @@ uxdevice::SurfaceArea::stream_input(const std::stringstream &_val) {
     return *this;                                                              \
   }
 
-STREAM_DL_UNIT(antialias);
-STREAM_DL_UNIT(source);
-STREAM_DL_UNIT(text_outline);
-STREAM_DL_UNIT(text_fill);
-STREAM_DL_UNIT(text_shadow);
-STREAM_DL_UNIT(text_outline_none);
-STREAM_DL_UNIT(text_fill_none);
-STREAM_DL_UNIT(text_shadow_none);
-STREAM_DL_UNIT(text_alignment);
+STREAM_DL_UNIT(antialias)
+STREAM_DL_UNIT(source)
+STREAM_DL_UNIT(text_outline)
+STREAM_DL_UNIT(text_fill)
+STREAM_DL_UNIT(text_shadow)
+STREAM_DL_UNIT(text_outline_none)
+STREAM_DL_UNIT(text_fill_none)
+STREAM_DL_UNIT(text_shadow_none)
+STREAM_DL_UNIT(text_alignment)
 // text alignment can also be set by the enumeration values, it creates an
 // object but the caller only specifies the value alone.
 SurfaceArea &uxdevice::SurfaceArea::stream_input(const alignment_t &_val) {
   stream_input(make_shared<text_alignment>(_val));
   return *this;
 }
-STREAM_DL_UNIT(coordinates);
-STREAM_DL_UNIT(line_width);
+STREAM_DL_UNIT(coordinates)
+STREAM_DL_UNIT(line_width)
 
-STREAM_DL_UNIT(indent);
-STREAM_DL_UNIT(ellipsize);
-STREAM_DL_UNIT(line_space);
-STREAM_DL_UNIT(tab_stops);
-STREAM_DL_UNIT(text_font);
-STREAM_DL_UNIT(line_cap);
-STREAM_DL_UNIT(line_join);
-STREAM_DL_UNIT(miter_limit);
-STREAM_DL_UNIT(line_dashes);
-STREAM_DL_DRAWABLE(image);
+STREAM_DL_UNIT(indent)
+STREAM_DL_UNIT(ellipsize)
+STREAM_DL_UNIT(line_space)
+STREAM_DL_UNIT(tab_stops)
+STREAM_DL_UNIT(text_font)
+STREAM_DL_UNIT(line_cap)
+STREAM_DL_UNIT(line_join)
+STREAM_DL_UNIT(miter_limit)
+STREAM_DL_UNIT(line_dashes)
+STREAM_DL_DRAWABLE(image)
 
-STREAM_DL(listener);
+STREAM_DL(listener)
 
-STREAM_DL(listen_paint);
-STREAM_DL(listen_focus);
-STREAM_DL(listen_blur);
-STREAM_DL(listen_resize);
-STREAM_DL(listen_keydown);
-STREAM_DL(listen_keyup);
-STREAM_DL(listen_keypress);
-STREAM_DL(listen_mouseenter);
-STREAM_DL(listen_mousemove);
-STREAM_DL(listen_mousedown);
-STREAM_DL(listen_mouseup);
-STREAM_DL(listen_click);
-STREAM_DL(listen_dblclick);
-STREAM_DL(listen_contextmenu);
-STREAM_DL(listen_wheel);
-STREAM_DL(listen_mouseleave);
+STREAM_DL(listen_paint)
+STREAM_DL(listen_focus)
+STREAM_DL(listen_blur)
+STREAM_DL(listen_resize)
+STREAM_DL(listen_keydown)
+STREAM_DL(listen_keyup)
+STREAM_DL(listen_keypress)
+STREAM_DL(listen_mouseenter)
+STREAM_DL(listen_mousemove)
+STREAM_DL(listen_mousedown)
+STREAM_DL(listen_mouseup)
+STREAM_DL(listen_click)
+STREAM_DL(listen_dblclick)
+STREAM_DL(listen_contextmenu)
+STREAM_DL(listen_wheel)
+STREAM_DL(listen_mouseleave)
 
-STREAM_DL(tollerance);
-STREAM_DL(op);
+STREAM_DL(tollerance)
+STREAM_DL(op)
 
-STREAM_DL(arc);
-STREAM_DL(negative_arc);
+STREAM_DL(arc)
+STREAM_DL(negative_arc)
 
-STREAM_DL(curve);
-STREAM_DL(line);
-STREAM_DL(hline);
-STREAM_DL(vline);
-STREAM_DL(rectangle);
+STREAM_DL(curve)
+STREAM_DL(line)
+STREAM_DL(hline)
+STREAM_DL(vline)
+STREAM_DL(rectangle)
+STREAM_DL(stroke_path)
+STREAM_DL(stroke_path_preserve)
+STREAM_DL(fill_path)
+STREAM_DL(fill_path_preserve)
+STREAM_DL(close_path)
+STREAM_DL(move_to)
 
 SurfaceArea &uxdevice::SurfaceArea::surface_brush(Paint &b) {
   context.surface_brush(b);

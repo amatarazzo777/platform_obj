@@ -142,7 +142,7 @@ bool uxdevice::TEXT_RENDER::set_layout_options(cairo_t *cr) {
 
   // set the width and height of the layout.
   if (pango_layout_get_width(_layout) != _coordinates->w() * PANGO_SCALE)
-    pango_layout_set_width(_layout, _coordinates->w * PANGO_SCALE);
+    pango_layout_set_width(_layout, _coordinates->w() * PANGO_SCALE);
 
   if (pango_layout_get_height(_layout) != _coordinates->h() * PANGO_SCALE)
     pango_layout_set_height(_layout, _coordinates->h() * PANGO_SCALE);
@@ -461,9 +461,9 @@ void uxdevice::image::invoke(DisplayContext &context) {
   }
 
   // set the ink area.
-  const coordinates &a = *_coordinates;
+  coordinates &a = *_coordinates;
 
-  auto fnthread = [=, &context]() {
+  auto fnthread = [=, &context, &a]() {
     _image = read_image(_data, _coordinates->w(), _coordinates->h());
 
     if (_image) {

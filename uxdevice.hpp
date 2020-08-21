@@ -92,6 +92,26 @@ public:
   std::unordered_map<std::size_t, std::shared_ptr<DisplayUnit>> mappedInteger =
       {};
 
+  /* the macro creates the stream interface for both constant references
+  and shared pointers as well as establishes the prototype for the insertion
+  function
+  */
+
+#define STREAM_INPUT(CLASS_NAME)                                               \
+public:                                                                        \
+  SurfaceArea &operator<<(const CLASS_NAME &data) {                            \
+    stream_input(data);                                                        \
+    return *this;                                                              \
+  }                                                                            \
+  SurfaceArea &operator<<(const std::shared_ptr<CLASS_NAME> data) {            \
+    stream_input(data);                                                        \
+    return *this;                                                              \
+  }                                                                            \
+                                                                               \
+private:                                                                       \
+  SurfaceArea &stream_input(const CLASS_NAME &_val);                           \
+  SurfaceArea &stream_input(const std::shared_ptr<CLASS_NAME> _val);
+
   template <typename T> SurfaceArea &operator<<(const T &data) {
     std::ostringstream s;
     s << data;
@@ -99,353 +119,71 @@ public:
     stream_input(sData);
     return *this;
   }
-  SurfaceArea &operator<<(const std::string &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<std::string> data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const char *data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const source &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<source> data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const text_outline &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<text_outline> data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const text_fill &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<text_fill> data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const text_shadow &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<text_shadow> data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const text_outline_none &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<text_outline_none> data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const text_fill_none &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<text_fill_none> data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const text_shadow_none &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<text_shadow_none> data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const text_alignment &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const alignment_t &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<text_alignment> data) {
-    stream_input(data);
-    return *this;
-  }
 
-  SurfaceArea &operator<<(const coordinates &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<coordinates> data) {
-    stream_input(data);
-    return *this;
-  }
+  STREAM_INPUT(std::string)
+  STREAM_INPUT(std::stringstream)
+  STREAM_INPUT(char *)
+  STREAM_INPUT(antialias)
+  STREAM_INPUT(source)
+  STREAM_INPUT(text_outline)
+  STREAM_INPUT(text_fill)
+  STREAM_INPUT(text_shadow)
+  STREAM_INPUT(text_outline_none)
+  STREAM_INPUT(text_fill_none)
+  STREAM_INPUT(text_shadow_none)
+  STREAM_INPUT(text_alignment)
+  STREAM_INPUT(alignment_t)
 
-  SurfaceArea &operator<<(const indent &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<indent> data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const ellipse &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<ellipse> data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const line_space &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<line_space> data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const tab_stops &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<tab_stops> data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const text_font &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<text_font> data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const line_width &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<line_width> data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const stroke_path &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<stroke_path> data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const fill_path &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<fill_path> data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const line_cap &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<line_cap> data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const line_join &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<line_join> data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const miter_limit &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<miter_limit> data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const line_dashes &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<line_dashes> data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const image &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<image> data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const listener &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<listener> data) {
-    stream_input(data);
-    return *this;
-  }
+  STREAM_INPUT(coordinates)
+  STREAM_INPUT(indent)
+  STREAM_INPUT(ellipsize)
+  STREAM_INPUT(line_space)
+  STREAM_INPUT(tab_stops)
+  STREAM_INPUT(text_font)
+  STREAM_INPUT(line_width)
+  STREAM_INPUT(line_cap)
+  STREAM_INPUT(line_join)
+  STREAM_INPUT(miter_limit)
+  STREAM_INPUT(line_dashes)
+  STREAM_INPUT(image)
+  STREAM_INPUT(stroke_path)
+  STREAM_INPUT(fill_path)
+  STREAM_INPUT(stroke_path_preserve)
+  STREAM_INPUT(fill_path_preserve)
+  STREAM_INPUT(close_path)
 
-  SurfaceArea &operator<<(const listen_paint &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<listen_paint> data) {
-    stream_input(data);
-    return *this;
-  }
+  STREAM_INPUT(arc)
+  STREAM_INPUT(negative_arc)
+  STREAM_INPUT(curve)
+  STREAM_INPUT(line)
+  STREAM_INPUT(hline)
+  STREAM_INPUT(vline)
+  STREAM_INPUT(move_to)
+  STREAM_INPUT(rectangle)
+  STREAM_INPUT(tollerance)
+  STREAM_INPUT(op)
+  STREAM_INPUT(absolute)
+  STREAM_INPUT(relative)
 
-  SurfaceArea &operator<<(const listen_focus &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<listen_focus> data) {
-    stream_input(data);
-    return *this;
-  }
+  STREAM_INPUT(listener)
+  STREAM_INPUT(listen_paint)
+  STREAM_INPUT(listen_focus)
+  STREAM_INPUT(listen_blur)
+  STREAM_INPUT(listen_resize)
+  STREAM_INPUT(listen_keydown)
+  STREAM_INPUT(listen_keyup)
+  STREAM_INPUT(listen_keypress)
+  STREAM_INPUT(listen_mouseenter)
+  STREAM_INPUT(listen_mousemove)
+  STREAM_INPUT(listen_mousedown)
+  STREAM_INPUT(listen_mouseup)
+  STREAM_INPUT(listen_click)
+  STREAM_INPUT(listen_dblclick)
+  STREAM_INPUT(listen_contextmenu)
+  STREAM_INPUT(listen_wheel)
+  STREAM_INPUT(listen_mouseleave)
 
-  SurfaceArea &operator<<(const listen_blur &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<listen_blur> data) {
-    stream_input(data);
-    return *this;
-  }
-
-  SurfaceArea &operator<<(const listen_resize &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<listen_resize> data) {
-    stream_input(data);
-    return *this;
-  }
-
-  SurfaceArea &operator<<(const listen_keydown &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<listen_keydown> data) {
-    stream_input(data);
-    return *this;
-  }
-
-  SurfaceArea &operator<<(const listen_keyup &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<listen_keyup> data) {
-    stream_input(data);
-    return *this;
-  }
-
-  SurfaceArea &operator<<(const listen_keypress &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<listen_keypress> data) {
-    stream_input(data);
-    return *this;
-  }
-
-  SurfaceArea &operator<<(const listen_mouseenter &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<listen_mouseenter> data) {
-    stream_input(data);
-    return *this;
-  }
-
-  SurfaceArea &operator<<(const listen_mousemove &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<listen_mousemove> data) {
-    stream_input(data);
-    return *this;
-  }
-
-  SurfaceArea &operator<<(const listen_mousedown &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<listen_mousedown> data) {
-    stream_input(data);
-    return *this;
-  }
-
-  SurfaceArea &operator<<(const listen_mouseup &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<listen_mouseup> data) {
-    stream_input(data);
-    return *this;
-  }
-
-  SurfaceArea &operator<<(const listen_click &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<listen_click> data) {
-    stream_input(data);
-    return *this;
-  }
-
-  SurfaceArea &operator<<(const listen_dblclick &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<listen_dblclick> data) {
-    stream_input(data);
-    return *this;
-  }
-
-  SurfaceArea &operator<<(const listen_contextmenu &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<listen_contextmenu> data) {
-    stream_input(data);
-    return *this;
-  }
-
-  SurfaceArea &operator<<(const listen_wheel &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<listen_wheel> data) {
-    stream_input(data);
-    return *this;
-  }
-
-  SurfaceArea &operator<<(const listen_mouseleave &data) {
-    stream_input(data);
-    return *this;
-  }
-  SurfaceArea &operator<<(const std::shared_ptr<listen_mouseleave> data) {
-    stream_input(data);
-    return *this;
-  }
-
+public:
   DisplayUnit &operator[](const std::string s) {
     auto n = mappedString.find(s);
     return *n->second;
@@ -508,122 +246,6 @@ private:
   void close_window(void);
   bool bRelative = false;
   void maintain_index(std::shared_ptr<DisplayUnit> obj);
-
-  SurfaceArea &stream_input(const antialias &_val);
-  SurfaceArea &stream_input(const std::string &_val);
-  SurfaceArea &stream_input(const std::shared_ptr<std::string> _val);
-  SurfaceArea &stream_input(const std::stringstream &_val);
-  SurfaceArea &stream_input(const source &_val);
-  SurfaceArea &stream_input(const text_outline &_val);
-  SurfaceArea &stream_input(const text_fill &_val);
-  SurfaceArea &stream_input(const text_shadow &_val);
-  SurfaceArea &stream_input(const text_outline_none &_val);
-  SurfaceArea &stream_input(const text_fill_none &_val);
-  SurfaceArea &stream_input(const text_shadow_none &_val);
-  SurfaceArea &stream_input(const text_alignment &_val);
-  SurfaceArea &stream_input(const alignment_t &_val);
-  SurfaceArea &stream_input(const coordinates &_val);
-  SurfaceArea &stream_input(const index_by &_val);
-  SurfaceArea &stream_input(const line_width &_val);
-  SurfaceArea &stream_input(const indent &_val);
-  SurfaceArea &stream_input(const ellipse &_val);
-  SurfaceArea &stream_input(const line_space &_val);
-  SurfaceArea &stream_input(const tab_stops &_val);
-  SurfaceArea &stream_input(const text_font &_val);
-  SurfaceArea &stream_input(const stroke_path &_val);
-  SurfaceArea &stream_input(const fill_path &_val);
-  SurfaceArea &stream_input(const line_cap &_val);
-  SurfaceArea &stream_input(const line_join &_val);
-  SurfaceArea &stream_input(const miter_limit &_val);
-  SurfaceArea &stream_input(const line_dashes &_val);
-  SurfaceArea &stream_input(const image &_val);
-
-  // event listeners are also processed by the stream input
-  SurfaceArea &stream_input(const listener &_val);
-  SurfaceArea &stream_input(const listen_paint &_val);
-  SurfaceArea &stream_input(const listen_focus &_val);
-  SurfaceArea &stream_input(const listen_blur &_val);
-  SurfaceArea &stream_input(const listen_resize &_val);
-  SurfaceArea &stream_input(const listen_keydown &_val);
-  SurfaceArea &stream_input(const listen_keyup &_val);
-  SurfaceArea &stream_input(const listen_keypress &_val);
-  SurfaceArea &stream_input(const listen_mouseenter &_val);
-  SurfaceArea &stream_input(const listen_mousemove &_val);
-  SurfaceArea &stream_input(const listen_mousedown &_val);
-  SurfaceArea &stream_input(const listen_mouseup &_val);
-  SurfaceArea &stream_input(const listen_click &_val);
-  SurfaceArea &stream_input(const listen_dblclick &_val);
-  SurfaceArea &stream_input(const listen_contextmenu &_val);
-  SurfaceArea &stream_input(const listen_wheel &_val);
-  SurfaceArea &stream_input(const listen_mouseleave &_val);
-
-  SurfaceArea &stream_input(const std::shared_ptr<antialias> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<std::stringstream> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<source> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<text_outline> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<text_fill> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<text_shadow> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<text_outline_none> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<text_fill_none> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<text_shadow_none> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<text_alignment> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<alignment_t> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<coordinates> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<index_by> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<line_width> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<indent> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<ellipse> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<line_space> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<tab_stops> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<text_font> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<stroke_path> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<fill_path> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<line_cap> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<line_join> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<miter_limit> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<line_dashes> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<image> _val);
-
-  SurfaceArea &stream_input(const std::shared_ptr<listener> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<listen_paint> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<listen_focus> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<listen_blur> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<listen_resize> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<listen_keydown> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<listen_keyup> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<listen_keypress> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<listen_mouseenter> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<listen_mousemove> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<listen_mousedown> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<listen_mouseup> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<listen_click> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<listen_dblclick> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<listen_contextmenu> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<listen_wheel> _val);
-  SurfaceArea &stream_input(const std::shared_ptr<listen_mouseleave> _val);
-
-  SurfaceArea &stream_input(const tollerance &_val);
-  SurfaceArea &stream_input(const std::shared_ptr<tollerance> _val);
-  SurfaceArea &stream_input(const op &_val);
-  SurfaceArea &stream_input(const std::shared_ptr<op> _val);
-  SurfaceArea &stream_input(const arc &_val);
-  SurfaceArea &stream_input(const std::shared_ptr<arc> _val);
-  SurfaceArea &stream_input(const negative_arc &_val);
-  SurfaceArea &stream_input(const std::shared_ptr<negative_arc> _val);
-  SurfaceArea &stream_input(const curve &_val);
-  SurfaceArea &stream_input(const std::shared_ptr<curve> _val);
-  SurfaceArea &stream_input(const line &_val);
-  SurfaceArea &stream_input(const std::shared_ptr<line> _val);
-  SurfaceArea &stream_input(const vline &_val);
-  SurfaceArea &stream_input(const std::shared_ptr<vline> _val);
-  SurfaceArea &stream_input(const hline &_val);
-  SurfaceArea &stream_input(const std::shared_ptr<hline> _val);
-  SurfaceArea &stream_input(const move_to &_val);
-  SurfaceArea &stream_input(const std::shared_ptr<move_to> _val);
-  SurfaceArea &stream_input(const relative &_val);
-  SurfaceArea &stream_input(const std::shared_ptr<relative> _val);
-  SurfaceArea &stream_input(const absolute &_val);
-  SurfaceArea &stream_input(const std::shared_ptr<absolute> _val);
 
   DisplayContext context = DisplayContext();
   std::atomic<bool> bProcessing = false;

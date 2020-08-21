@@ -533,7 +533,7 @@ void draw_lines(SurfaceArea &vis) {
       Paint(coord(gen), coord(gen), coord(gen), coord(gen),
             {{_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}});
 
-  vis << stroke_shape_preserve(ps) << fill_shape(pf);
+  vis << stroke_path_preserve(ps) << fill_path(pf);
 }
 
 #if 0

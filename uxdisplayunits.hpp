@@ -199,7 +199,7 @@ public:
     }
     bprocessed = true;
   }
-}; // namespace uxdevice
+};
 
 #define PAINT_OBJ(X_NAME)                                                      \
   using X_NAME = class X_NAME : public DisplayUnit, public Paint {             \
@@ -232,8 +232,6 @@ PAINT_OBJ(source);
 PAINT_OBJ(text_outline);
 PAINT_OBJ(text_fill);
 PAINT_OBJ(text_shadow);
-PAINT_OBJ(fill_path);
-PAINT_OBJ(stroke_path);
 
 using source_default = class source_default : public DisplayUnit {
 public:
@@ -283,6 +281,7 @@ public:
     }
   }
 };
+
 using coordinates = class coordinates : public DisplayUnit {
 public:
   coordinates() {}
@@ -294,7 +293,7 @@ public:
     _data = other._data;
     return *this;
   }
-  double &x(void) {
+  double x(void) {
     double *dret = nullptr;
     if (std::holds_alternative<std::vector<double>>(_data)) {
       auto &val = std::get<std::vector<double>>(_data);
@@ -308,7 +307,7 @@ public:
       val[0] = dval;
     }
   }
-  double &y(void) {
+  double y(void) {
     double *dret = nullptr;
     if (std::holds_alternative<std::vector<double>>(_data)) {
       auto &val = std::get<std::vector<double>>(_data);
@@ -322,7 +321,7 @@ public:
       val[1] = dval;
     }
   }
-  double &w(void) {
+  double w(void) {
     double *dret = nullptr;
     if (std::holds_alternative<std::vector<double>>(_data)) {
       auto &val = std::get<std::vector<double>>(_data);
@@ -336,7 +335,7 @@ public:
       val[2] = dval;
     }
   }
-  double &h(void) {
+  double h(void) {
     double *dret = nullptr;
     if (std::holds_alternative<std::vector<double>>(_data)) {
       auto &val = std::get<std::vector<double>>(_data);
@@ -606,323 +605,323 @@ public:
       auto &_val = std::get<double>(_data);
       cairo_set_tolerance(context.cr, _val);
     }
-  };
+  }
+};
 
-  // draw and paint objects
+// draw and paint objects
 
-  using op = class op : public DisplayUnit {
-  public:
-    op(op_t _op) : DisplayUnit(_op) {}
-    void invoke(DisplayContext &context) {
-      bprocessed = true;
-      if (std::holds_alternative<op_t>(_data)) {
-        auto &_val = std::get<op_t>(_data);
-        cairo_set_operator(context.cr,
-                           static_cast<cairo_operator_t>(_val));
-      }
+using op = class op : public DisplayUnit {
+public:
+  op(op_t _op) : DisplayUnit(_op) {}
+  void invoke(DisplayContext &context) {
+    bprocessed = true;
+    if (std::holds_alternative<op_t>(_data)) {
+      auto &_val = std::get<op_t>(_data);
+      cairo_set_operator(context.cr, static_cast<cairo_operator_t>(_val));
     }
-  };
+  }
+};
 
-  using close_path = class close_path : public DrawingOutput {
-  public:
-    void invoke(DisplayContext &context) {
-      bprocessed = true;
-      cairo_close_path(context.cr);
+using close_path = class close_path : public DrawingOutput {
+public:
+  void invoke(DisplayContext &context) {
+    bprocessed = true;
+    cairo_close_path(context.cr);
+  }
+};
+
+using arc = class arc : public DrawingOutput {
+public:
+  arc(double xc, double yc, double radius, double angle1, double angle2)
+      : DrawingOutput(xc, yc, radius, angle1, angle2) {}
+
+  void invoke(DisplayContext &context) {
+    bprocessed = true;
+    if (std::holds_alternative<std::vector<double>>(_data)) {
+      auto &_val = std::get<std::vector<double>>(_data);
+      cairo_arc(context.cr, _val[0], _val[1], _val[2], _val[3], _val[4]);
     }
-  };
+  }
+};
 
-  using arc = class arc : public DrawingOutput {
-  public:
-    arc(double xc, double yc, double radius, double angle1, double angle2)
-        : DrawingOutput(xc, yc, radius, angle1, angle2) {}
+using negative_arc = class negative_arc : public DrawingOutput {
+public:
+  negative_arc(double xc, double yc, double radius, double angle1,
+               double angle2)
+      : DrawingOutput(xc, yc, radius, angle1, angle2) {}
 
-    void invoke(DisplayContext &context) {
-      bprocessed = true;
-      if (std::holds_alternative<std::vector<double>>(_data)) {
-        auto &_val = std::get<std::vector<double>>(_data);
-        cairo_arc(context.cr, _val[0], _val[1], _val[2], _val[3], _val[4]);
-      }
+  void invoke(DisplayContext &context) {
+    bprocessed = true;
+    if (std::holds_alternative<std::vector<double>>(_data)) {
+      auto &_val = std::get<std::vector<double>>(_data);
+      cairo_arc_negative(context.cr, _val[0], _val[1], _val[2], _val[3],
+                         _val[4]);
     }
-  };
+  }
+};
 
-  using negative_arc = class negative_arc : public DrawingOutput {
-  public:
-    negative_arc(double xc, double yc, double radius, double angle1,
-                 double angle2)
-        : DrawingOutput(xc, yc, radius, angle1, angle2) {}
+using curve = class curve : public DrawingOutput {
+public:
+  curve(double x1, double y1, double x2, double y2, double x3, double y3)
+      : DrawingOutput(x1, y1, x2, y2, x3, y3) {}
+  void invoke(DisplayContext &context) {
+    bprocessed = true;
+    if (std::holds_alternative<std::vector<double>>(_data)) {
+      auto &_val = std::get<std::vector<double>>(_data);
 
-    void invoke(DisplayContext &context) {
-      bprocessed = true;
-      if (std::holds_alternative<std::vector<double>>(_data)) {
-        auto &_val = std::get<std::vector<double>>(_data);
-        cairo_arc_negative(context.cr, _val[0], _val[1], _val[2], _val[3],
-                           _val[4]);
-      }
+      if (context.bRelative)
+        cairo_rel_curve_to(context.cr, _val[0], _val[1], _val[2], _val[3],
+                           _val[4], _val[5]);
+      else
+        cairo_curve_to(context.cr, _val[0], _val[1], _val[2], _val[3], _val[4],
+                       _val[5]);
     }
-  };
+  }
+};
 
-  using curve = class curve : public DrawingOutput {
-  public:
-    curve(double x1, double y1, double x2, double y2, double x3, double y3)
-        : DrawingOutput(x1, y1, x2, y2, x3, y3) {}
-    void invoke(DisplayContext &context) {
-      bprocessed = true;
-      if (std::holds_alternative<std::vector<double>>(_data)) {
-        auto &_val = std::get<std::vector<double>>(_data);
+using line = class line : public DrawingOutput {
+public:
+  line(double x, double y) : DrawingOutput(x, y) {}
+  void invoke(DisplayContext &context) {
+    bprocessed = true;
+    if (std::holds_alternative<std::vector<double>>(_data)) {
+      auto &_val = std::get<std::vector<double>>(_data);
+      if (context.bRelative)
+        cairo_rel_line_to(context.cr, _val[0], _val[1]);
+      else
+        cairo_line_to(context.cr, _val[0], _val[1]);
+    }
+  }
+};
+using hline = class hline : public DrawingOutput {
+public:
+  hline(double x) : DrawingOutput(x) {}
+  void invoke(DisplayContext &context) {
+    bprocessed = true;
+    if (std::holds_alternative<double>(_data)) {
+      auto &_val = std::get<double>(_data);
+
+      if (cairo_has_current_point(context.cr)) {
+        double curx = 0.0, cury = 0.0;
+        cairo_get_current_point(context.cr, &curx, &cury);
 
         if (context.bRelative)
-          cairo_rel_curve_to(context.cr, _val[0], _val[1], _val[2], _val[3],
-                             _val[4], _val[5]);
+          cairo_rel_line_to(context.cr, _val, cury);
         else
-          cairo_curve_to(context.cr, _val[0], _val[1], _val[2], _val[3],
-                         _val[4], _val[5]);
+          cairo_line_to(context.cr, _val, cury);
       }
     }
-  };
+  }
+};
+using vline = class vline : public DrawingOutput {
+public:
+  vline(double y) : DrawingOutput(y) {}
+  void invoke(DisplayContext &context) {
+    bprocessed = true;
+    if (std::holds_alternative<double>(_data)) {
+      auto &_val = std::get<double>(_data);
 
-  using line = class line : public DrawingOutput {
-  public:
-    line(double x, double y) : DrawingOutput(x, y) {}
-    void invoke(DisplayContext &context) {
-      bprocessed = true;
-      if (std::holds_alternative<std::vector<double>>(_data)) {
-        auto &_val = std::get<std::vector<double>>(_data);
+      if (cairo_has_current_point(context.cr)) {
+        double curx = 0.0, cury = 0.0;
+        cairo_get_current_point(context.cr, &curx, &cury);
+
         if (context.bRelative)
-          cairo_rel_line_to(context.cr, _val[0], _val[1]);
+          cairo_rel_line_to(context.cr, curx, _val);
         else
-          cairo_line_to(context.cr, _val[0], _val[1]);
+          cairo_line_to(context.cr, curx, _val);
       }
     }
-  };
-  using hline = class hline : public DrawingOutput {
-  public:
-    hline(double x) : DrawingOutput(x) {}
-    void invoke(DisplayContext &context) {
-      bprocessed = true;
-      if (std::holds_alternative<double>(_data)) {
-        auto &_val = std::get<double>(_data);
+  }
+};
+using move_to = class move_to : public DisplayUnit {
+public:
+  move_to(double x, double y) : DisplayUnit(x, y) {}
+  void invoke(DisplayContext &context) {
+    bprocessed = true;
+    if (std::holds_alternative<std::vector<double>>(_data)) {
+      auto &_val = std::get<std::vector<double>>(_data);
+      if (context.bRelative)
+        cairo_rel_move_to(context.cr, _val[0], _val[1]);
+      else
+        cairo_move_to(context.cr, _val[0], _val[1]);
+    }
+  }
+};
+using rectangle = class rectangle : public DisplayUnit {
+public:
+  rectangle(double x, double y, double width, double height)
+      : DisplayUnit(x, y, width, height) {}
+  void invoke(DisplayContext &context) {
+    bprocessed = true;
+    if (std::holds_alternative<std::vector<double>>(_data)) {
+      auto &_val = std::get<std::vector<double>>(_data);
+      cairo_rectangle(context.cr, _val[0], _val[1], _val[2], _val[3]);
+    }
+  }
+};
 
-        if (cairo_has_current_point(context.cr)) {
-          double curx = 0.0, cury = 0.0;
-          cairo_get_current_point(context.cr, &curx, &cury);
+using stroke_path_preserve = class stroke_path_preserve : public DisplayUnit {
+public:
+  stroke_path_preserve(Paint &p) : DisplayUnit(p) {}
+  void invoke(DisplayContext &context) {
+    bprocessed = true;
+    if (std::holds_alternative<Paint>(_data)) {
+      auto &_val = std::get<Paint>(_data);
+      _val.emit(context.cr);
+      cairo_stroke_preserve(context.cr);
+    }
+  }
+};
+using stroke_path = class stroke_path : public DisplayUnit {
+public:
+  stroke_path(Paint &p) : DisplayUnit(p) {}
+  void invoke(DisplayContext &context) {
+    bprocessed = true;
+    if (std::holds_alternative<Paint>(_data)) {
+      auto &_val = std::get<Paint>(_data);
+      _val.emit(context.cr);
+      cairo_stroke(context.cr);
+    }
+  }
+};
+using fill_path_preserve = class fill_path_preserve : public DisplayUnit {
+public:
+  fill_path_preserve(Paint &p) : DisplayUnit(p) {}
+  void invoke(DisplayContext &context) {
+    bprocessed = true;
+    if (std::holds_alternative<Paint>(_data)) {
+      auto &_val = std::get<Paint>(_data);
+      _val.emit(context.cr);
+      cairo_fill_preserve(context.cr);
+    }
+  }
+};
+using fill_path = class fill_path : public DisplayUnit {
+public:
+  fill_path(Paint &p) : DisplayUnit(p) {}
+  void invoke(DisplayContext &context) {
+    bprocessed = true;
+    if (std::holds_alternative<Paint>(_data)) {
+      auto &_val = std::get<Paint>(_data);
+      _val.emit(context.cr);
+      cairo_fill(context.cr);
+    }
+  }
+};
+using mask = class mask : public DisplayUnit {
+public:
+  mask(Paint &p) : DisplayUnit(p) {}
+  mask(Paint &p, double x, double y) : DisplayUnit(p, x, y) {}
+};
 
-          if (context.bRelative)
-            cairo_rel_line_to(context.cr, _val, cury);
-          else
-            cairo_line_to(context.cr, _val, cury);
-        }
+using paint = class paint : public DisplayUnit {
+public:
+  paint(double alpha = 1.0) : DisplayUnit(alpha) {}
+  void invoke(DisplayContext &context) {
+    bprocessed = true;
+    if (std::holds_alternative<double>(_data)) {
+      auto &_val = std::get<double>(_data);
+      if (_val == 1.0) {
+        cairo_paint(context.cr);
+      } else {
+        cairo_paint_with_alpha(context.cr, _val);
       }
     }
-  };
-  using vline = class vline : public DrawingOutput {
-  public:
-    vline(double y) : DrawingOutput(y) {}
-    void invoke(DisplayContext &context) {
-      bprocessed = true;
-      if (std::holds_alternative<double>(_data)) {
-        auto &_val = std::get<double>(_data);
+  }
+};
 
-        if (cairo_has_current_point(context.cr)) {
-          double curx = 0.0, cury = 0.0;
-          cairo_get_current_point(context.cr, &curx, &cury);
+using relative = class relative : public DisplayUnit {};
+using absolute = class absolute : public DisplayUnit {};
 
-          if (context.bRelative)
-            cairo_rel_line_to(context.cr, curx, _val);
-          else
-            cairo_line_to(context.cr, curx, _val);
-        }
-      }
-    }
-  };
-  using move_to = class move_to : public DisplayUnit {
-  public:
-    move_to(double x, double y) : DisplayUnit(x, y) {}
-    void invoke(DisplayContext &context) {
-      bprocessed = true;
-      if (std::holds_alternative<std::vector<double>>(_data)) {
-        auto &_val = std::get<std::vector<double>>(_data);
-        if (context.bRelative)
-          cairo_rel_move_to(context.cr, _val[0], _val[1]);
-        else
-          cairo_move_to(context.cr, _val[0], _val[1]);
-      }
-    }
-  };
-  using rectangle = class rectangle : public DisplayUnit {
-  public:
-    rectangle(double x, double y, double width, double height)
-        : DisplayUnit(x, y, width, height) {}
-    void invoke(DisplayContext &context) {
-      bprocessed = true;
-      if (std::holds_alternative<std::vector<double>>(_data)) {
-        auto &_val = std::get<std::vector<double>>(_data);
-        cairo_rectangle(context.cr, _val[0], _val[1], _val[2], _val[3]);
-      }
-    }
-  };
+// listeners are named from this base class.
+using listener = class listener : public DisplayUnit {
+public:
+  listener(const eventType &_etype, const eventHandler &_evtDispatcher)
+      : evtDispatcher(_evtDispatcher) {}
+  eventType etype = {};
+  eventHandler evtDispatcher = {};
+};
 
-  using stroke_path_preserve = class stroke_path_preserve : public DisplayUnit {
-  public:
-    stroke_path_preserve(Paint &p) : DisplayUnit(p) {}
-    void invoke(DisplayContext &context) {
-      bprocessed = true;
-      if (std::holds_alternative<Paint>(_data)) {
-        auto &_val = std::get<Paint>(_data);
-        _val.emit(context.cr);
-        cairo_stroke_preserve(context.cr);
-      }
-    }
-  };
-  using stroke_path = class stroke_path : public DisplayUnit {
-  public:
-    stroke_path(Paint &p) : DisplayUnit(p) {}
-    void invoke(DisplayContext &context) {
-      bprocessed = true;
-      if (std::holds_alternative<Paint>(_data)) {
-        auto &_val = std::get<Paint>(_data);
-        _val.emit(context.cr);
-        cairo_stroke(context.cr);
-      }
-    }
-  };
-  using fill_path_preserve = class fill_path_preserve : public DisplayUnit {
-  public:
-    fill_path_preserve(Paint &p) : DisplayUnit(p) {}
-    void invoke(DisplayContext &context) {
-      bprocessed = true;
-      if (std::holds_alternative<Paint>(_data)) {
-        auto &_val = std::get<Paint>(_data);
-        _val.emit(context.cr);
-        cairo_fill_preserve(context.cr);
-      }
-    }
-  };
-  using fill_path = class fill_path : public DisplayUnit {
-  public:
-    fill_path(Paint &p) : DisplayUnit(p) {}
-    void invoke(DisplayContext &context) {
-      bprocessed = true;
-      if (std::holds_alternative<Paint>(_data)) {
-        auto &_val = std::get<Paint>(_data);
-        _val.emit(context.cr);
-        cairo_fill(context.cr);
-      }
-    }
-  };
-  using mask = class mask : public DisplayUnit {
-  public:
-    mask(Paint &p) : DisplayUnit(p) {}
-    mask(Paint &p, double x, double y) : DisplayUnit(p, x, y) {}
-  };
-
-  using paint = class paint : public DisplayUnit {
-  public:
-    paint(double alpha = 1.0) : DisplayUnit(alpha) {}
-    void invoke(DisplayContext &context) {
-      bprocessed = true;
-      if (std::holds_alternative<double>(_data)) {
-        auto &_val = std::get<double>(_data);
-        if (_val == 1.0) {
-          cairo_paint(context.cr);
-        } else {
-          cairo_paint_with_alpha(context.cr, _val);
-        }
-      }
-    }
-  };
-
-  using relative = class relative : public DisplayUnit {};
-  using absolute = class absolute : public DisplayUnit {};
-
-  // listeners are named from this base class.
-  using listener = class listener : public DisplayUnit {
-  public:
-    listener(const eventType &_etype, const eventHandler &_evtDispatcher)
-        : evtDispatcher(_evtDispatcher) {}
-    eventType etype = {};
-    eventHandler evtDispatcher = {};
-  };
-
-  // Named event listeners shorten the code a little and make the code more
-  // readable. pasting macros would be nice, however, its not the c++ standard
-  using listen_paint = class listen_paint : public listener {
-  public:
-    listen_paint(const eventHandler &_evtDispatcher)
-        : listener(eventType::paint, _evtDispatcher) {}
-  };
-  using listen_focus = class listen_focus : public listener {
-  public:
-    listen_focus(const eventHandler &_evtDispatcher)
-        : listener(eventType::focus, _evtDispatcher) {}
-  };
-  using listen_blur = class listen_blur : public listener {
-  public:
-    listen_blur(const eventHandler &_evtDispatcher)
-        : listener(eventType::blur, _evtDispatcher) {}
-  };
-  using listen_resize = class listen_resize : public listener {
-  public:
-    listen_resize(const eventHandler &_evtDispatcher)
-        : listener(eventType::resize, _evtDispatcher) {}
-  };
-  using listen_keydown = class listen_keydown : public listener {
-  public:
-    listen_keydown(const eventHandler &_evtDispatcher)
-        : listener(eventType::keydown, _evtDispatcher) {}
-  };
-  using listen_keyup = class listen_keyup : public listener {
-  public:
-    listen_keyup(const eventHandler &_evtDispatcher)
-        : listener(eventType::keyup, _evtDispatcher) {}
-  };
-  using listen_keypress = class listen_keypress : public listener {
-  public:
-    listen_keypress(const eventHandler &_evtDispatcher)
-        : listener(eventType::keypress, _evtDispatcher) {}
-  };
-  using listen_mouseenter = class listen_mouseenter : public listener {
-  public:
-    listen_mouseenter(const eventHandler &_evtDispatcher)
-        : listener(eventType::mouseenter, _evtDispatcher) {}
-  };
-  using listen_mousemove = class listen_mousemove : public listener {
-  public:
-    listen_mousemove(const eventHandler &_evtDispatcher)
-        : listener(eventType::mousemove, _evtDispatcher) {}
-  };
-  using listen_mousedown = class listen_mousedown : public listener {
-  public:
-    listen_mousedown(const eventHandler &_evtDispatcher)
-        : listener(eventType::mousedown, _evtDispatcher) {}
-  };
-  using listen_mouseup = class listen_mouseup : public listener {
-  public:
-    listen_mouseup(const eventHandler &_evtDispatcher)
-        : listener(eventType::mouseup, _evtDispatcher) {}
-  };
-  using listen_click = class listen_click : public listener {
-  public:
-    listen_click(const eventHandler &_evtDispatcher)
-        : listener(eventType::click, _evtDispatcher) {}
-  };
-  using listen_dblclick = class listen_dblclick : public listener {
-  public:
-    listen_dblclick(const eventHandler &_evtDispatcher)
-        : listener(eventType::dblclick, _evtDispatcher) {}
-  };
-  using listen_contextmenu = class listen_contextmenu : public listener {
-  public:
-    listen_contextmenu(const eventHandler &_evtDispatcher)
-        : listener(eventType::contextmenu, _evtDispatcher) {}
-  };
-  using listen_wheel = class listen_wheel : public listener {
-  public:
-    listen_wheel(const eventHandler &_evtDispatcher)
-        : listener(eventType::wheel, _evtDispatcher) {}
-  };
-  using listen_mouseleave = class listen_mouseleave : public listener {
-  public:
-    listen_mouseleave(const eventHandler &_evtDispatcher)
-        : listener(eventType::mouseleave, _evtDispatcher) {}
-  };
+// Named event listeners shorten the code a little and make the code more
+// readable. pasting macros would be nice, however, its not the c++ standard
+using listen_paint = class listen_paint : public listener {
+public:
+  listen_paint(const eventHandler &_evtDispatcher)
+      : listener(eventType::paint, _evtDispatcher) {}
+};
+using listen_focus = class listen_focus : public listener {
+public:
+  listen_focus(const eventHandler &_evtDispatcher)
+      : listener(eventType::focus, _evtDispatcher) {}
+};
+using listen_blur = class listen_blur : public listener {
+public:
+  listen_blur(const eventHandler &_evtDispatcher)
+      : listener(eventType::blur, _evtDispatcher) {}
+};
+using listen_resize = class listen_resize : public listener {
+public:
+  listen_resize(const eventHandler &_evtDispatcher)
+      : listener(eventType::resize, _evtDispatcher) {}
+};
+using listen_keydown = class listen_keydown : public listener {
+public:
+  listen_keydown(const eventHandler &_evtDispatcher)
+      : listener(eventType::keydown, _evtDispatcher) {}
+};
+using listen_keyup = class listen_keyup : public listener {
+public:
+  listen_keyup(const eventHandler &_evtDispatcher)
+      : listener(eventType::keyup, _evtDispatcher) {}
+};
+using listen_keypress = class listen_keypress : public listener {
+public:
+  listen_keypress(const eventHandler &_evtDispatcher)
+      : listener(eventType::keypress, _evtDispatcher) {}
+};
+using listen_mouseenter = class listen_mouseenter : public listener {
+public:
+  listen_mouseenter(const eventHandler &_evtDispatcher)
+      : listener(eventType::mouseenter, _evtDispatcher) {}
+};
+using listen_mousemove = class listen_mousemove : public listener {
+public:
+  listen_mousemove(const eventHandler &_evtDispatcher)
+      : listener(eventType::mousemove, _evtDispatcher) {}
+};
+using listen_mousedown = class listen_mousedown : public listener {
+public:
+  listen_mousedown(const eventHandler &_evtDispatcher)
+      : listener(eventType::mousedown, _evtDispatcher) {}
+};
+using listen_mouseup = class listen_mouseup : public listener {
+public:
+  listen_mouseup(const eventHandler &_evtDispatcher)
+      : listener(eventType::mouseup, _evtDispatcher) {}
+};
+using listen_click = class listen_click : public listener {
+public:
+  listen_click(const eventHandler &_evtDispatcher)
+      : listener(eventType::click, _evtDispatcher) {}
+};
+using listen_dblclick = class listen_dblclick : public listener {
+public:
+  listen_dblclick(const eventHandler &_evtDispatcher)
+      : listener(eventType::dblclick, _evtDispatcher) {}
+};
+using listen_contextmenu = class listen_contextmenu : public listener {
+public:
+  listen_contextmenu(const eventHandler &_evtDispatcher)
+      : listener(eventType::contextmenu, _evtDispatcher) {}
+};
+using listen_wheel = class listen_wheel : public listener {
+public:
+  listen_wheel(const eventHandler &_evtDispatcher)
+      : listener(eventType::wheel, _evtDispatcher) {}
+};
+using listen_mouseleave = class listen_mouseleave : public listener {
+public:
+  listen_mouseleave(const eventHandler &_evtDispatcher)
+      : listener(eventType::mouseleave, _evtDispatcher) {}
+};
 } // namespace uxdevice
