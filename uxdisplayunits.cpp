@@ -41,7 +41,7 @@ shading or texturing derive and publish the Paint class interface.
 void uxdevice::DrawingOutput::invoke(cairo_t *cr) {
 
   for (auto &fn : options)
-    fn->fnOption(cr);
+    fn->invoke(cr);
   bprocessed = true;
 }
 
@@ -107,13 +107,15 @@ void uxdevice::DrawingOutput::evaluate_cache(DisplayContext &context) {
 }
 
 void uxdevice::OPTION_FUNCTION::invoke(DisplayContext &context) {
-  auto optType = fnOption.target_type().hash_code();
-
-  context.currentUnits._options.remove_if([=](auto &n) {
-    return n->fnOption.target_type().hash_code() == optType;
-  });
-
-  context.currentUnits._options.emplace_back(this);
+  if (std::holds_alternative<CAIRO_FUNCTION>(_data)) {
+    auto &func = std::get<CAIRO_FUNCTION>(_data);
+    auto optType = func.target_type().hash_code();
+    context.currentUnits._options.remove_if([=](auto &n) {
+      auto &funcTarget = std::get<CAIRO_FUNCTION>(n->_data);
+      return funcTarget.target_type().hash_code() == optType;
+    });
+    context.currentUnits._options.emplace_back(this);
+  }
 }
 
 /**
@@ -539,17 +541,24 @@ void uxdevice::DRAW_FUNCTION::invoke(DisplayContext &context) {
   auto fnCache = [=](DisplayContext &context) {
     // set directly callable rendering function.
     auto fn = [=](DisplayContext &context) {
-      DrawingOutput::invoke(context.cr);
-      func(context.cr);
+      if (std::holds_alternative<CAIRO_FUNCTION>(_data)) {
+        DrawingOutput::invoke(context.cr);
+        auto &func = std::get<CAIRO_FUNCTION>(_data);
+        func(context.cr);
+      }
     };
     auto fnClipping = [=](DisplayContext &context) {
-      DrawingOutput::invoke(context.cr);
-      cairo_rectangle(context.cr, _intersection.x, _intersection.y,
-                      _intersection.width, _intersection.height);
-      cairo_clip(context.cr);
-      func(context.cr);
-      cairo_reset_clip(context.cr);
-      evaluate_cache(context);
+      if (std::holds_alternative<CAIRO_FUNCTION>(_data)) {
+
+        DrawingOutput::invoke(context.cr);
+        auto &func = std::get<CAIRO_FUNCTION>(_data);
+        cairo_rectangle(context.cr, _intersection.x, _intersection.y,
+                        _intersection.width, _intersection.height);
+        cairo_clip(context.cr);
+        func(context.cr);
+        cairo_reset_clip(context.cr);
+        evaluate_cache(context);
+     }
     };
     functors_lock(true);
     fnDraw = std::bind(fn, _1);

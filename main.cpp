@@ -62,7 +62,7 @@ const char *stripes =
     "jDuf4YrMMm0cOGnAAAAAElFTkSuQmCC";
 
 // inline SVG, you may build this at run time or parameterize certain aspects
-// of the style or and of its data. Not all of the blocks below are required,
+// of the style. Not all of the blocks below are required,
 // such as meta data. The parsing is fast, however the information is still
 // transposed from text. The biggest slowdowns are the effects that use the
 // Gaussian blur functions. This uses the RSVG api for its rendering and
@@ -379,12 +379,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
   // easily index  properties for specific access later.
   // creating shared objects allows for some interface architectures
   // to be crafted easier.
-  vis << text_font("28px") << text_shadow("green")
-      << coordinates{0, 100, 600, 300} << source("white") << paragraph_text
-      << '\n';
+  vis << text_font("28px").index("paragraphfont");
+  vis << text_shadow("green") << coordinates{0, 100, 600, 300}
+      << source("white") << paragraph_text << '\n';
 
   vis[paragraph_text] =
-      "New text is changed without an indirect index, more simplified syntax. ";
+      "New text is applied without an indirect index, more simplified syntax. ";
+  vis["paragraphfont"]="40px";
 
   for (int i = 0; i < 5; i++) {
     vis << coordinates{i * 130.0, 200, 150, 240} << image{sSVG_BUTTON}
@@ -430,7 +431,6 @@ std::shared_ptr<std::string> insert_text(SurfaceArea &vis, bool bfast,
 #define _A opac(gen)
   std::shared_ptr<std::string> ps = std::make_shared<std::string>(stxt);
 
-  // set the font name according to pango api. see pango font description.
   std::uniform_int_distribution<> fill(1, 2);
 
   if (bfast) {
@@ -470,8 +470,12 @@ std::string generate_text(void) {
           "produced a canny type of music. A simple ten note. ";
     break;
   case 2:
-    ret = "The color of text can be a choice. Yet the appearance is a common "
-          "desire.";
+    ret = "The color of text can be a choice. Yet the appearance is also a "
+          "common "
+          "desire. Creating animal letters colored with a furry texture is "
+          "great for CPU rendering work. Perhaps the flexibility of the API "
+          "gives "
+          "light to incorporating other types of computer generated graphics. ";
     break;
   case 3:
     ret = "Planets orbit the mass, but this is inconsequential of "

@@ -590,13 +590,14 @@ uxdevice::SurfaceArea::stream_input(const std::shared_ptr<std::string> _val) {
   DL_SPIN;
   auto item = DL.emplace_back(make_shared<STRING>(*_val));
   item->key = reinterpret_cast<std::size_t>(_val.get());
+  maintain_index(item);
   context.set_unit(std::dynamic_pointer_cast<STRING>(item));
   auto textrender = DL.emplace_back(
       make_shared<TEXT_RENDER>(std::dynamic_pointer_cast<STRING>(item)));
   textrender->invoke(context);
   DL_CLEAR;
   context.add_drawable(std::dynamic_pointer_cast<DrawingOutput>(textrender));
-  maintain_index(textrender);
+
   return *this;
 }
 SurfaceArea &
@@ -631,7 +632,6 @@ uxdevice::SurfaceArea::stream_input(const std::stringstream &_val) {
     DL_SPIN;                                                                   \
     auto item = DL.emplace_back(_val);                                         \
     item->invoke(context);                                                     \
-    item->key = reinterpret_cast<std::size_t>(_val.get());                     \
     DL_CLEAR;                                                                  \
     maintain_index(item);                                                      \
     return *this;                                                              \
@@ -647,7 +647,6 @@ uxdevice::SurfaceArea::stream_input(const std::stringstream &_val) {
     DL_SPIN;                                                                   \
     auto item = DL.emplace_back(_val);                                         \
     item->invoke(context);                                                     \
-    item->key = reinterpret_cast<std::size_t>(_val.get());                     \
     context.set_unit(std::dynamic_pointer_cast<CLASS_NAME>(item));             \
     DL_CLEAR;                                                                  \
     maintain_index(item);                                                      \
@@ -664,7 +663,6 @@ uxdevice::SurfaceArea::stream_input(const std::stringstream &_val) {
     DL_SPIN;                                                                   \
     auto item = DL.emplace_back(_val);                                         \
     item->invoke(context);                                                     \
-    item->key = reinterpret_cast<std::size_t>(_val.get());                     \
     DL_CLEAR;                                                                  \
     context.add_drawable(std::dynamic_pointer_cast<DrawingOutput>(item));      \
     maintain_index(item);                                                      \
