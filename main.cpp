@@ -385,7 +385,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 
   vis[paragraph_text] =
       "New text is applied without an indirect index, more simplified syntax. ";
-  vis["paragraphfont"]="40px";
+  vis["paragraphfont"] = "40px";
 
   for (int i = 0; i < 5; i++) {
     vis << coordinates{i * 130.0, 200, 150, 240} << image{sSVG_BUTTON}
