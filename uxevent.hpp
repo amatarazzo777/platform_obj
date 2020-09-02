@@ -85,8 +85,8 @@ public:
   short distance = 0;
 };
 
-/// \typedef eventHandler is used to note and declare a lambda function for
+/// \typedef event_handler_t is used to note and declare a lambda function for
 /// the specified event.
-typedef std::function<void(const event_t &et)> eventHandler;
+typedef std::function<void(const event_t &et)> event_handler_t;
 
 } // namespace uxdevice

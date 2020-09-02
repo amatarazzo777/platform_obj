@@ -14,7 +14,7 @@
 \addtogroup Library Build Options
 \brief Library Options
 \details These options provide the selection to configure selection
-options when compiling the source.
+options when compiling the text_color.
 @{
 */
 
@@ -40,7 +40,7 @@ options when compiling the source.
 #include "uxdisplaycontext.hpp"
 #include "uxdisplayunits.hpp"
 
-std::string _errorReport(std::string sourceFile, int ln, std::string sfunc,
+std::string _errorReport(std::string text_colorFile, int ln, std::string sfunc,
                          std::string cond, std::string ecode);
 typedef std::function<void(const std::string &err)> errorHandler;
 
@@ -70,27 +70,28 @@ local operating system.
 */
 typedef std::list<short int> CoordinateList;
 
-class SurfaceArea {
+class surface_area {
 public:
-  SurfaceArea();
-  SurfaceArea(const std::string &sSurfaceAreaTitle);
+  surface_area();
+  surface_area(const std::string &ssurface_areaTitle);
 
-  SurfaceArea(const eventHandler &evtDispatcher);
-  SurfaceArea(const CoordinateList &coordinates);
+  surface_area(const event_handler_t &evtDispatcher);
+  surface_area(const CoordinateList &coordinates);
 
-  SurfaceArea(const CoordinateList &coordinates,
-              const std::string &sSurfaceAreaTitle);
-  SurfaceArea(const CoordinateList &coordinates,
-              const std::string &sSurfaceAreaTitle, const Paint &background);
+  surface_area(const CoordinateList &coordinates,
+               const std::string &ssurface_areaTitle);
+  surface_area(const CoordinateList &coordinates,
+               const std::string &ssurface_areaTitle,
+               const painter_brush_t &background);
 
-  SurfaceArea(const CoordinateList &coordinates,
-              const std::string &sSurfaceAreaTitle,
-              const eventHandler &evtDispatcher, const Paint &background);
-  ~SurfaceArea();
-  std::unordered_map<std::string, std::shared_ptr<DisplayUnit>> mappedString =
-      {};
-  std::unordered_map<std::size_t, std::shared_ptr<DisplayUnit>> mappedInteger =
-      {};
+  surface_area(const CoordinateList &coordinates,
+               const std::string &ssurface_areaTitle,
+               const event_handler_t &evtDispatcher,
+               const painter_brush_t &background);
+  ~surface_area();
+
+  std::unordered_map<indirect_index_t, std::shared_ptr<display_unit_t>>
+      mapped_objects = {};
 
   /* the macro creates the stream interface for both constant references
   and shared pointers as well as establishes the prototype for the insertion
@@ -99,20 +100,20 @@ public:
 
 #define STREAM_INPUT(CLASS_NAME)                                               \
 public:                                                                        \
-  SurfaceArea &operator<<(const CLASS_NAME &data) {                            \
+  surface_area &operator<<(const CLASS_NAME &data) {                           \
     stream_input(data);                                                        \
     return *this;                                                              \
   }                                                                            \
-  SurfaceArea &operator<<(const std::shared_ptr<CLASS_NAME> data) {            \
+  surface_area &operator<<(const std::shared_ptr<CLASS_NAME> data) {           \
     stream_input(data);                                                        \
     return *this;                                                              \
   }                                                                            \
                                                                                \
 private:                                                                       \
-  SurfaceArea &stream_input(const CLASS_NAME &_val);                           \
-  SurfaceArea &stream_input(const std::shared_ptr<CLASS_NAME> _val);
+  surface_area &stream_input(const CLASS_NAME &_val);                          \
+  surface_area &stream_input(const std::shared_ptr<CLASS_NAME> _val);
 
-  template <typename T> SurfaceArea &operator<<(const T &data) {
+  template <typename T> surface_area &operator<<(const T &data) {
     std::ostringstream s;
     s << data;
     std::string sData = s.str();
@@ -124,13 +125,13 @@ private:                                                                       \
   STREAM_INPUT(std::stringstream)
   STREAM_INPUT(char *)
   STREAM_INPUT(antialias)
-  STREAM_INPUT(source)
+  STREAM_INPUT(text_color)
   STREAM_INPUT(text_outline)
   STREAM_INPUT(text_fill)
   STREAM_INPUT(text_shadow)
-  STREAM_INPUT(text_outline_none)
-  STREAM_INPUT(text_fill_none)
-  STREAM_INPUT(text_shadow_none)
+  STREAM_INPUT(text_outline_off)
+  STREAM_INPUT(text_fill_off)
+  STREAM_INPUT(text_shadow_off)
   STREAM_INPUT(text_alignment)
   STREAM_INPUT(alignment_t)
 
@@ -145,7 +146,7 @@ private:                                                                       \
   STREAM_INPUT(line_join)
   STREAM_INPUT(miter_limit)
   STREAM_INPUT(line_dashes)
-  STREAM_INPUT(image)
+  STREAM_INPUT(image_block)
   STREAM_INPUT(stroke_path)
   STREAM_INPUT(fill_path)
   STREAM_INPUT(stroke_path_preserve)
@@ -184,49 +185,46 @@ private:                                                                       \
   STREAM_INPUT(listen_mouseleave)
 
 public:
-  DisplayUnit &operator[](const std::string s) {
-    auto n = mappedString.find(s);
+  display_unit_t &operator[](const indirect_index_t &idx) {
+    auto n = mapped_objects.find(idx);
     return *n->second;
   }
-  DisplayUnit &operator[](const std::size_t &nval) {
-    auto n = mappedInteger.find(nval);
-    return *n->second;
-  }
+
   // return display unit associated, update
-  DisplayUnit &operator[](const std::shared_ptr<std::string> _val) {
-    auto n = mappedInteger.find(reinterpret_cast<std::size_t>(_val.get()));
+  display_unit_t &operator[](const std::shared_ptr<std::string> _val) {
+    auto n = mapped_objects.find(reinterpret_cast<std::size_t>(_val.get()));
     return *n->second;
   }
-  DisplayUnit &group(const std::string &sgroupname) {
-    auto n = mappedString.find(sgroupname);
+  display_unit_t &group(const std::string &sgroupname) {
+    auto n = mapped_objects.find(sgroupname);
     return *n->second;
   }
 
   bool processing(void) { return bProcessing; };
-  SurfaceArea &group(std::string &_name);
+  surface_area &group(std::string &_name);
 
-  SurfaceArea &device_offset(double x, double y);
-  SurfaceArea &device_scale(double x, double y);
-  SurfaceArea &surface_brush(Paint &b);
+  surface_area &device_offset(double x, double y);
+  surface_area &device_scale(double x, double y);
+  surface_area &surface_brush(painter_brush_t &b);
   void clear(void);
   void notify_complete(void);
 
-  SurfaceArea &save(void);
-  SurfaceArea &restore(void);
+  surface_area &save(void);
+  surface_area &restore(void);
 
-  SurfaceArea &push(content_t _content = content_t::all);
-  SurfaceArea &pop(bool bToSource = false);
+  surface_area &push(content_t _content = content_t::all);
+  surface_area &pop(bool bToSource = false);
 
-  SurfaceArea &translate(double x, double y);
-  SurfaceArea &rotate(double angle);
-  SurfaceArea &scale(double x, double y);
-  SurfaceArea &transform(const Matrix &mat);
-  SurfaceArea &matrix(const Matrix &mat);
-  SurfaceArea &identity(void);
-  SurfaceArea &device(double &x, double &y);
-  SurfaceArea &device_distance(double &x, double &y);
-  SurfaceArea &user(double &x, double &y);
-  SurfaceArea &user_distance(double &x, double &y);
+  surface_area &translate(double x, double y);
+  surface_area &rotate(double angle);
+  surface_area &scale(double x, double y);
+  surface_area &transform(const Matrix &mat);
+  surface_area &matrix(const Matrix &mat);
+  surface_area &identity(void);
+  surface_area &device(double &x, double &y);
+  surface_area &device_distance(double &x, double &y);
+  surface_area &user(double &x, double &y);
+  surface_area &user_distance(double &x, double &y);
   point location(void);
 
   bounds stroke(void);
@@ -244,40 +242,40 @@ private:
   void render_loop(void);
   void dispatch_event(const event_t &e);
   void close_window(void);
-  bool bRelative = false;
-  void maintain_index(std::shared_ptr<DisplayUnit> obj);
+  bool relative = false;
+  void maintain_index(std::shared_ptr<display_unit_t> obj);
 
-  DisplayContext context = DisplayContext();
+  display_context_t context = display_context_t();
   std::atomic<bool> bProcessing = false;
   errorHandler fnError = nullptr;
-  eventHandler fnEvents = nullptr;
+  event_handler_t fnEvents = nullptr;
 
-  typedef std::list<std::shared_ptr<DisplayUnit>> DisplayUnitStorage;
-  DisplayUnitStorage DL = {};
-  DisplayUnitStorage::iterator itDL_Processed = DL.begin();
+  typedef std::list<std::shared_ptr<display_unit_t>> display_unit_storage_t;
+  display_unit_storage_t DL = {};
+  display_unit_storage_t::iterator itDL_Processed = DL.begin();
 
   std::atomic_flag DL_readwrite = ATOMIC_FLAG_INIT;
 
 #define DL_SPIN while (DL_readwrite.test_and_set(std::memory_order_acquire))
 #define DL_CLEAR DL_readwrite.clear(std::memory_order_release)
 
-  std::list<eventHandler> onfocus = {};
-  std::list<eventHandler> onblur = {};
-  std::list<eventHandler> onresize = {};
-  std::list<eventHandler> onkeydown = {};
-  std::list<eventHandler> onkeyup = {};
-  std::list<eventHandler> onkeypress = {};
-  std::list<eventHandler> onmouseenter = {};
-  std::list<eventHandler> onmouseleave = {};
-  std::list<eventHandler> onmousemove = {};
-  std::list<eventHandler> onmousedown = {};
-  std::list<eventHandler> onmouseup = {};
-  std::list<eventHandler> onclick = {};
-  std::list<eventHandler> ondblclick = {};
-  std::list<eventHandler> oncontextmenu = {};
-  std::list<eventHandler> onwheel = {};
+  std::list<event_handler_t> onfocus = {};
+  std::list<event_handler_t> onblur = {};
+  std::list<event_handler_t> onresize = {};
+  std::list<event_handler_t> onkeydown = {};
+  std::list<event_handler_t> onkeyup = {};
+  std::list<event_handler_t> onkeypress = {};
+  std::list<event_handler_t> onmouseenter = {};
+  std::list<event_handler_t> onmouseleave = {};
+  std::list<event_handler_t> onmousemove = {};
+  std::list<event_handler_t> onmousedown = {};
+  std::list<event_handler_t> onmouseup = {};
+  std::list<event_handler_t> onclick = {};
+  std::list<event_handler_t> ondblclick = {};
+  std::list<event_handler_t> oncontextmenu = {};
+  std::list<event_handler_t> onwheel = {};
 
-  std::list<eventHandler> &get_event_vector(eventType evtType);
+  std::list<event_handler_t> &get_event_vector(eventType evtType);
 };
 
 } // namespace uxdevice

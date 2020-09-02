@@ -3,7 +3,7 @@
 \file uxworkstate.hpp
 \date 5/12/20
 \version 1.0
- \details  Routines for cairo image
+ \details  Routines for cairo image_block
 
 */
 #pragma once

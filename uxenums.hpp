@@ -12,7 +12,7 @@ enum class alias_t {
   def = CAIRO_ANTIALIAS_DEFAULT,
 
   /* method */
-  none = CAIRO_ANTIALIAS_NONE,
+  off = CAIRO_ANTIALIAS_NONE,
   gray = CAIRO_ANTIALIAS_GRAY,
   subPixel = CAIRO_ANTIALIAS_SUBPIXEL,
 
@@ -32,7 +32,7 @@ enum class filter_t {
 };
 
 enum class extend_t {
-  none = CAIRO_EXTEND_NONE,
+  off = CAIRO_EXTEND_NONE,
   repeat = CAIRO_EXTEND_REPEAT,
   reflect = CAIRO_EXTEND_REFLECT,
   pad = CAIRO_EXTEND_PAD
@@ -88,7 +88,7 @@ enum class alignment_t {
   justified = 4
 };
 enum class ellipsize_t {
-  none = PANGO_ELLIPSIZE_NONE,
+  off = PANGO_ELLIPSIZE_NONE,
   start = PANGO_ELLIPSIZE_START,
   middle = PANGO_ELLIPSIZE_MIDDLE,
   end = PANGO_ELLIPSIZE_END

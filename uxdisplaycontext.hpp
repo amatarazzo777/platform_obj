@@ -7,7 +7,7 @@
  \details CLass holds the display window context, gui drawing, cairo
  context, and provides an interface for threads running to
  invalidate part of the surface, resize the surface. The
- CurrentUnits class is within the public members and holds
+ current_units_t class is within the public members and holds
  the state of the last used data parameters.
 
 */
@@ -15,85 +15,89 @@
 
 namespace uxdevice {
 
-class image;
+class image_block;
 class text_font;
 class antialias;
 class text_shadow;
 class text_fill;
 class text_outline;
 class coordinates;
-class source;
+class text_color;
 class text_alignment;
 class index_by;
 class line_width;
 class indent;
-class ellipse;
+class ellipsize;
 class line_space;
 class tab_stops;
-class TEXT_RENDER;
-class FUNCTION;
-class OPTION_FUNCTION;
-class STRING;
-class DRAW_FUNCTION;
-class DisplayUnit;
-class DrawingOutput;
+class textual_render;
+class function_object_t;
+class option_function_object_t;
+class textual_data;
+class DRAW_function_object_t;
+class display_unit_t;
+class drawing_output_t;
 
-typedef std::list<std::shared_ptr<DisplayUnit>> DisplayUnitCollection;
-typedef std::list<std::shared_ptr<DisplayUnit>>::iterator
-    DisplayUnitCollectionIter;
-typedef std::list<std::shared_ptr<DrawingOutput>> DrawingOutputCollection;
-typedef std::list<std::shared_ptr<DrawingOutput>>::iterator
-    DrawingOutputCollectionIter;
+typedef std::list<std::shared_ptr<display_unit_t>> display_unit_collection_t;
+typedef std::list<std::shared_ptr<display_unit_t>>::iterator
+    display_unit_collection_iter_t;
+typedef std::list<std::shared_ptr<drawing_output_t>>
+    drawing_output_collection_t;
+typedef std::list<std::shared_ptr<drawing_output_t>>::iterator
+    drawing_output_collection_iter_t;
 
-class DisplayContext;
-typedef std::function<void(DisplayContext &context)> DrawLogic;
+class display_context_t;
+typedef std::function<void(display_context_t &context)> draw_logic_t;
 
-typedef std::list<OPTION_FUNCTION *> CairoOptionFn;
-typedef struct _DRAWBUFFER {
+typedef std::list<option_function_object_t *> cairo_option_function_t;
+typedef struct _draw_buffer_t {
   cairo_t *cr = nullptr;
   cairo_surface_t *rendered = nullptr;
-} DRAWBUFFER;
+} draw_buffer_t;
 
-class CurrentUnits {
+class current_units_t {
 public:
   std::shared_ptr<text_font> _text_font = nullptr;
   std::shared_ptr<antialias> _antialias = nullptr;
   std::shared_ptr<text_shadow> _text_shadow = nullptr;
   std::shared_ptr<text_fill> _text_fill = nullptr;
   std::shared_ptr<text_outline> _text_outline = nullptr;
-  std::shared_ptr<source> _source = nullptr;
-  std::shared_ptr<STRING> _text = nullptr;
+  std::shared_ptr<text_color> _text_color = nullptr;
+  std::shared_ptr<textual_data> _text = nullptr;
   std::shared_ptr<text_alignment> _text_alignment = nullptr;
   std::shared_ptr<coordinates> _coordinates = nullptr;
   std::shared_ptr<index_by> _index_by = nullptr;
   std::shared_ptr<line_width> _line_width = nullptr;
   std::shared_ptr<indent> _indent = nullptr;
-  std::shared_ptr<ellipse> _ellipse = nullptr;
+  std::shared_ptr<ellipsize> _ellipsize = nullptr;
   std::shared_ptr<line_space> _line_space = nullptr;
   std::shared_ptr<tab_stops> _tab_stops = nullptr;
-  CairoOptionFn _options = {};
+  cairo_option_function_t _options = {};
 };
 
-class DisplayContext {
+class display_context_t {
 public:
-  class CairoRegion {
+  class context_cairo_region_t {
   public:
-    CairoRegion() = delete;
-    CairoRegion(bool bOS, int x, int y, int w, int h) {
+    context_cairo_region_t() = delete;
+    context_cairo_region_t(bool bOS, int x, int y, int w, int h) {
       rect = {x, y, w, h};
       _rect = {(double)x, (double)y, (double)w, (double)h};
       _ptr = cairo_region_create_rectangle(&rect);
       bOSsurface = bOS;
     }
-    CairoRegion(std::size_t _obj, int x, int y, int w, int h) : obj(_obj) {
+    context_cairo_region_t(std::size_t _obj, int x, int y, int w, int h)
+        : obj(_obj) {
       rect = {x, y, w, h};
       _rect = {(double)x, (double)y, (double)w, (double)h};
       _ptr = cairo_region_create_rectangle(&rect);
       bOSsurface = false;
     }
 
-    CairoRegion(const CairoRegion &other) { *this = other; }
-    CairoRegion &operator=(const CairoRegion &other) {
+    context_cairo_region_t(const context_cairo_region_t &other) {
+      *this = other;
+    }
+    context_cairo_region_t &operator=(const context_cairo_region_t &other) {
       _ptr = cairo_region_reference(other._ptr);
       rect = other.rect;
       _rect = other._rect;
@@ -101,7 +105,7 @@ public:
       bOSsurface = other.bOSsurface;
       return *this;
     }
-    ~CairoRegion() {
+    ~context_cairo_region_t() {
       if (_ptr)
         cairo_region_destroy(_ptr);
     }
@@ -113,15 +117,15 @@ public:
   };
 
 public:
-  DisplayContext(void) {}
+  display_context_t(void) {}
 
-  DisplayContext(const DisplayContext &other) { *this = other; }
-  DisplayContext &operator=(const DisplayContext &other) {
-    windowX = other.windowX;
-    windowY = other.windowY;
-    windowWidth = other.windowWidth;
-    windowHeight = other.windowHeight;
-    windowOpen = other.windowOpen;
+  display_context_t(const display_context_t &other) { *this = other; }
+  display_context_t &operator=(const display_context_t &other) {
+    window_x = other.window_x;
+    window_y = other.window_y;
+    window_width = other.window_width;
+    window_height = other.window_height;
+    window_open = other.window_open;
     if (other.cr)
       cr = cairo_reference(other.cr);
     _regions = other._regions;
@@ -140,14 +144,14 @@ public:
     return *this;
   }
 
-  DrawingOutputCollection viewportOff = {};
+  drawing_output_collection_t viewportOff = {};
   std::atomic_flag drawables_off_readwrite = ATOMIC_FLAG_INIT;
 #define DRAWABLES_OFF_SPIN                                                     \
   while (drawables_off_readwrite.test_and_set(std::memory_order_acquire))
 #define DRAWABLES_OFF_CLEAR                                                    \
   drawables_off_readwrite.clear(std::memory_order_release)
 
-  DrawingOutputCollection viewportOn = {};
+  drawing_output_collection_t viewportOn = {};
   std::atomic_flag drawables_on_readwrite = ATOMIC_FLAG_INIT;
 #define DRAWABLES_ON_SPIN                                                      \
   while (drawables_on_readwrite.test_and_set(std::memory_order_acquire))
@@ -155,7 +159,7 @@ public:
   drawables_on_readwrite.clear(std::memory_order_release)
 
   bool surface_prime(void);
-  void plot(CairoRegion &plotArea);
+  void plot(context_cairo_region_t &plotArea);
   void flush(void);
   void device_offset(double x, double y);
   void device_scale(double x, double y);
@@ -163,19 +167,19 @@ public:
   void resize_surface(const int w, const int h);
 
   void offsetPosition(const int x, const int y);
-  void surface_brush(Paint &b);
+  void surface_brush(painter_brush_t &b);
 
   void render(void);
-  void add_drawable(std::shared_ptr<DrawingOutput> _obj);
+  void add_drawable(std::shared_ptr<drawing_output_t> _obj);
   void partition_visibility(void);
-  void state(std::shared_ptr<DrawingOutput> obj);
+  void state(std::shared_ptr<drawing_output_t> obj);
   void state(int x, int y, int w, int h);
   bool state(void);
   void state_surface(int x, int y, int w, int h);
   void state_notify_complete(void);
 
-  DRAWBUFFER allocate_buffer(int width, int height);
-  static void destroy_buffer(DRAWBUFFER &_buffer);
+  draw_buffer_t allocate_buffer(int width, int height);
+  static void destroy_buffer(draw_buffer_t &_buffer);
   void clear(void);
 
   std::atomic_flag lockErrors = ATOMIC_FLAG_INIT;
@@ -197,71 +201,73 @@ public:
   }
   cairo_status_t error_check(cairo_t *cr) { return cairo_status(cr); }
 
-  CurrentUnits currentUnits = CurrentUnits();
+  current_units_t current_units = current_units_t();
 
-  void set_unit(std::shared_ptr<STRING> _text) { currentUnits._text = _text; };
+  void set_unit(std::shared_ptr<textual_data> _text) {
+    current_units._text = _text;
+  };
   void set_unit(std::shared_ptr<text_font> _font) {
-    currentUnits._text_font = _font;
+    current_units._text_font = _font;
   };
   void set_unit(std::shared_ptr<antialias> _antialias) {
-    currentUnits._antialias = _antialias;
+    current_units._antialias = _antialias;
   };
   void set_unit(std::shared_ptr<text_shadow> _text_shadow) {
-    currentUnits._text_shadow = _text_shadow;
+    current_units._text_shadow = _text_shadow;
   };
   void set_unit(std::shared_ptr<text_fill> _text_fill) {
-    currentUnits._text_fill = _text_fill;
+    current_units._text_fill = _text_fill;
   };
   void set_unit(std::shared_ptr<text_outline> _text_outline) {
-    currentUnits._text_outline = _text_outline;
+    current_units._text_outline = _text_outline;
   };
-  void set_unit(std::shared_ptr<source> _source) {
-    currentUnits._source = _source;
+  void set_unit(std::shared_ptr<text_color> _text_color) {
+    current_units._text_color = _text_color;
   };
 
   void set_unit(std::shared_ptr<text_alignment> _align) {
-    currentUnits._text_alignment = _align;
+    current_units._text_alignment = _align;
   };
   void set_unit(std::shared_ptr<coordinates> _pos) {
-    currentUnits._coordinates = _pos;
+    current_units._coordinates = _pos;
   };
   void set_unit(std::shared_ptr<index_by> _val) {
-    currentUnits._index_by = _val;
+    current_units._index_by = _val;
   };
   void set_unit(std::shared_ptr<line_width> _val) {
-    currentUnits._line_width = _val;
+    current_units._line_width = _val;
   };
-  void set_unit(std::shared_ptr<indent> _val) { currentUnits._indent = _val; };
-  void set_unit(std::shared_ptr<ellipse> _val) {
-    currentUnits._ellipse = _val;
+  void set_unit(std::shared_ptr<indent> _val) { current_units._indent = _val; };
+  void set_unit(std::shared_ptr<ellipsize> _val) {
+    current_units._ellipsize = _val;
   };
   void set_unit(std::shared_ptr<line_space> _val) {
-    currentUnits._line_space = _val;
+    current_units._line_space = _val;
   };
   void set_unit(std::shared_ptr<tab_stops> _val) {
-    currentUnits._tab_stops = _val;
+    current_units._tab_stops = _val;
   };
 
 public:
-  short windowX = 0;
-  short windowY = 0;
-  unsigned short windowWidth = 0;
-  unsigned short windowHeight = 0;
-  bool windowOpen = false;
-  bool bRelative = false;
+  short window_x = 0;
+  short window_y = 0;
+  unsigned short window_width = 0;
+  unsigned short window_height = 0;
+  bool window_open = false;
+  std::atomic<bool> relative = false;
 
   std::atomic_flag lockBrush = ATOMIC_FLAG_INIT;
 #define BRUSH_SPIN while (lockBrush.test_and_set(std::memory_order_acquire))
 #define BRUSH_CLEAR lockBrush.clear(std::memory_order_release)
-  Paint brush = Paint("white");
+  painter_brush_t brush = painter_brush_t("white");
 
   cairo_t *cr = nullptr;
 
-  cairo_rectangle_t viewportRectangle = cairo_rectangle_t();
+  cairo_rectangle_t viewport_rectangle = cairo_rectangle_t();
 
 private:
-  std::list<CairoRegion> _regions = {};
-  typedef std::list<CairoRegion>::iterator RegionIter;
+  std::list<context_cairo_region_t> _regions = {};
+  typedef std::list<context_cairo_region_t>::iterator region_iter_t;
 
   std::atomic_flag lockRegions = ATOMIC_FLAG_INIT;
 #define REGIONS_SPIN while (lockRegions.test_and_set(std::memory_order_acquire))
@@ -271,9 +277,9 @@ private:
     int w = 0;
     int h = 0;
     _WH(int _w, int _h) : w(_w), h(_h) {}
-  } WH;
+  } __WH;
   std::list<_WH> _surfaceRequests = {};
-  typedef std::list<_WH>::iterator SurfaceRequestsIter;
+  typedef std::list<_WH>::iterator surface_requests_iter_t;
   std::atomic_flag lockSurfaceRequests = ATOMIC_FLAG_INIT;
 #define SURFACE_REQUESTS_SPIN                                                  \
   while (lockSurfaceRequests.test_and_set(std::memory_order_acquire))
@@ -288,9 +294,9 @@ private:
 
 public:
   // if render request time for objects are less than x ms
-  int cacheThreshold = 200;
+  int cache_threshold = 200;
 
-  std::atomic<bool> bClearFrame = false;
+  std::atomic<bool> clearing_frame = false;
   Display *xdisplay = nullptr;
   xcb_connection_t *connection = nullptr;
   xcb_screen_t *screen = nullptr;

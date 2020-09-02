@@ -3,7 +3,7 @@
 \file uxworkstate.hpp
 \date 5/12/20
 \version 1.0
- \details  Routines for cairo image
+ \details  Routines for cairo image_block
 
 */
 #include "uxdevice.hpp"
@@ -51,7 +51,7 @@ cairo_status_t uxdevice::read_contents(const gchar *file_name,
 
 /**
 \internal
-\brief creates an image surface from an svg.
+\brief creates an image_block surface from an svg.
 */
 cairo_surface_t *uxdevice::image_surface_SVG(bool bDataPassed,
                                              std::string &info, double width,
@@ -85,7 +85,7 @@ cairo_surface_t *uxdevice::image_surface_SVG(bool bDataPassed,
     goto error_exit;
   }
 
-  // scale to the image requested.
+  // scale to the image_block requested.
   dWidth = width;
   dHeight = height;
   rsvg_handle_get_dimensions(handle, &dimensions);
@@ -102,7 +102,7 @@ cairo_surface_t *uxdevice::image_surface_SVG(bool bDataPassed,
     dHeight /= dimensions.height;
   }
 
-  // render the image to surface
+  // render the image_block to surface
   img = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
   status = cairo_surface_status(img);
   if (status != CAIRO_STATUS_SUCCESS) {
@@ -150,7 +150,7 @@ error_exit:
 
 /**
 \internal
-\brief reads the image and creates a cairo surface image.
+\brief reads the image_block and creates a cairo surface image_block.
 */
 cairo_surface_t *uxdevice::read_image(std::string &data, double w, double h) {
   const string dataPNG = "data:image/png;base64,";
