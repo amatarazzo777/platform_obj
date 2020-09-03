@@ -38,6 +38,9 @@ public:
   color_stop_t(double o, const std::string &s, double a);
   void parse_color(const std::string &s);
 
+  HASH_OBJECT_MEMBERS(std::type_index(typeid(color_stop_t)), _bAutoOffset,
+                      _bRGBA, _offset, _r, _g, _b, _a)
+
   bool _bAutoOffset = false;
   bool _bRGBA = false;
   double _offset = 0;
@@ -48,6 +51,9 @@ public:
 };
 typedef std::vector<color_stop_t> color_stops_t;
 typedef std::vector<color_stop_t>::iterator color_stops_iterator_t;
+} // namespace uxdevice
+
+STD_HASHABLE(uxdevice::color_stop_t);
 
 /**
  parse web formats
@@ -68,11 +74,10 @@ radial-gradient(ellipsize at center, #1e5799 0%,#2989d8 50%,#207cca
 51%,#2989d8 51%,#7db9e8 100%);
 
 */
+namespace uxdevice {
 
 class painter_brush_t : public Matrix {
 public:
-  const std::string_view sLinearPattern = "linear-gradient";
-  const std::string_view sRadialPattern = "radial-gradient";
   enum class paint_definition_class_t {
     none,
     descriptive,
@@ -86,40 +91,50 @@ public:
   public:
     paint_definition_base_t(paint_definition_class_t _ct,
                             const std::string &_description)
-        : class_type(ct), description(_description) {}
+        : class_type(_ct), description(_description) {}
+    paint_definition_base_t &operator=(const paint_definition_base_t &other) {
 
-    virtual void emit(cairo_t *cr);
-    virtual void emit(cairo_t *cr, double x, double y, double w, double h);
+      return *this;
+    }
+    paint_definition_base_t(const paint_definition_base_t &other)  {}
+    paint_definition_base_t(paint_definition_base_t &&other) {}
 
-    bool is_linear_gradient_description(const std::string &s) {
-      if (s.compare(0, sLinearPattern.size(), sLinearPattern) != 0)
+    virtual ~paint_definition_base_t() {}
+    virtual void emit(cairo_t *cr) {}
+    virtual void emit(cairo_t *cr, double x, double y, double w, double h) {}
+    bool is_text_color_description(void) {
+      bool bret = false;
+      if (pango_color_parse(&pango_color, description.data())) {
+        bret = true;
+      }
+      return bret;
+    }
+    bool is_linear_gradient_description(void) {
+      const std::string_view sLinearPattern = "linear-gradient";
+      if (description.compare(0, sLinearPattern.size(), sLinearPattern) != 0)
         return false;
 
       return true;
     }
-    bool is_radial_gradient_description(const std::string &s) {
-      if (s.compare(0, sRadialPattern.size(), sRadialPattern) != 0)
+    bool is_radial_gradient_description(void) {
+      const std::string_view sRadialPattern = "radial-gradient";
+      if (description.compare(0, sRadialPattern.size(), sRadialPattern) != 0)
         return false;
 
       return true;
     }
 
-    bool uxdevice::painter_brush_t::is_patch_description(const std::string &s) {
-      return false;
-    }
+    bool is_patch_description(void) { return false; }
 
-    std::size_t hash_value(void) {
-      std::size_t value = {};
-      hash_combine(value, class_type, description, pango_color, is_loaded);
-      return value;
-    }
+    HASH_OBJECT_MEMBERS(std::type_index(typeid(this)), class_type, description,
+                        pango_color.red, pango_color.green, pango_color.blue,
+                        is_loaded)
+
     paint_definition_class_t class_type = paint_definition_class_t::none;
     std::string description = {};
+    Matrix matrix = {};
     PangoColor pango_color = {0, 0, 0};
     bool is_loaded = false;
-    bool is_valid(void) {
-      return data_storage!=nullptr;
-    }
   };
 
   class descriptive_definition_t : public paint_definition_base_t {
@@ -127,11 +142,17 @@ public:
     descriptive_definition_t(const std::string &_description)
         : paint_definition_base_t(paint_definition_class_t::descriptive,
                                   _description) {}
-    std::size_t hash_value(void) {
-      std::size_t value = {};
-      hash_combine(value, paint_definition_base_t::hash_value());
-      return value;
+                                      descriptive_definition_t &
+    operator=(const descriptive_definition_t &other) {
+
+      return *this;
     }
+    descriptive_definition_t(const descriptive_definition_t &other) : paint_definition_base_t(other) {}
+    descriptive_definition_t(descriptive_definition_t &&other) : paint_definition_base_t(other) {}
+    virtual ~descriptive_definition_t() {}
+
+    HASH_OBJECT_MEMBERS(paint_definition_base_t::hash_code(),
+                        std::type_index(typeid(this)).hash_code())
   };
 
   class color_definition_t : public paint_definition_base_t {
@@ -141,17 +162,34 @@ public:
         : paint_definition_base_t(paint_definition_class_t::color,
                                   _description),
           r(_r), g(_g), b(_b), a(_a) {}
+    color_definition_t(const std::string &_description)
+        : paint_definition_base_t(paint_definition_class_t::color,
+                                  _description) {
+      if (pango_color_parse(&pango_color, _description.data())) {
+        r = pango_color.red / 65535.0;
+        g = pango_color.green / 65535.0;
+        b = pango_color.blue / 65535.0;
+        a = 1;
+        is_loaded = true;
+      }
+    }
+    color_definition_t &
+    operator=(const color_definition_t &other) {
 
+      return *this;
+    }
+    color_definition_t(const color_definition_t &other) : paint_definition_base_t(other) {}
+    color_definition_t(color_definition_t &&other) : paint_definition_base_t(other) {}
+
+    virtual ~color_definition_t() {}
     virtual void emit(cairo_t *cr) { cairo_set_source_rgba(cr, r, g, b, a); }
     virtual void emit(cairo_t *cr, double x, double y, double w, double h) {
       cairo_set_source_rgba(cr, r, g, b, a);
     }
 
-    std::size_t hash_value(void) {
-      std::size_t value = {};
-      hash_combine(value, paint_definition_base_t::hash_value(), r, g, b, a);
-      return value;
-    }
+    HASH_OBJECT_MEMBERS(paint_definition_base_t::hash_code(),
+                        std::type_index(typeid(this)), r, g, b, a)
+
     double r = {};
     double g = {};
     double b = {};
@@ -162,35 +200,46 @@ public:
   public:
     linear_gradient_definition_t(const std::string &_description, double _x0,
                                  double _y0, double _x1, double _y1,
-                                 color_stops_t &__cs, filter_t _filter,
+                                 const color_stops_t &__cs, filter_t _filter,
                                  extend_t _extend)
-        : paint_definition_base_t((paint_definition_class_t::linear_gradient,_description), x0(_x0), y0(_x0), x1(_x0),
-          y1(_x0), cs(__cs), filter(_filter), extend(_extend) {}
+        : paint_definition_base_t(paint_definition_class_t::linear_gradient,
+                                  _description),
+          x0(_x0), y0(_x0), x1(_x0), y1(_x0), cs(__cs), filter(_filter),
+          extend(_extend) {}
+    linear_gradient_definition_t(const std::string &_description)
+        : paint_definition_base_t(paint_definition_class_t::linear_gradient,
+                                  _description) {}
+    linear_gradient_definition_t &
+    operator=(const linear_gradient_definition_t &other) {
+
+      return *this;
+    }
+    linear_gradient_definition_t(const linear_gradient_definition_t &other) : paint_definition_base_t(other) {}
+    linear_gradient_definition_t(linear_gradient_definition_t &&other) : paint_definition_base_t(other) {}
 
     ~linear_gradient_definition_t() {
-      if (_pattern)
-        cairo_pattern_destroy(_pattern);
+      if (pattern)
+        cairo_pattern_destroy(pattern);
     }
     virtual void emit(cairo_t *cr) {
-      cairo_pattern_set_matrix(pattern, &matrix);
+      cairo_pattern_set_matrix(pattern, &matrix._matrix);
       cairo_set_source(cr, pattern);
     }
     virtual void emit(cairo_t *cr, double x, double y, double w, double h) {
-      cairo_pattern_set_matrix(pattern, &matrix);
+      cairo_pattern_set_matrix(pattern, &matrix._matrix);
       cairo_set_source(cr, pattern);
     }
 
-    std::size_t hash_value(void) {
-      std::size_t value = {};
-      hash_combine(value, paint_definition_base_t::hash_value(), x0, y0, x1, y1,
-                   cs, filter, extend, pattern);
-      return value;
-    }
+    HASH_OBJECT_MEMBERS_CONTAINING_VECTOR(cs, color_stop_t,
+                                          paint_definition_base_t::hash_code(),
+                                          std::type_index(typeid(this)), x0, y0,
+                                          x1, y1, filter, extend, pattern)
+
     double x0 = {};
     double y0 = {};
     double x1 = {};
     double y1 = {};
-    color_stops_t &cs = {};
+    color_stops_t cs = {};
     filter_t filter = {};
     extend_t extend = {};
     cairo_pattern_t *pattern = {};
@@ -201,37 +250,48 @@ public:
     radial_gradient_definition_t(const std::string &_description, double _cx0,
                                  double _cy0, double _radius0, double _cx1,
                                  double _cy1, double _radius1,
-                                 const color_stops_t &_cs)
+                                 const color_stops_t &_cs, filter_t _filter,
+                                 extend_t _extend)
         : paint_definition_base_t(paint_definition_class_t::radial_gradient,
                                   _description),
-          cx0(_cx0), cy0(_cy0), radius0(_radius0), cx1(cx1), cy1(_cy),
-          radius1(_radius1), cs(_cs) {}
+          cx0(_cx0), cy0(_cy0), radius0(_radius0), cx1(_cx1), cy1(_cy1),
+          radius1(_radius1), cs(_cs), filter(_filter), extend(_extend) {}
     ~radial_gradient_definition_t() {
       if (pattern)
         cairo_pattern_destroy(pattern);
     }
+    radial_gradient_definition_t(const std::string &_description)
+        : paint_definition_base_t(paint_definition_class_t::radial_gradient,
+                                  _description) {}
+     radial_gradient_definition_t &
+    operator=(const radial_gradient_definition_t &other) {
+
+      return *this;
+    }
+    radial_gradient_definition_t(const radial_gradient_definition_t &other) : paint_definition_base_t(other) {}
+    radial_gradient_definition_t(radial_gradient_definition_t &&other) : paint_definition_base_t(other) {}
+
     virtual void emit(cairo_t *cr) {
-      cairo_pattern_set_matrix(pattern, &matrix);
+      cairo_pattern_set_matrix(pattern, &matrix._matrix);
       cairo_set_source(cr, pattern);
     }
     virtual void emit(cairo_t *cr, double x, double y, double w, double h) {
-      cairo_pattern_set_matrix(pattern, &matrix);
+      cairo_pattern_set_matrix(pattern, &matrix._matrix);
       cairo_set_source(cr, pattern);
     }
 
-    std::size_t hash_value(void) {
-      hash_combine(value, paint_definition_base_t::hash_value(),  cx0,
-                 cy0, radius0, cx1, cy1, radius1, cs, filter,
-                 extend, pattern));
-      return value;
-    }
+    HASH_OBJECT_MEMBERS_CONTAINING_VECTOR(
+        cs, color_stop_t, paint_definition_base_t::hash_code(),
+        std::type_index(typeid(this)).hash_code(), cx0, cy0, radius0, cx1, cy1,
+        radius1, filter, extend, pattern)
+
     double cx0 = {};
     double cy0 = {};
     double radius0 = {};
     double cx1 = {};
     double cy1 = {};
     double radius1 = {};
-    color_stops_t &cs = {};
+    color_stops_t cs = {};
     filter_t filter = {};
     extend_t extend = {};
     cairo_pattern_t *pattern = {};
@@ -242,8 +302,8 @@ public:
   public:
     image_block_pattern_source_definition_t(const std::string &_description,
                                             double _width, double _height)
-        : paint_definition_base_t(
-              paint_definition_class_t::image_block_pattern),
+        : paint_definition_base_t(paint_definition_class_t::image_block_pattern,
+                                  _description),
           width(_width), height(_height) {}
     image_block_pattern_source_definition_t(const std::string &_description,
                                             double _width, double _height,
@@ -254,9 +314,17 @@ public:
           width(_width), height(_height), image_block(_image), filter(_filter),
           extend(_extend) {
       pattern = cairo_pattern_create_for_surface(image_block);
-      cairo_pattern_set_extend(_pattern, CAIRO_EXTEND_REPEAT);
-      cairo_pattern_set_filter(_pattern, CAIRO_FILTER_FAST);
+      cairo_pattern_set_extend(pattern, static_cast<cairo_extend_t>(extend));
+      cairo_pattern_set_filter(pattern, static_cast<cairo_filter_t>(filter));
     }
+    image_block_pattern_source_definition_t &
+    operator=(const image_block_pattern_source_definition_t &other) {
+
+      return *this;
+    }
+    image_block_pattern_source_definition_t(const image_block_pattern_source_definition_t &other) : paint_definition_base_t(other) {}
+    image_block_pattern_source_definition_t(image_block_pattern_source_definition_t &&other) : paint_definition_base_t(other) {}
+
     ~image_block_pattern_source_definition_t() {
       if (image_block)
         cairo_surface_destroy(image_block);
@@ -264,19 +332,18 @@ public:
         cairo_pattern_destroy(pattern);
     }
     virtual void emit(cairo_t *cr) {
-      cairo_pattern_set_matrix(pattern, &matrix);
+      cairo_pattern_set_matrix(pattern, &matrix._matrix);
       cairo_set_source(cr, pattern);
     }
     virtual void emit(cairo_t *cr, double x, double y, double w, double h) {
-      cairo_pattern_set_matrix(pattern, &matrix);
+      cairo_pattern_set_matrix(pattern, &matrix._matrix);
       cairo_set_source(cr, pattern);
     }
 
-    std::size_t hash_value(void) {
-      hash_combine(value, paint_definition_base_t::hash_value(), width, height,
-                   image_block, pattern, filter, extend);
-      return value;
-    }
+    HASH_OBJECT_MEMBERS(paint_definition_base_t::hash_code(),
+                        std::type_index(typeid(this)), width, height,
+                        image_block, pattern, filter, extend)
+
     double width = {};
     double height = {};
     cairo_surface_t *image_block = {};
@@ -285,18 +352,18 @@ public:
     extend_t extend = {};
   };
 
-  std::shared_ptr<paint_definition_base_t> data_storage_t = {};
   /**
   \brief color given as a uint32 value
   */
   painter_brush_t(u_int32_t c) {
 
-    _r = static_cast<u_int8_t>(c >> 16) / 255.0;
-    _g = static_cast<u_int8_t>(c >> 8) / 255.0;
-    _b = static_cast<u_int8_t>(c) / 255.0;
-    _a = 1.0;
+    u_int8_t r = static_cast<u_int8_t>(c >> 16) / 255.0;
+    u_int8_t g = static_cast<u_int8_t>(c >> 8) / 255.0;
+    u_int8_t b = static_cast<u_int8_t>(c) / 255.0;
+    u_int8_t a = 1.0;
 
-    data_storage= std::make_shared<color_definition_t>(r,g,b,a,"u_int32_t RGB", PangoColor{},true));
+    data_storage =
+        std::make_shared<color_definition_t>("u_int32_t RGB", r, g, b, a);
   }
 
   painter_brush_t(double r, double g, double b)
@@ -318,16 +385,15 @@ public:
   painter_brush_t(double x0, double y0, double x1, double y1,
                   const color_stops_t &cs)
       : data_storage(std::make_shared<linear_gradient_definition_t>(
-            "linear_gradient", x0, y0, x1, y1, cs, filter_t::none,
-            extend_t::none)) {}
+            "linear_gradient", x0, y0, x1, y1, cs, filter_t::fast,
+            extend_t::off)) {}
 
   // specify a radial gradient
   painter_brush_t(double cx0, double cy0, double radius0, double cx1,
                   double cy1, double radius1, const color_stops_t &cs)
       : data_storage(std::make_shared<radial_gradient_definition_t>(
             "radial_gradient", cx0, cy0, radius0, cx1, cy1, radius1, cs,
-            filter_t::none, extend_t::none, _radius0(radius0), _cx1(cx1),
-            _cy1(cy1), _radius1(radius1), _stops(cs))) {}
+            filter_t::fast, extend_t::off)) {}
 
   painter_brush_t(const painter_brush_t &other) { *this = other; }
   painter_brush_t &operator=(const painter_brush_t &other) {
@@ -346,30 +412,25 @@ public:
 
   virtual void emit(cairo_t *cr);
   virtual void emit(cairo_t *cr, double x, double y, double w, double h);
+  bool is_valid(void) { return data_storage != nullptr; }
 
 private:
   bool create(void);
-  bool is_loaded(void) const { return _is_loaded; }
+
   bool is_linear_gradient(const std::string &s);
   bool is_radial_gradient(const std::string &s);
   bool patch(const std::string &s);
   std::size_t current_hash = {};
 
 public:
+  typedef std::shared_ptr<paint_definition_base_t> data_storage_t;
   data_storage_t data_storage = {};
-}; // class painter_brush_t
+}; // namespace uxdevice
 
 // from -
 // https://stackoverflow.com/questions/2590677/how-do-i-combine-hash-values-in-c0x
 
 } // namespace uxdevice
-
-#define STD_HASHABLE(CLASS_NAME)                                               \
-  template <> struct std::hash<CLASS_NAME> {                                   \
-    std::size_t operator()(CLASS_NAME const &o) const noexcept {               \
-      return o.hash_value();                                                   \
-    }                                                                          \
-  }
 
 STD_HASHABLE(uxdevice::painter_brush_t::paint_definition_base_t);
 STD_HASHABLE(uxdevice::painter_brush_t::descriptive_definition_t);

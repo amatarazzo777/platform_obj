@@ -221,8 +221,7 @@ public:
   antialias(alias_t _antialias)
       : display_unit_t(_antialias), value(std::get<alias_t>(_data)) {}
   antialias &operator=(const antialias &other) {
-    _data = other._data;
-    key = other.key;
+    display_unit_t::operator=(other);
     return *this;
   }
   antialias(const antialias &other)
@@ -256,8 +255,7 @@ public:
                double radius1, const color_stops_t &cs)                        \
         : painter_brush_t(cx0, cy0, radius0, cx1, cy1, radius1, cs) {}         \
     CLASS_NAME &operator=(const CLASS_NAME &other) {                           \
-      _data = other._data;                                                     \
-      key = other.key;                                                         \
+      display_unit_t::operator=(other);                                        \
       return *this;                                                            \
     }                                                                          \
     CLASS_NAME(const CLASS_NAME &other) : painter_brush_t(other) {             \

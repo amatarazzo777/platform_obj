@@ -370,7 +370,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
   });
 
   vis.clear();
-  draw_lines(vis);
+  //draw_lines(vis);
   std::shared_ptr<std::string> paragraph_text =
       std::make_shared<std::string>("starting text");
   std::shared_ptr<std::string> button_caption =

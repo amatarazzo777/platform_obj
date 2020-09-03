@@ -65,3 +65,4 @@
 #include <pango/pangocairo.h>
 
 #include "uxenums.hpp"
+#include "uxstdmacros.hpp"

@@ -64,11 +64,11 @@ uxdevice::color_stop_t::color_stop_t(double o, const std::string &s, double a) {
 }
 
 void uxdevice::color_stop_t::parse_color(const std::string &s) {
-  PangoColor pangoColor;
-  if (pango_color_parse(&pangoColor, s.data())) {
-    _r = pangoColor.red / 65535.0;
-    _g = pangoColor.green / 65535.0;
-    _b = pangoColor.blue / 65535.0;
+  PangoColor pango_color;
+  if (pango_color_parse(&pango_color, s.data())) {
+    _r = pango_color.red / 65535.0;
+    _g = pango_color.green / 65535.0;
+    _b = pango_color.blue / 65535.0;
   }
 }
 
@@ -84,35 +84,38 @@ bool uxdevice::painter_brush_t::create(void) {
   // already created,
   if (data_storage->is_loaded)
     return true;
-  if (!data_storage->is_valid())
+  if (!is_valid())
     return false;
 
   // if a description was provided, determine how it should be interpreted
   if (data_storage->class_type == paint_definition_class_t::descriptive) {
-    auto &_image = read_image(data_storage->description, _width, _height);
+    double _width = {};
+    double _height = {};
+
+    auto _image = read_image(data_storage->description, _width, _height);
 
     if (_image) {
 
-      data_storage=std::make_shared<image_block_pattern_source_definition_t>(data_storage->description,
-             cairo_image_surface_get_width(_image), cairo_image_surface_get_height(_image),
-             _image, filter_t::fast, extend_t::repeat);
+      data_storage = std::make_shared<image_block_pattern_source_definition_t>(
+          data_storage->description, cairo_image_surface_get_width(_image),
+          cairo_image_surface_get_height(_image), _image, filter_t::fast,
+          extend_t::repeat);
 
       // determine if the description is another form such as a gradient or
       // color.
-    } else if (is_linear_gradient_description()) {
-      _gradientType = gradientType::linear;
+    } else if (data_storage->is_linear_gradient_description()) {
+      data_storage = std::make_shared<linear_gradient_definition_t>(
+          data_storage->description);
 
-    } else if (is_radial_gradient_description()) {
-      _gradientType = gradientType::radial;
+    } else if (data_storage->is_radial_gradient_description()) {
+      data_storage = std::make_shared<radial_gradient_definition_t>(
+          data_storage->description);
 
-    } else if (is_patch_description()) {
+    } else if (data_storage->is_patch_description()) {
 
-    } else if (pango_color_parse(&_pangoColor, _description.data())) {
-      r = _pangoColor.red / 65535.0;
-      g = _pangoColor.green / 65535.0;
-      b = _pangoColor.blue / 65535.0;
-      a = 1;
-      is_loaded = true;
+    } else if (data_storage->is_text_color_description()) {
+      data_storage =
+          std::make_shared<color_definition_t>(data_storage->description);
     }
   }
 
@@ -123,17 +126,34 @@ bool uxdevice::painter_brush_t::create(void) {
   // the logic below fills in the offset values automatically distributing
   // equally across the noted offset. offsets are provided from 0 - 1
   // and name the point within the line.
-  if (!is_loaded && stops.size() > 0) {
+  if (!data_storage->is_loaded) {
+    color_stops_t *ptr_cs = {};
+    cairo_pattern_t *ptr_cp = {};
 
-    if (_gradientType == gradientType::linear) {
-      pattern = cairo_pattern_create_linear(x0, y0, x1, y1);
-
-    } else if (_gradientType == gradientType::radial) {
-      pattern =
-          cairo_pattern_create_radial(cx0, cy0, radius0, cx1, cy1, radius1);
+    switch (data_storage->class_type) {
+    case paint_definition_class_t::linear_gradient: {
+      auto p =
+          std::dynamic_pointer_cast<linear_gradient_definition_t>(data_storage);
+      p->pattern = cairo_pattern_create_linear(p->x0, p->y0, p->x1, p->y1);
+      ptr_cp = p->pattern;
+      ptr_cs = &p->cs;
+    } break;
+    case paint_definition_class_t::radial_gradient: {
+      auto p =
+          std::dynamic_pointer_cast<radial_gradient_definition_t>(data_storage);
+      p->pattern = cairo_pattern_create_radial(p->cx0, p->cy0, p->radius0,
+                                               p->cx1, p->cy1, p->radius1);
+      ptr_cp = p->pattern;
+      ptr_cs = &p->cs;
+    } break;
+    case paint_definition_class_t::none: {} break;
+    case paint_definition_class_t::descriptive: {} break;
+    case paint_definition_class_t::color: {} break;
+    case paint_definition_class_t::image_block_pattern: {} break;
     }
-    // provide auto offsets
-    if (pattern) {
+
+    color_stops_t &_stops = *ptr_cs;
+    if (_stops.size() > 0 && ptr_cp) {
       bool bDone = false;
       bool bEdgeEnd = false;
 
@@ -192,19 +212,18 @@ bool uxdevice::painter_brush_t::create(void) {
       // add the color stops
       std::for_each(_stops.begin(), _stops.end(), [=](auto &n) {
         if (n._bRGBA)
-          cairo_pattern_add_color_stop_rgba(_pattern, n._offset, n._r, n._g,
-                                            n._b, n._a);
+          cairo_pattern_add_color_stop_rgba(ptr_cp, n._offset, n._r, n._g, n._b,
+                                            n._a);
         else
-          cairo_pattern_add_color_stop_rgb(_pattern, n._offset, n._r, n._g,
-                                           n._b);
+          cairo_pattern_add_color_stop_rgb(ptr_cp, n._offset, n._r, n._g, n._b);
       });
 
-      cairo_pattern_set_extend(_pattern, CAIRO_EXTEND_REPEAT);
-      is_loaded = true;
+      cairo_pattern_set_extend(ptr_cp, CAIRO_EXTEND_REPEAT);
+      data_storage->is_loaded = true;
     }
   }
 
-  return _is_loaded;
+  return data_storage->is_loaded;
 }
 
 /**
@@ -215,27 +234,28 @@ the color name string.
 
 */
 void uxdevice::painter_brush_t::emit(cairo_t *cr) {
-  if (!is_loaded)
+  if (!data_storage->is_loaded)
     create();
 
-  if (is_loaded) {
+  if (data_storage->is_loaded) {
     data_storage->emit(cr);
   }
 }
 
 void uxdevice::painter_brush_t::emit(cairo_t *cr, double x, double y, double w,
                                      double h) {
-  if (!is_loaded) {
+  if (!data_storage->is_loaded) {
     create();
 
     // adjust to user space
-    if (class_type == paint_definition_class_t::linear_gradient ||
-        class_type == paint_definition_class_t::radial_gradient ||
-        class_type == paint_definition_class_t::image_block_pattern)
+    if (data_storage->class_type == paint_definition_class_t::linear_gradient ||
+        data_storage->class_type == paint_definition_class_t::radial_gradient ||
+        data_storage->class_type ==
+            paint_definition_class_t::image_block_pattern)
       translate(-x, -y);
   }
 
-  if (is_loaded) {
+  if (data_storage->is_loaded) {
     data_storage->emit(cr, x, y, w, h);
   }
 }
