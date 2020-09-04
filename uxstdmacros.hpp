@@ -1,12 +1,22 @@
 /**
 \author Anthony Matarazzo
-\file uxevent.hpp
+\file uxstdmacros.hpp
 \date 5/12/20
 \version 1.0
- \details  paint class
+ \details  macros that minimize the maintained of member that are summarized
+ in a has value.
 
 */
+
 #pragma once
+namespace uxdevice {
+template <typename T, typename... Rest>
+void hash_combine(std::size_t &seed, const T &v, const Rest &... rest) {
+  seed ^= std::hash<T>{}(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+  (hash_combine(seed, rest), ...);
+}
+} // namespace uxdevice
+
 #define STD_HASHABLE(CLASS_NAME)                                               \
   template <> struct std::hash<CLASS_NAME> {                                   \
     std::size_t operator()(CLASS_NAME const &o) const noexcept {               \

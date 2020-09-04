@@ -99,8 +99,8 @@ bool uxdevice::painter_brush_t::create(void) {
       data_storage = std::make_shared<image_block_pattern_source_definition_t>(
           data_storage->description, cairo_image_surface_get_width(_image),
           cairo_image_surface_get_height(_image), _image, filter_t::fast,
-          extend_t::repeat);
-
+          extend_t::repeat );
+      data_storage->is_loaded=true;
       // determine if the description is another form such as a gradient or
       // color.
     } else if (data_storage->is_linear_gradient_description()) {
@@ -119,6 +119,10 @@ bool uxdevice::painter_brush_t::create(void) {
     }
   }
 
+  // early exit
+  if (data_storage->is_loaded)
+    return data_storage->is_loaded;
+
   // still more processing to do, -- create gradients
   // the parsing above for gradients populates this data.
   // so this logic is used in duel form. When gradients may be
@@ -126,104 +130,112 @@ bool uxdevice::painter_brush_t::create(void) {
   // the logic below fills in the offset values automatically distributing
   // equally across the noted offset. offsets are provided from 0 - 1
   // and name the point within the line.
-  if (!data_storage->is_loaded) {
-    color_stops_t *ptr_cs = {};
-    cairo_pattern_t *ptr_cp = {};
 
-    switch (data_storage->class_type) {
-    case paint_definition_class_t::linear_gradient: {
-      auto p =
-          std::dynamic_pointer_cast<linear_gradient_definition_t>(data_storage);
-      p->pattern = cairo_pattern_create_linear(p->x0, p->y0, p->x1, p->y1);
-      ptr_cp = p->pattern;
-      ptr_cs = &p->cs;
-    } break;
-    case paint_definition_class_t::radial_gradient: {
-      auto p =
-          std::dynamic_pointer_cast<radial_gradient_definition_t>(data_storage);
-      p->pattern = cairo_pattern_create_radial(p->cx0, p->cy0, p->radius0,
-                                               p->cx1, p->cy1, p->radius1);
-      ptr_cp = p->pattern;
-      ptr_cs = &p->cs;
-    } break;
-    case paint_definition_class_t::none: {} break;
-    case paint_definition_class_t::descriptive: {} break;
-    case paint_definition_class_t::color: {} break;
-    case paint_definition_class_t::image_block_pattern: {} break;
-    }
-
-    color_stops_t &_stops = *ptr_cs;
-    if (_stops.size() > 0 && ptr_cp) {
-      bool bDone = false;
-      bool bEdgeEnd = false;
-
-      // first one, if auto offset set to
-      //   0 - the beginning of the color stops
-      color_stops_iterator_t it = _stops.begin();
-      if (it->_bAutoOffset) {
-        it->_bAutoOffset = false;
-        it->_offset = 0;
-      }
-      double dOffset = it->_offset;
-
-      while (!bDone) {
-
-        // find first color stop with a defined offset.
-        color_stops_iterator_t it2 =
-            find_if(it + 1, _stops.end(),
-                    [](auto const &o) { return !o._bAutoOffset; });
-
-        // not found, the last item in color stops did not have a value,
-        // assign it 1.0
-        if (it2 == _stops.end()) {
-          bEdgeEnd = true;
-          bDone = true;
-          // very last one has a setting
-        } else if (it2 == _stops.end() - 1) {
-          bDone = true;
-        }
-
-        // distribute offsets equally across range
-        int ncolor_stops_t = std::distance(it, it2);
-        if (bEdgeEnd)
-          ncolor_stops_t--;
-
-        if (ncolor_stops_t > 0) {
-          double incr = 0;
-          if (bEdgeEnd) {
-            incr = (1 - it->_offset) / ncolor_stops_t;
-          } else {
-            incr = (it2->_offset - it->_offset) / ncolor_stops_t;
-            ncolor_stops_t--;
-          }
-
-          dOffset = it->_offset;
-          while (ncolor_stops_t) {
-            it++;
-            dOffset += incr;
-            it->_offset = dOffset;
-            it->_bAutoOffset = false;
-            ncolor_stops_t--;
-          }
-        }
-        // forward to next range
-        it = it2;
-      }
-      // add the color stops
-      std::for_each(_stops.begin(), _stops.end(), [=](auto &n) {
-        if (n._bRGBA)
-          cairo_pattern_add_color_stop_rgba(ptr_cp, n._offset, n._r, n._g, n._b,
-                                            n._a);
-        else
-          cairo_pattern_add_color_stop_rgb(ptr_cp, n._offset, n._r, n._g, n._b);
-      });
-
-      cairo_pattern_set_extend(ptr_cp, CAIRO_EXTEND_REPEAT);
-      data_storage->is_loaded = true;
-    }
+  color_stops_t *ptr_cs = {};
+  cairo_pattern_t *ptr_cp = {};
+  switch (data_storage->class_type) {
+  case paint_definition_class_t::linear_gradient: {
+    auto p =
+        std::dynamic_pointer_cast<linear_gradient_definition_t>(data_storage);
+    p->pattern = cairo_pattern_create_linear(p->x0, p->y0, p->x1, p->y1);
+    ptr_cp = p->pattern;
+    ptr_cs = &p->cs;
+  } break;
+  case paint_definition_class_t::radial_gradient: {
+    auto p =
+        std::dynamic_pointer_cast<radial_gradient_definition_t>(data_storage);
+    p->pattern = cairo_pattern_create_radial(p->cx0, p->cy0, p->radius0, p->cx1,
+                                             p->cy1, p->radius1);
+    ptr_cp = p->pattern;
+    ptr_cs = &p->cs;
+  } break;
+  case paint_definition_class_t::none: {
+  } break;
+  case paint_definition_class_t::descriptive: {
+  } break;
+  case paint_definition_class_t::color: {
+  } break;
+  case paint_definition_class_t::image_block_pattern: {
+  } break;
   }
 
-  return data_storage->is_loaded;
+  // early exit
+  if (!ptr_cs) {
+    data_storage->is_loaded = false;
+    return data_storage->is_loaded;
+  }
+
+  color_stops_t &_stops = *ptr_cs;
+  if (_stops.size() > 0 && ptr_cp) {
+    bool bDone = false;
+    bool bEdgeEnd = false;
+
+    // first one, if auto offset set to
+    //   0 - the beginning of the color stops
+    color_stops_iterator_t it = _stops.begin();
+    if (it->_bAutoOffset) {
+      it->_bAutoOffset = false;
+      it->_offset = 0;
+    }
+    double dOffset = it->_offset;
+
+    while (!bDone) {
+
+      // find first color stop with a defined offset.
+      color_stops_iterator_t it2 = find_if(
+          it + 1, _stops.end(), [](auto const &o) { return !o._bAutoOffset; });
+
+      // not found, the last item in color stops did not have a value,
+      // assign it 1.0
+      if (it2 == _stops.end()) {
+        bEdgeEnd = true;
+        bDone = true;
+        // very last one has a setting
+      } else if (it2 == _stops.end() - 1) {
+        bDone = true;
+      }
+
+      // distribute offsets equally across range
+      int ncolor_stops_t = std::distance(it, it2);
+      if (bEdgeEnd)
+        ncolor_stops_t--;
+
+      if (ncolor_stops_t > 0) {
+        double incr = 0;
+        if (bEdgeEnd) {
+          incr = (1 - it->_offset) / ncolor_stops_t;
+        } else {
+          incr = (it2->_offset - it->_offset) / ncolor_stops_t;
+          ncolor_stops_t--;
+        }
+
+        dOffset = it->_offset;
+        while (ncolor_stops_t) {
+          it++;
+          dOffset += incr;
+          it->_offset = dOffset;
+          it->_bAutoOffset = false;
+          ncolor_stops_t--;
+        }
+      }
+      // forward to next range
+      it = it2;
+    }
+    // add the color stops
+    std::for_each(_stops.begin(), _stops.end(), [=](auto &n) {
+      if (n._bRGBA)
+        cairo_pattern_add_color_stop_rgba(ptr_cp, n._offset, n._r, n._g, n._b,
+                                          n._a);
+      else
+        cairo_pattern_add_color_stop_rgb(ptr_cp, n._offset, n._r, n._g, n._b);
+    });
+
+    cairo_pattern_set_extend(ptr_cp, CAIRO_EXTEND_REPEAT);
+    data_storage->is_loaded = true;
+  }
+
+
+return data_storage->is_loaded;
 }
 
 /**

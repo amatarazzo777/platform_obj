@@ -18,12 +18,6 @@ namespace uxdevice {
 enum class paintType { none, color, pattern, image_block };
 enum class gradientType { none, linear, radial };
 
-template <typename T, typename... Rest>
-void hash_combine(std::size_t &seed, const T &v, const Rest &... rest) {
-  seed ^= std::hash<T>{}(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-  (hash_combine(seed, rest), ...);
-}
-
 class color_stop_t {
 public:
   color_stop_t(u_int32_t c);
@@ -38,8 +32,8 @@ public:
   color_stop_t(double o, const std::string &s, double a);
   void parse_color(const std::string &s);
 
-  HASH_OBJECT_MEMBERS(std::type_index(typeid(color_stop_t)), _bAutoOffset,
-                      _bRGBA, _offset, _r, _g, _b, _a)
+  HASH_OBJECT_MEMBERS(std::type_index(typeid(this)), _bAutoOffset, _bRGBA,
+                      _offset, _r, _g, _b, _a)
 
   bool _bAutoOffset = false;
   bool _bRGBA = false;
@@ -96,7 +90,7 @@ public:
 
       return *this;
     }
-    paint_definition_base_t(const paint_definition_base_t &other)  {}
+    paint_definition_base_t(const paint_definition_base_t &other) {}
     paint_definition_base_t(paint_definition_base_t &&other) {}
 
     virtual ~paint_definition_base_t() {}
@@ -142,13 +136,14 @@ public:
     descriptive_definition_t(const std::string &_description)
         : paint_definition_base_t(paint_definition_class_t::descriptive,
                                   _description) {}
-                                      descriptive_definition_t &
-    operator=(const descriptive_definition_t &other) {
+    descriptive_definition_t &operator=(const descriptive_definition_t &other) {
 
       return *this;
     }
-    descriptive_definition_t(const descriptive_definition_t &other) : paint_definition_base_t(other) {}
-    descriptive_definition_t(descriptive_definition_t &&other) : paint_definition_base_t(other) {}
+    descriptive_definition_t(const descriptive_definition_t &other)
+        : paint_definition_base_t(other) {}
+    descriptive_definition_t(descriptive_definition_t &&other)
+        : paint_definition_base_t(other) {}
     virtual ~descriptive_definition_t() {}
 
     HASH_OBJECT_MEMBERS(paint_definition_base_t::hash_code(),
@@ -173,13 +168,23 @@ public:
         is_loaded = true;
       }
     }
-    color_definition_t &
-    operator=(const color_definition_t &other) {
-
+    color_definition_t &operator=(const color_definition_t &other) {
+      r = other.r;
+      g = other.g;
+      b = other.b;
+      a = other.a;
       return *this;
     }
-    color_definition_t(const color_definition_t &other) : paint_definition_base_t(other) {}
-    color_definition_t(color_definition_t &&other) : paint_definition_base_t(other) {}
+    color_definition_t(const color_definition_t &other)
+        : paint_definition_base_t(other), r(other.r), g(other.g), b(other.b),
+          a(other.a) {}
+    color_definition_t(color_definition_t &&other)
+        : paint_definition_base_t(other) {
+      r = std::move(other.r);
+      g = std::move(other.g);
+      b = std::move(other.b);
+      a = std::move(other.a);
+    }
 
     virtual ~color_definition_t() {}
     virtual void emit(cairo_t *cr) { cairo_set_source_rgba(cr, r, g, b, a); }
@@ -214,8 +219,10 @@ public:
 
       return *this;
     }
-    linear_gradient_definition_t(const linear_gradient_definition_t &other) : paint_definition_base_t(other) {}
-    linear_gradient_definition_t(linear_gradient_definition_t &&other) : paint_definition_base_t(other) {}
+    linear_gradient_definition_t(const linear_gradient_definition_t &other)
+        : paint_definition_base_t(other) {}
+    linear_gradient_definition_t(linear_gradient_definition_t &&other)
+        : paint_definition_base_t(other) {}
 
     ~linear_gradient_definition_t() {
       if (pattern)
@@ -263,13 +270,15 @@ public:
     radial_gradient_definition_t(const std::string &_description)
         : paint_definition_base_t(paint_definition_class_t::radial_gradient,
                                   _description) {}
-     radial_gradient_definition_t &
+    radial_gradient_definition_t &
     operator=(const radial_gradient_definition_t &other) {
 
       return *this;
     }
-    radial_gradient_definition_t(const radial_gradient_definition_t &other) : paint_definition_base_t(other) {}
-    radial_gradient_definition_t(radial_gradient_definition_t &&other) : paint_definition_base_t(other) {}
+    radial_gradient_definition_t(const radial_gradient_definition_t &other)
+        : paint_definition_base_t(other) {}
+    radial_gradient_definition_t(radial_gradient_definition_t &&other)
+        : paint_definition_base_t(other) {}
 
     virtual void emit(cairo_t *cr) {
       cairo_pattern_set_matrix(pattern, &matrix._matrix);
@@ -322,8 +331,12 @@ public:
 
       return *this;
     }
-    image_block_pattern_source_definition_t(const image_block_pattern_source_definition_t &other) : paint_definition_base_t(other) {}
-    image_block_pattern_source_definition_t(image_block_pattern_source_definition_t &&other) : paint_definition_base_t(other) {}
+    image_block_pattern_source_definition_t(
+        const image_block_pattern_source_definition_t &other)
+        : paint_definition_base_t(other) {}
+    image_block_pattern_source_definition_t(
+        image_block_pattern_source_definition_t &&other)
+        : paint_definition_base_t(other) {}
 
     ~image_block_pattern_source_definition_t() {
       if (image_block)

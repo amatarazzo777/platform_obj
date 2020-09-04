@@ -153,8 +153,8 @@ error_exit:
 \brief reads the image_block and creates a cairo surface image_block.
 */
 cairo_surface_t *uxdevice::read_image(std::string &data, double w, double h) {
-  const string dataPNG = "data:image/png;base64,";
-  const string dataSVG = "<?xml";
+  const string dataPNG = string("data:image/png;base64,");
+  const string dataSVG = string("<?xml");
   cairo_surface_t *image = nullptr;
 
   if (data.size() == 0)
