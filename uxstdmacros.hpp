@@ -31,7 +31,10 @@ void hash_combine(std::size_t &seed, const T &v, const Rest &... rest) {
     std::size_t value = {};                                                    \
     hash_combine(value, __VA_ARGS__);                                          \
     return value;                                                              \
-  }
+  }                                                                            \
+  std::size_t __used_hash_code = {};                                           \
+  void state_hash_code(void) { __used_hash_code = hash_code(); }               \
+  bool is_different_hash() { return hash_code() != __used_hash_code; }
 
 #define HASH_OBJECT_MEMBER_SHARED_PTR(PTR_VAR)                                 \
   PTR_VAR ? PTR_VAR->hash_code() : std::type_index(typeid(PTR_VAR)).hash_code()

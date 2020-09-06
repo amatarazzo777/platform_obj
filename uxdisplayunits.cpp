@@ -43,6 +43,7 @@ void uxdevice::drawing_output_t::invoke(cairo_t *cr) {
   for (auto &fn : options)
     fn->invoke(cr);
   is_processed = true;
+  state_hash_code();
 }
 
 void uxdevice::drawing_output_t::intersect(cairo_rectangle_t &r) {
@@ -116,6 +117,7 @@ void uxdevice::option_function_object_t::invoke(display_context_t &context) {
     });
     context.current_units._options.emplace_back(this);
   }
+  state_hash_code();
 }
 
 /**
@@ -198,6 +200,7 @@ void uxdevice::textual_render::create_shadow(void) {
 
 void uxdevice::textual_render::invoke(display_context_t &context) {
   setup_draw(context);
+  state_hash_code();
 }
 
 /**
@@ -524,6 +527,7 @@ void uxdevice::image_block::invoke(display_context_t &context) {
   fn_base_surface(context);
 
   is_processed = true;
+  state_hash_code();
 }
 
 /**
@@ -581,4 +585,5 @@ void uxdevice::draw_function_object_t::invoke(display_context_t &context) {
   fn_base_surface(context);
 
   is_processed = true;
+  state_hash_code();
 }

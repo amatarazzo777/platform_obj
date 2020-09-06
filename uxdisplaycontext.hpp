@@ -144,14 +144,14 @@ public:
     return *this;
   }
 
-  drawing_output_collection_t viewportOff = {};
+  drawing_output_collection_t viewport_off = {};
   std::atomic_flag drawables_off_readwrite = ATOMIC_FLAG_INIT;
 #define DRAWABLES_OFF_SPIN                                                     \
   while (drawables_off_readwrite.test_and_set(std::memory_order_acquire))
 #define DRAWABLES_OFF_CLEAR                                                    \
   drawables_off_readwrite.clear(std::memory_order_release)
 
-  drawing_output_collection_t viewportOn = {};
+  drawing_output_collection_t viewport_on = {};
   std::atomic_flag drawables_on_readwrite = ATOMIC_FLAG_INIT;
 #define DRAWABLES_ON_SPIN                                                      \
   while (drawables_on_readwrite.test_and_set(std::memory_order_acquire))

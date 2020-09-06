@@ -245,11 +245,11 @@ void uxdevice::display_context_t::add_drawable(
   _obj->intersect(viewport_rectangle);
   if (_obj->overlap == CAIRO_REGION_OVERLAP_OUT) {
     DRAWABLES_OFF_SPIN;
-    viewportOff.emplace_back(_obj);
+    viewport_off.emplace_back(_obj);
     DRAWABLES_OFF_CLEAR;
   } else {
     DRAWABLES_ON_SPIN;
-    viewportOn.emplace_back(_obj);
+    viewport_on.emplace_back(_obj);
     DRAWABLES_ON_CLEAR;
     state(_obj);
   }
@@ -266,13 +266,13 @@ void uxdevice::display_context_t::partition_visibility(void) {
   viewport_rectangle = {(double)offsetx, (double)offsety,
                         (double)offsetx + (double)window_width,
                         (double)offsety + (double)window_height};
-  if (viewportOff.empty()) {
+  if (viewport_off.empty()) {
     DRAWABLES_OFF_CLEAR;
     return;
   }
 
-  drawing_output_collection_t::iterator obj = viewportOff.begin();
-  while (obj != viewportOff.end()) {
+  drawing_output_collection_t::iterator obj = viewport_off.begin();
+  while (obj != viewport_off.end()) {
     std::shared_ptr<drawing_output_t> n = *obj;
     DRAWABLES_OFF_CLEAR;
 
@@ -286,17 +286,17 @@ void uxdevice::display_context_t::partition_visibility(void) {
       drawing_output_collection_t::iterator next = obj;
       next++;
       DRAWABLES_ON_SPIN;
-      viewportOn.emplace_back(n);
+      viewport_on.emplace_back(n);
       DRAWABLES_ON_CLEAR;
 
       DRAWABLES_OFF_SPIN;
-      if (clearing_frame || viewportOff.empty()) {
+      if (clearing_frame || viewport_off.empty()) {
         clearing_frame = false;
         DRAWABLES_OFF_CLEAR;
         break;
       }
 
-      viewportOff.erase(obj);
+      viewport_off.erase(obj);
       DRAWABLES_OFF_CLEAR;
       obj = next;
     } else {
@@ -329,11 +329,11 @@ void uxdevice::display_context_t::clear(void) {
   REGIONS_CLEAR;
 
   DRAWABLES_ON_SPIN;
-  viewportOn.clear();
+  viewport_on.clear();
   DRAWABLES_ON_CLEAR;
 
   DRAWABLES_OFF_SPIN;
-  viewportOff.clear();
+  viewport_off.clear();
   DRAWABLES_OFF_CLEAR;
 
   state(0, 0, window_width, window_height);
@@ -409,6 +409,13 @@ void uxdevice::display_context_t::state_notify_complete(void) {
 */
 bool uxdevice::display_context_t::state(void) {
 
+  // determine if any on screen elements, or their attribute shared pointers
+  // have changed.
+  for (auto n : viewport_on) {
+    if (n->is_different_hash())
+      add_drawable(n);
+  }
+
   REGIONS_SPIN;
   bool ret = !_regions.empty();
   REGIONS_CLEAR;
@@ -435,12 +442,12 @@ void uxdevice::display_context_t::plot(context_cairo_region_t &plotArea) {
   // setting the flag informs that the contents
   // has been evaluated and ma be removed
   DRAWABLES_ON_SPIN;
-  if (viewportOn.empty()) {
+  if (viewport_on.empty()) {
     DRAWABLES_ON_CLEAR;
     return;
   }
 
-  auto itUnit = viewportOn.begin();
+  auto itUnit = viewport_on.begin();
   bool bDone = false;
   while (!bDone) {
 
@@ -474,7 +481,7 @@ void uxdevice::display_context_t::plot(context_cairo_region_t &plotArea) {
     DRAWABLES_ON_SPIN;
     if (!bDone) {
       itUnit++;
-      bDone = itUnit == viewportOn.end();
+      bDone = itUnit == viewport_on.end();
     }
   }
   DRAWABLES_ON_CLEAR;

@@ -56,7 +56,7 @@ template <> struct std::hash<uxdevice::display_unit_storage_t> {
     else if (auto pval = std::get_if<double>(&o))
       uxdevice::hash_combine(value, *pval);
     else if (auto pval = std::get_if<std::vector<double>>(&o)) {
-      for(auto n:*pval)
+      for (auto n : *pval)
         uxdevice::hash_combine(value, n);
     } else if (auto pval = std::get_if<std::size_t>(&o))
       uxdevice::hash_combine(value, *pval);
@@ -75,9 +75,9 @@ template <> struct std::hash<uxdevice::display_unit_storage_t> {
     else if (auto pval = std::get_if<uxdevice::op_t>(&o))
       uxdevice::hash_combine(value, *pval);
     else if (auto pval = std::get_if<uxdevice::alignment_t>(&o))
-        uxdevice::hash_combine(value, *pval);
+      uxdevice::hash_combine(value, *pval);
     else if (auto pval = std::get_if<uxdevice::ellipsize_t>(&o))
-        uxdevice::hash_combine(value, *pval);
+      uxdevice::hash_combine(value, *pval);
 
     return value;
   }
@@ -126,7 +126,7 @@ public:
   }
   display_unit_t(display_unit_t &&other) { _data = std::move(other._data); }
 
-  virtual void invoke(display_context_t &context) {}
+  virtual void invoke(display_context_t &context) { state_hash_code(); }
   virtual bool is_output(void) { return false; }
   void error(const char *s) { _serror = s; }
   bool valid(void) { return _serror == nullptr; }
@@ -282,6 +282,7 @@ public:
   antialias(antialias &&other) : value(other.value) {}
 
   void invoke(display_context_t &context) {
+    state_hash_code();
     cairo_set_antialias(context.cr, static_cast<cairo_antialias_t>(value));
     is_processed = true;
   }
@@ -351,6 +352,7 @@ public:
   text_outline_off &operator=(const text_outline_off &other) { return *this; }
   text_outline_off(const text_outline_off &other) {}
   void invoke(display_context_t &context) {
+    state_hash_code();
     is_processed = true;
     context.current_units._text_outline.reset();
   }
@@ -370,6 +372,7 @@ public:
   text_fill_off &operator=(const text_fill_off &other) { return *this; }
   text_fill_off(const text_fill_off &other) {}
   void invoke(display_context_t &context) {
+    state_hash_code();
     is_processed = true;
     context.current_units._text_fill.reset();
   }
@@ -388,6 +391,7 @@ public:
   text_shadow_off(const text_shadow_off &other) {}
 
   void invoke(display_context_t &context) {
+    state_hash_code();
     is_processed = true;
     context.current_units._text_shadow.reset();
   }
@@ -462,6 +466,7 @@ public:
   line_width(const line_width &other)
       : display_unit_t(other), value(std::get<double>(_data)) {}
   void invoke(display_context_t &context) {
+    state_hash_code();
     is_processed = true;
     cairo_set_line_width(context.cr, value);
   }
@@ -583,6 +588,7 @@ public:
         context.error_state(__func__, __LINE__, __FILE__, std::string_view(s));
       }
     }
+    state_hash_code();
   }
   HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
                       std::type_index(typeid(this)).hash_code(), value)
@@ -605,6 +611,7 @@ public:
   void invoke(display_context_t &context) {
     is_processed = true;
     cairo_set_line_cap(context.cr, static_cast<cairo_line_cap_t>(value));
+    state_hash_code();
   }
   HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
                       std::type_index(typeid(this)).hash_code(), value)
@@ -627,6 +634,7 @@ public:
   void invoke(display_context_t &context) {
     is_processed = true;
     cairo_set_line_join(context.cr, static_cast<cairo_line_join_t>(value));
+    state_hash_code();
   }
   HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
                       std::type_index(typeid(this)).hash_code(), value)
@@ -648,6 +656,7 @@ public:
   void invoke(display_context_t &context) {
     is_processed = true;
     cairo_set_miter_limit(context.cr, value);
+    state_hash_code();
   }
   HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
                       std::type_index(typeid(this)).hash_code(), value)
@@ -670,6 +679,7 @@ public:
   void invoke(display_context_t &context) {
     is_processed = true;
     cairo_set_dash(context.cr, value.data(), value.size(), _offset);
+    state_hash_code();
   }
   TYPED_INDEX_INTERFACE(line_dashes)
   HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
@@ -692,7 +702,10 @@ public:
   textual_data &operator=(const textual_data &other) { return *this; }
   textual_data(const textual_data &other)
       : display_unit_t(other), value(std::get<std::string>(_data)) {}
-  void invoke(display_context_t &context) { is_processed = true; }
+  void invoke(display_context_t &context) {
+    is_processed = true;
+    state_hash_code();
+  }
   TYPED_INDEX_INTERFACE(textual_data)
 
   HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
@@ -784,8 +797,7 @@ public:
   bool is_valid(void);
 
   HASH_OBJECT_MEMBERS(drawing_output_t::hash_code(),
-                      std::type_index(typeid(this)).hash_code(), value,
-                       is_SVG,
+                      std::type_index(typeid(this)).hash_code(), value, is_SVG,
                       _coordinates ? _coordinates->hash_code() : 0)
 
   std::string &value;
@@ -1373,7 +1385,9 @@ public:
   listener(const listener &other)
       : display_unit_t(other), eType(other.eType),
         evtDispatcher(other.evtDispatcher) {}
-
+  HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), eType,
+                      evtDispatcher.target_type().hash_code())
   eventType eType = {};
   event_handler_t evtDispatcher = {};
   TYPED_INDEX_INTERFACE(listener)
@@ -1394,6 +1408,8 @@ public:
     return *this;
   }
   listen_paint(const listen_paint &other) : listener(other) {}
+  HASH_OBJECT_MEMBERS(listener::hash_code(),
+                    std::type_index(typeid(this)).hash_code())
   TYPED_INDEX_INTERFACE(listen_paint)
 };
 } // namespace uxdevice
@@ -1410,6 +1426,8 @@ public:
     return *this;
   }
   listen_focus(const listen_focus &other) : listener(other) {}
+  HASH_OBJECT_MEMBERS(listener::hash_code(),
+                    std::type_index(typeid(this)).hash_code())
   TYPED_INDEX_INTERFACE(listen_focus)
 };
 } // namespace uxdevice
@@ -1426,6 +1444,8 @@ public:
     return *this;
   }
   listen_blur(const listen_blur &other) : listener(other) {}
+  HASH_OBJECT_MEMBERS(listener::hash_code(),
+                    std::type_index(typeid(this)).hash_code())
   TYPED_INDEX_INTERFACE(listen_blur)
 };
 } // namespace uxdevice
@@ -1442,6 +1462,8 @@ public:
     return *this;
   }
   listen_resize(const listen_resize &other) : listener(other) {}
+  HASH_OBJECT_MEMBERS(listener::hash_code(),
+                    std::type_index(typeid(this)).hash_code())
   TYPED_INDEX_INTERFACE(listen_resize)
 };
 } // namespace uxdevice
@@ -1458,6 +1480,8 @@ public:
     return *this;
   }
   listen_keydown(const listen_keydown &other) : listener(other) {}
+  HASH_OBJECT_MEMBERS(listener::hash_code(),
+                  std::type_index(typeid(this)).hash_code())
   TYPED_INDEX_INTERFACE(listen_keydown)
 };
 } // namespace uxdevice
@@ -1474,6 +1498,8 @@ public:
     return *this;
   }
   listen_keyup(const listen_keyup &other) : listener(other) {}
+  HASH_OBJECT_MEMBERS(listener::hash_code(),
+                    std::type_index(typeid(this)).hash_code())
   TYPED_INDEX_INTERFACE(listen_keyup)
 };
 } // namespace uxdevice
@@ -1490,6 +1516,8 @@ public:
     return *this;
   }
   listen_keypress(const listen_keypress &other) : listener(other) {}
+  HASH_OBJECT_MEMBERS(listener::hash_code(),
+                    std::type_index(typeid(this)).hash_code())
   TYPED_INDEX_INTERFACE(listen_keypress)
 };
 } // namespace uxdevice
@@ -1506,6 +1534,8 @@ public:
     return *this;
   }
   listen_mouseenter(const listen_mouseenter &other) : listener(other) {}
+  HASH_OBJECT_MEMBERS(listener::hash_code(),
+                    std::type_index(typeid(this)).hash_code())
   TYPED_INDEX_INTERFACE(listen_mouseenter)
 };
 } // namespace uxdevice
@@ -1522,6 +1552,8 @@ public:
     return *this;
   }
   listen_mousemove(const listen_mousemove &other) : listener(other) {}
+  HASH_OBJECT_MEMBERS(listener::hash_code(),
+                    std::type_index(typeid(this)).hash_code())
   TYPED_INDEX_INTERFACE(listen_mousemove)
 };
 } // namespace uxdevice
@@ -1538,6 +1570,8 @@ public:
     return *this;
   }
   listen_mousedown(const listen_mousedown &other) : listener(other) {}
+  HASH_OBJECT_MEMBERS(listener::hash_code(),
+                    std::type_index(typeid(this)).hash_code())
   TYPED_INDEX_INTERFACE(listen_mousedown)
 };
 } // namespace uxdevice
@@ -1554,6 +1588,8 @@ public:
     return *this;
   }
   listen_mouseup(const listen_mouseup &other) : listener(other) {}
+  HASH_OBJECT_MEMBERS(listener::hash_code(),
+                    std::type_index(typeid(this)).hash_code())
   TYPED_INDEX_INTERFACE(listen_mouseup)
 };
 } // namespace uxdevice
@@ -1570,6 +1606,8 @@ public:
     return *this;
   }
   listen_click(const listen_click &other) : listener(other) {}
+  HASH_OBJECT_MEMBERS(listener::hash_code(),
+                    std::type_index(typeid(this)).hash_code())
   TYPED_INDEX_INTERFACE(listen_click)
 };
 } // namespace uxdevice
@@ -1586,6 +1624,8 @@ public:
     return *this;
   }
   listen_dblclick(const listen_dblclick &other) : listener(other) {}
+  HASH_OBJECT_MEMBERS(listener::hash_code(),
+                    std::type_index(typeid(this)).hash_code())
   TYPED_INDEX_INTERFACE(listen_dblclick)
 };
 } // namespace uxdevice
@@ -1602,6 +1642,8 @@ public:
     return *this;
   }
   listen_contextmenu(const listen_contextmenu &other) : listener(other) {}
+  HASH_OBJECT_MEMBERS(listener::hash_code(),
+                    std::type_index(typeid(this)).hash_code())
   TYPED_INDEX_INTERFACE(listen_contextmenu)
 };
 } // namespace uxdevice
@@ -1614,6 +1656,8 @@ public:
       : listener(eventType::wheel, _evtDispatcher) {}
   listen_wheel &operator=(const listen_wheel &other) { return *this; }
   listen_wheel(const listen_wheel &other) : listener(other) {}
+  HASH_OBJECT_MEMBERS(listener::hash_code(),
+                    std::type_index(typeid(this)).hash_code())
   TYPED_INDEX_INTERFACE(listen_wheel)
 };
 } // namespace uxdevice
@@ -1626,6 +1670,8 @@ public:
       : listener(eventType::mouseleave, _evtDispatcher) {}
   listen_mouseleave &operator=(const listen_mouseleave &other) { return *this; }
   listen_mouseleave(const listen_mouseleave &other) : listener(other) {}
+  HASH_OBJECT_MEMBERS(listener::hash_code(),
+                    std::type_index(typeid(this)).hash_code())
   TYPED_INDEX_INTERFACE(listen_mouseleave)
 };
 } // namespace uxdevice
