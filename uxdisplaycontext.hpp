@@ -34,7 +34,7 @@ class textual_render;
 class function_object_t;
 class option_function_object_t;
 class textual_data;
-class DRAW_function_object_t;
+class draw_function_object_t;
 class display_unit_t;
 class drawing_output_t;
 

@@ -536,7 +536,7 @@ bool uxdevice::image_block::is_valid(void) { return is_loaded; }
 \internal
 \brief
 */
-void uxdevice::DRAW_function_object_t::invoke(display_context_t &context) {
+void uxdevice::draw_function_object_t::invoke(display_context_t &context) {
   using namespace std::placeholders;
 
   options = context.current_units._options;

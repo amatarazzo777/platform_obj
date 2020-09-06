@@ -46,6 +46,13 @@ public:
     x = _y;
     y = _y;
   }
+  std::size_t hash_code(void) const noexcept {
+    std::size_t value = {};
+    hash_combine(value, _matrix.xx, _matrix.yx, _matrix.xy, _matrix.yy,
+                 _matrix.x0, _matrix.y0);
+    return value;
+  }
+
   cairo_matrix_t _matrix = {0, 0, 0, 0, 0, 0};
 };
 } // namespace uxdevice

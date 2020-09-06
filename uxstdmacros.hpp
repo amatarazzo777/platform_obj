@@ -9,6 +9,8 @@
 */
 
 #pragma once
+// from -
+// https://stackoverflow.com/questions/2590677/how-do-i-combine-hash-values-in-c0x
 namespace uxdevice {
 template <typename T, typename... Rest>
 void hash_combine(std::size_t &seed, const T &v, const Rest &... rest) {
@@ -31,13 +33,14 @@ void hash_combine(std::size_t &seed, const T &v, const Rest &... rest) {
     return value;                                                              \
   }
 
+#define HASH_OBJECT_MEMBER_SHARED_PTR(PTR_VAR)                                 \
+  PTR_VAR ? PTR_VAR->hash_code() : std::type_index(typeid(PTR_VAR)).hash_code()
+
 #define HASH_OBJECT_MEMBERS_CONTAINING_VECTOR(VECTOR_NAME, CLASS_NAME, ...)    \
   std::size_t hash_code(void) const noexcept {                                 \
     std::size_t value = {};                                                    \
     std::for_each(VECTOR_NAME.begin(), VECTOR_NAME.end(),                      \
-                  [&value](const CLASS_NAME &n) {                              \
-                    hash_combine(value, n.hash_code());                        \
-                  });                                                          \
+                  [&value](const CLASS_NAME &n) { hash_combine(value, n); });  \
     hash_combine(value, __VA_ARGS__);                                          \
     return value;                                                              \
   }

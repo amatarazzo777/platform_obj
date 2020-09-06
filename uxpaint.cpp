@@ -99,8 +99,8 @@ bool uxdevice::painter_brush_t::create(void) {
       data_storage = std::make_shared<image_block_pattern_source_definition_t>(
           data_storage->description, cairo_image_surface_get_width(_image),
           cairo_image_surface_get_height(_image), _image, filter_t::fast,
-          extend_t::repeat );
-      data_storage->is_loaded=true;
+          extend_t::repeat);
+      data_storage->is_loaded = true;
       // determine if the description is another form such as a gradient or
       // color.
     } else if (data_storage->is_linear_gradient_description()) {
@@ -234,8 +234,7 @@ bool uxdevice::painter_brush_t::create(void) {
     data_storage->is_loaded = true;
   }
 
-
-return data_storage->is_loaded;
+  return data_storage->is_loaded;
 }
 
 /**

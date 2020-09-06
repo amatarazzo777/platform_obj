@@ -96,6 +96,7 @@ public:
     virtual ~paint_definition_base_t() {}
     virtual void emit(cairo_t *cr) {}
     virtual void emit(cairo_t *cr, double x, double y, double w, double h) {}
+
     bool is_text_color_description(void) {
       bool bret = false;
       if (pango_color_parse(&pango_color, description.data())) {
@@ -433,15 +434,14 @@ private:
   bool is_linear_gradient(const std::string &s);
   bool is_radial_gradient(const std::string &s);
   bool patch(const std::string &s);
-  std::size_t current_hash = {};
 
 public:
+  HASH_OBJECT_MEMBERS(std::type_index(typeid(this)),
+                      HASH_OBJECT_MEMBER_SHARED_PTR(data_storage))
+
   typedef std::shared_ptr<paint_definition_base_t> data_storage_t;
   data_storage_t data_storage = {};
 }; // namespace uxdevice
-
-// from -
-// https://stackoverflow.com/questions/2590677/how-do-i-combine-hash-values-in-c0x
 
 } // namespace uxdevice
 

@@ -27,7 +27,9 @@ public:
 
   indirect_index_t key = {};
 };
+} // namespace uxdevice
 
+namespace uxdevice {
 /**
 \brief base class for all display units. defaulted
 is the is_output function. Drawing object should override
@@ -44,6 +46,44 @@ typedef std::variant<std::string, std::shared_ptr<std::string>, double,
                      alignment_t, ellipsize_t, cairo_function>
     display_unit_storage_t;
 
+} // namespace uxdevice
+template <> struct std::hash<uxdevice::display_unit_storage_t> {
+  std::size_t
+  operator()(uxdevice::display_unit_storage_t const &o) const noexcept {
+    size_t value = o.index();
+    if (auto pval = std::get_if<std::string>(&o))
+      uxdevice::hash_combine(value, *pval);
+    else if (auto pval = std::get_if<double>(&o))
+      uxdevice::hash_combine(value, *pval);
+    else if (auto pval = std::get_if<std::vector<double>>(&o)) {
+      for(auto n:*pval)
+        uxdevice::hash_combine(value, n);
+    } else if (auto pval = std::get_if<std::size_t>(&o))
+      uxdevice::hash_combine(value, *pval);
+    else if (auto pval = std::get_if<uxdevice::painter_brush_t>(&o))
+      uxdevice::hash_combine(value, pval->hash_code());
+    else if (auto pval = std::get_if<uxdevice::line_cap_t>(&o))
+      uxdevice::hash_combine(value, *pval);
+    else if (auto pval = std::get_if<uxdevice::alias_t>(&o))
+      uxdevice::hash_combine(value, *pval);
+    else if (auto pval = std::get_if<uxdevice::filter_t>(&o))
+      uxdevice::hash_combine(value, *pval);
+    else if (auto pval = std::get_if<uxdevice::extend_t>(&o))
+      uxdevice::hash_combine(value, *pval);
+    else if (auto pval = std::get_if<uxdevice::line_join_t>(&o))
+      uxdevice::hash_combine(value, *pval);
+    else if (auto pval = std::get_if<uxdevice::op_t>(&o))
+      uxdevice::hash_combine(value, *pval);
+    else if (auto pval = std::get_if<uxdevice::alignment_t>(&o))
+        uxdevice::hash_combine(value, *pval);
+    else if (auto pval = std::get_if<uxdevice::ellipsize_t>(&o))
+        uxdevice::hash_combine(value, *pval);
+
+    return value;
+  }
+};
+
+namespace uxdevice {
 class display_unit_t : public index_by {
 public:
   display_unit_t() : _data(0.0) {}
@@ -92,13 +132,17 @@ public:
   bool valid(void) { return _serror == nullptr; }
 
   display_unit_storage_t _data = {};
-  display_unit_storage_t _used_data_hash = {};
+
+  HASH_OBJECT_MEMBERS(std::type_index(typeid(this)).hash_code(), _data, _offset,
+                      _serror)
 
   double _offset = {};
   bool is_processed = false;
   bool viewport_inked = false;
   const char *_serror = nullptr;
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::display_unit_t);
 
 /**
 \brief base class for objects that produce image_block drawing commands
@@ -106,7 +150,7 @@ The is_output is overridden to return true. As well the object uses
 the render work list to determine if a particular image_block is on screen.
 
 */
-
+namespace uxdevice {
 class drawing_output_t : public display_unit_t {
 public:
   typedef display_context_t::context_cairo_region_t context_cairo_region_t;
@@ -189,6 +233,13 @@ public:
       LOCK_FUNCTORS_CLEAR;
   }
 
+  HASH_OBJECT_MEMBERS(std::type_index(typeid(this)).hash_code(),
+                      last_render_time.time_since_epoch().count(),
+                      fn_cache_surface.target_type().name(),
+                      fn_base_surface.target_type().name(),
+                      fn_draw.target_type().name(),
+                      fn_draw_clipped.target_type().name())
+
   draw_logic_t fn_cache_surface = draw_logic_t();
   draw_logic_t fn_base_surface = draw_logic_t();
   draw_logic_t fn_draw = draw_logic_t();
@@ -204,6 +255,8 @@ public:
   cairo_rectangle_int_t intersection = cairo_rectangle_int_t();
   cairo_rectangle_t _intersection = cairo_rectangle_t();
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::drawing_output_t);
 
 #define TYPED_INDEX_INTERFACE(CLASS_NAME)                                      \
   CLASS_NAME &index(const std::string &_k) {                                   \
@@ -214,7 +267,7 @@ public:
     key = _k;                                                                  \
     return *this;                                                              \
   }
-
+namespace uxdevice {
 using antialias = class antialias : public display_unit_t {
 public:
   antialias() = delete;
@@ -232,12 +285,19 @@ public:
     cairo_set_antialias(context.cr, static_cast<cairo_antialias_t>(value));
     is_processed = true;
   }
+
+  HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), value)
+
   alias_t &value;
 
   TYPED_INDEX_INTERFACE(antialias)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::antialias);
 
 #define PAINT_OBJ(CLASS_NAME)                                                  \
+  namespace uxdevice {                                                         \
   using CLASS_NAME = class CLASS_NAME : public display_unit_t,                 \
         public painter_brush_t {                                               \
   public:                                                                      \
@@ -258,10 +318,7 @@ public:
       display_unit_t::operator=(other);                                        \
       return *this;                                                            \
     }                                                                          \
-    CLASS_NAME(const CLASS_NAME &other) : painter_brush_t(other) {             \
-      _data = other._data;                                                     \
-      key = other.key;                                                         \
-    }                                                                          \
+    CLASS_NAME(const CLASS_NAME &other) : painter_brush_t(other) {}            \
     CLASS_NAME(CLASS_NAME &&other) : painter_brush_t(other) {}                 \
     void emit(cairo_t *cr) {                                                   \
       painter_brush_t::emit(cr);                                               \
@@ -271,85 +328,83 @@ public:
       painter_brush_t::emit(cr);                                               \
       cairo_set_line_width(cr, lineWidth);                                     \
     }                                                                          \
+    HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),                           \
+                        std::type_index(typeid(this)).hash_code(),             \
+                        painter_brush_t::hash_code(), lineWidth, radius, x, y) \
     double lineWidth = 1;                                                      \
     unsigned short radius = 3;                                                 \
     double x = 1, y = 1;                                                       \
     TYPED_INDEX_INTERFACE(CLASS_NAME)                                          \
-  }
+  };                                                                           \
+  }                                                                            \
+  STD_HASHABLE(uxdevice::CLASS_NAME)
 
 PAINT_OBJ(text_color);
 PAINT_OBJ(text_outline);
 PAINT_OBJ(text_fill);
 PAINT_OBJ(text_shadow);
 
+namespace uxdevice {
 using text_outline_off = class text_outline_off : public display_unit_t {
 public:
   text_outline_off() {}
-  text_outline_off &operator=(const text_outline_off &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
-  text_outline_off(const text_outline_off &other) {
-    _data = other._data;
-    key = other.key;
-  }
+  text_outline_off &operator=(const text_outline_off &other) { return *this; }
+  text_outline_off(const text_outline_off &other) {}
   void invoke(display_context_t &context) {
     is_processed = true;
     context.current_units._text_outline.reset();
   }
+
+  HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code())
+
   TYPED_INDEX_INTERFACE(text_outline_off)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::text_outline_off);
 
+namespace uxdevice {
 using text_fill_off = class text_fill_off : public display_unit_t {
 public:
   text_fill_off() {}
-  text_fill_off &operator=(const text_fill_off &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
-  text_fill_off(const text_fill_off &other) {
-    _data = other._data;
-    key = other.key;
-  }
+  text_fill_off &operator=(const text_fill_off &other) { return *this; }
+  text_fill_off(const text_fill_off &other) {}
   void invoke(display_context_t &context) {
     is_processed = true;
     context.current_units._text_fill.reset();
   }
+  HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code())
   TYPED_INDEX_INTERFACE(text_fill_off)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::text_fill_off);
 
+namespace uxdevice {
 using text_shadow_off = class text_shadow_off : public display_unit_t {
 public:
   text_shadow_off() {}
-  text_shadow_off &operator=(const text_shadow_off &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
-  text_shadow_off(const text_shadow_off &other) {
-    _data = other._data;
-    key = other.key;
-  }
+  text_shadow_off &operator=(const text_shadow_off &other) { return *this; }
+  text_shadow_off(const text_shadow_off &other) {}
 
   void invoke(display_context_t &context) {
     is_processed = true;
     context.current_units._text_shadow.reset();
   }
+  HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code())
   TYPED_INDEX_INTERFACE(text_shadow_off)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::text_shadow_off);
 
+namespace uxdevice {
 using text_alignment = class text_alignment : public display_unit_t {
 public:
   text_alignment() = delete;
   text_alignment(alignment_t opt)
       : display_unit_t(opt), value(std::get<alignment_t>(_data)) {}
-  text_alignment &operator=(const text_alignment &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+  text_alignment &operator=(const text_alignment &other) { return *this; }
   text_alignment(const text_alignment &other)
       : display_unit_t(other), value(std::get<alignment_t>(_data)) {}
   void emit(PangoLayout *layout) {
@@ -363,10 +418,16 @@ public:
       pango_layout_set_alignment(layout, static_cast<PangoAlignment>(value));
     }
   }
+  HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), value)
+
   alignment_t &value;
   TYPED_INDEX_INTERFACE(text_alignment)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::text_alignment);
 
+namespace uxdevice {
 using coordinates = class coordinates : public display_unit_t {
 public:
   coordinates() = delete;
@@ -381,100 +442,102 @@ public:
         y(std::get<std::vector<double>>(_data)[1]),
         w(std::get<std::vector<double>>(_data)[2]),
         h(std::get<std::vector<double>>(_data)[3]) {}
-  coordinates &operator=(const coordinates &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+  coordinates &operator=(const coordinates &other) { return *this; }
+
+  HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), x, y, w, h)
+
   double &x, &y, &w, &h;
 
   TYPED_INDEX_INTERFACE(coordinates)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::coordinates);
 
+namespace uxdevice {
 using line_width = class line_width : public display_unit_t {
 public:
   line_width(double lw) : display_unit_t(lw), value(std::get<double>(_data)) {}
-  line_width &operator=(const line_width &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+  line_width &operator=(const line_width &other) { return *this; }
   line_width(const line_width &other)
       : display_unit_t(other), value(std::get<double>(_data)) {}
   void invoke(display_context_t &context) {
     is_processed = true;
     cairo_set_line_width(context.cr, value);
   }
-
+  HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), value)
   double &value;
   TYPED_INDEX_INTERFACE(line_width)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::line_width);
 
+namespace uxdevice {
 using indent = class indent : public display_unit_t {
 public:
   indent(double _space)
       : display_unit_t(_space), value(std::get<double>(_data)) {}
-  indent &operator=(const indent &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+  indent &operator=(const indent &other) { return *this; }
   indent(const indent &other)
       : display_unit_t(other), value(std::get<double>(_data)) {}
   void emit(PangoLayout *layout) {
     int pangoUnits = value * PANGO_SCALE;
     pango_layout_set_indent(layout, pangoUnits);
   }
+  HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), value)
   double &value;
   TYPED_INDEX_INTERFACE(indent)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::indent);
 
+namespace uxdevice {
 using ellipsize = class ellipsize : public display_unit_t {
 public:
   ellipsize(ellipsize_t eType)
       : display_unit_t(eType), value(std::get<ellipsize_t>(_data)) {}
-  ellipsize &operator=(const ellipsize &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+  ellipsize &operator=(const ellipsize &other) { return *this; }
   ellipsize(const ellipsize &other)
       : display_unit_t(other), value(std::get<ellipsize_t>(_data)) {}
   void emit(PangoLayout *layout) {
     pango_layout_set_ellipsize(layout, static_cast<PangoEllipsizeMode>(value));
   }
+  HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), value)
   ellipsize_t &value;
 
   TYPED_INDEX_INTERFACE(ellipsize)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::ellipsize);
 
+namespace uxdevice {
 using line_space = class line_space : public display_unit_t {
 public:
   line_space(double dSpace)
       : display_unit_t(dSpace), value(std::get<double>(_data)) {}
-  line_space &operator=(const line_space &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+  line_space &operator=(const line_space &other) { return *this; }
   line_space(const line_space &other)
       : display_unit_t(other), value(std::get<double>(_data)) {}
   void emit(PangoLayout *layout) {
     pango_layout_set_line_spacing(layout, static_cast<float>(value));
   }
+  HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), value)
   double &value;
   TYPED_INDEX_INTERFACE(line_space)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::line_space);
 
+namespace uxdevice {
 using tab_stops = class tab_stops : public display_unit_t {
 public:
   tab_stops(const std::vector<double> &_tabs)
       : display_unit_t(_tabs), value(std::get<std::vector<double>>(_data)) {}
-  tab_stops &operator=(const tab_stops &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+  tab_stops &operator=(const tab_stops &other) { return *this; }
   tab_stops(const tab_stops &other)
       : display_unit_t(other), value(std::get<std::vector<double>>(_data)) {}
   void emit(PangoLayout *layout) {
@@ -488,10 +551,15 @@ public:
     pango_layout_set_tabs(layout, tabs);
     pango_tab_array_free(tabs);
   }
+  HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), value)
   std::vector<double> &value;
   TYPED_INDEX_INTERFACE(tab_stops)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::tab_stops);
 
+namespace uxdevice {
 using text_font = class text_font : public display_unit_t {
 public:
   text_font(const std::string &s)
@@ -500,11 +568,7 @@ public:
     if (fontDescription)
       pango_font_description_free(fontDescription);
   }
-  text_font &operator=(const text_font &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+  text_font &operator=(const text_font &other) { return *this; }
   text_font(const text_font &other)
       : display_unit_t(other), value(std::get<std::string>(_data)) {}
 
@@ -520,84 +584,87 @@ public:
       }
     }
   }
+  HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), value)
 
   std::string &value;
   TYPED_INDEX_INTERFACE(text_font)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::text_font);
 
+namespace uxdevice {
 using line_cap = class line_cap : public display_unit_t {
 public:
   line_cap(const line_cap_t _val)
       : display_unit_t(_val), value(std::get<line_cap_t>(_data)) {}
   ~line_cap() {}
-  line_cap &operator=(const line_cap &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+  line_cap &operator=(const line_cap &other) { return *this; }
   line_cap(const line_cap &other)
       : display_unit_t(other), value(std::get<line_cap_t>(_data)) {}
   void invoke(display_context_t &context) {
     is_processed = true;
     cairo_set_line_cap(context.cr, static_cast<cairo_line_cap_t>(value));
   }
-
+  HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), value)
   line_cap_t &value;
 
   TYPED_INDEX_INTERFACE(line_cap)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::line_cap);
 
+namespace uxdevice {
 using line_join = class line_join : public display_unit_t {
 public:
   line_join(const line_join_t _val)
       : display_unit_t(_val), value(std::get<line_join_t>(_data)) {}
   ~line_join() {}
-  line_join &operator=(const line_join &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+  line_join &operator=(const line_join &other) { return *this; }
   line_join(const line_join &other)
       : display_unit_t(other), value(std::get<line_join_t>(_data)) {}
   void invoke(display_context_t &context) {
     is_processed = true;
     cairo_set_line_join(context.cr, static_cast<cairo_line_join_t>(value));
   }
+  HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), value)
   line_join_t &value;
   TYPED_INDEX_INTERFACE(line_join)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::line_join);
 
+namespace uxdevice {
 using miter_limit = class miter_limit : public display_unit_t {
 public:
   miter_limit(const double _val)
       : display_unit_t(_val), value(std::get<double>(_data)) {}
   ~miter_limit() {}
-  miter_limit &operator=(const miter_limit &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+  miter_limit &operator=(const miter_limit &other) { return *this; }
   miter_limit(const miter_limit &other)
       : display_unit_t(other), value(std::get<double>(_data)) {}
   void invoke(display_context_t &context) {
     is_processed = true;
     cairo_set_miter_limit(context.cr, value);
   }
+  HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), value)
   double &value;
   TYPED_INDEX_INTERFACE(miter_limit)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::miter_limit);
 
+namespace uxdevice {
 using line_dashes = class line_dashes : public display_unit_t {
 public:
   line_dashes(const std::vector<double> &_val, double _offset = 0)
       : display_unit_t(_val, _offset),
         value(std::get<std::vector<double>>(_data)) {}
   ~line_dashes() {}
-  line_dashes &operator=(const line_dashes &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+  line_dashes &operator=(const line_dashes &other) { return *this; }
   line_dashes(const line_dashes &other)
       : display_unit_t(other), value(std::get<std::vector<double>>(_data)) {}
   void invoke(display_context_t &context) {
@@ -605,9 +672,14 @@ public:
     cairo_set_dash(context.cr, value.data(), value.size(), _offset);
   }
   TYPED_INDEX_INTERFACE(line_dashes)
+  HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), value)
   std::vector<double> &value;
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::line_dashes);
 
+namespace uxdevice {
 class textual_data : public display_unit_t {
 public:
   textual_data(const std::string &s)
@@ -617,30 +689,26 @@ public:
         value(*(std::get<std::shared_ptr<std::string>>(_data)).get()) {}
 
   ~textual_data() {}
-  textual_data &operator=(const textual_data &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+  textual_data &operator=(const textual_data &other) { return *this; }
   textual_data(const textual_data &other)
-      : display_unit_t(other), value(std::get<std::string>(_data)) {
-    _data = other._data;
-    key = other.key;
-  }
+      : display_unit_t(other), value(std::get<std::string>(_data)) {}
   void invoke(display_context_t &context) { is_processed = true; }
   TYPED_INDEX_INTERFACE(textual_data)
+
+  HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), value)
+
   std::string &value;
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::textual_data);
 
+namespace uxdevice {
 class textual_render : public drawing_output_t {
 public:
   textual_render(std::shared_ptr<textual_data> data) : _text(data) {}
   ~textual_render() {}
-  textual_render &operator=(const textual_render &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+  textual_render &operator=(const textual_render &other) { return *this; }
   textual_render(const textual_render &other) : drawing_output_t(other) {}
 
   TYPED_INDEX_INTERFACE(textual_render)
@@ -653,6 +721,22 @@ private:
   void create_shadow(void);
   void setup_draw(display_context_t &context);
 
+public:
+  HASH_OBJECT_MEMBERS(drawing_output_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(),
+                      HASH_OBJECT_MEMBER_SHARED_PTR(_text_color),
+                      HASH_OBJECT_MEMBER_SHARED_PTR(_text_outline),
+                      HASH_OBJECT_MEMBER_SHARED_PTR(_text_fill),
+                      HASH_OBJECT_MEMBER_SHARED_PTR(_text_shadow),
+                      HASH_OBJECT_MEMBER_SHARED_PTR(_text_font),
+                      HASH_OBJECT_MEMBER_SHARED_PTR(_text_alignment),
+                      HASH_OBJECT_MEMBER_SHARED_PTR(_coordinates),
+                      HASH_OBJECT_MEMBER_SHARED_PTR(_text),
+                      pango_layout_get_serial(_layout), _ink_rect.x,
+                      _ink_rect.y, _ink_rect.width, _ink_rect.height,
+                      _matrix.hash_code())
+
+private:
   std::atomic<cairo_surface_t *> _shadow_image = nullptr;
   std::atomic<cairo_t *> _shadow_cr = nullptr;
   std::atomic<PangoLayout *> _layout = nullptr;
@@ -670,7 +754,10 @@ private:
   std::shared_ptr<coordinates> _coordinates = nullptr;
   std::shared_ptr<textual_data> _text = nullptr;
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::textual_render);
 
+namespace uxdevice {
 class image_block : public drawing_output_t {
 public:
   image_block(const std::string &data)
@@ -681,8 +768,7 @@ public:
   }
   image_block &operator=(const image_block &other) {
     _image_block = cairo_surface_reference(other._image_block);
-    _data = other._data;
-    key = other.key;
+
     is_SVG = other.is_SVG;
     if (_image_block)
       is_loaded = true;
@@ -693,33 +779,37 @@ public:
     if (_image_block)
       cairo_surface_destroy(_image_block);
   }
-  std::string &value;
 
   void invoke(display_context_t &context);
   bool is_valid(void);
-  std::atomic<cairo_surface_t *> _image_block = nullptr;
-  bool is_SVG = false;
-  std::atomic<bool> is_loaded = false;
-  std::shared_ptr<coordinates> _coordinates = nullptr;
+
+  HASH_OBJECT_MEMBERS(drawing_output_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), value,
+                       is_SVG,
+                      _coordinates ? _coordinates->hash_code() : 0)
+
+  std::string &value;
+  std::atomic<cairo_surface_t *> _image_block = {};
+  bool is_SVG = {};
+  std::atomic<bool> is_loaded = {};
+  std::shared_ptr<coordinates> _coordinates = {};
 
   TYPED_INDEX_INTERFACE(image_block)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::image_block);
 
 /**
 \internal
 \brief call previously bound function with the cairo context.
 */
-
+namespace uxdevice {
 class function_object_t : public display_unit_t {
 public:
   function_object_t(cairo_function _func)
       : display_unit_t(_func), value(std::get<cairo_function>(_data)) {}
   ~function_object_t() {}
-  function_object_t &operator=(const function_object_t &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+  function_object_t &operator=(const function_object_t &other) { return *this; }
   function_object_t(const function_object_t &other)
       : display_unit_t(other), value(std::get<cairo_function>(_data)) {}
 
@@ -727,29 +817,39 @@ public:
     is_processed = true;
     value(context.cr);
   }
-
+  HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), value)
   cairo_function &value;
   TYPED_INDEX_INTERFACE(function_object_t)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::function_object_t);
 
-class DRAW_function_object_t : public drawing_output_t {
+namespace uxdevice {
+class draw_function_object_t : public drawing_output_t {
 public:
-  DRAW_function_object_t(cairo_function _func)
+  draw_function_object_t(cairo_function _func)
       : drawing_output_t(_func), value(std::get<cairo_function>(_data)) {}
-  ~DRAW_function_object_t() {}
-  DRAW_function_object_t &operator=(const DRAW_function_object_t &other) {
-    _data = other._data;
-    key = other.key;
+  ~draw_function_object_t() {}
+  draw_function_object_t &operator=(const draw_function_object_t &other) {
+
     return *this;
   }
-  DRAW_function_object_t(const DRAW_function_object_t &other)
+  draw_function_object_t(const draw_function_object_t &other)
       : drawing_output_t(other), value(std::get<cairo_function>(_data)) {}
+
+  HASH_OBJECT_MEMBERS(drawing_output_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), value)
 
   void invoke(display_context_t &context);
   cairo_function &value;
-  TYPED_INDEX_INTERFACE(DRAW_function_object_t)
-};
 
+  TYPED_INDEX_INTERFACE(draw_function_object_t)
+};
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::draw_function_object_t);
+
+namespace uxdevice {
 class option_function_object_t : public display_unit_t {
 public:
   option_function_object_t(cairo_function _func)
@@ -765,19 +865,21 @@ public:
 
   void invoke(display_context_t &context);
   void invoke(cairo_t *cr) { value(cr); }
+
+  HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), value)
   cairo_function &value;
   TYPED_INDEX_INTERFACE(option_function_object_t)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::option_function_object_t);
 
+namespace uxdevice {
 using tollerance = class tollerance : public display_unit_t {
 public:
   tollerance(const double _t)
       : display_unit_t(_t), value(std::get<double>(_data)) {}
-  tollerance &operator=(const tollerance &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+  tollerance &operator=(const tollerance &other) { return *this; }
   tollerance(const tollerance &other)
       : display_unit_t(other), value(std::get<double>(_data)) {}
 
@@ -785,40 +887,40 @@ public:
     is_processed = true;
     cairo_set_tolerance(context.cr, value);
   }
+  HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), value)
   double &value;
 
   TYPED_INDEX_INTERFACE(tollerance)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::tollerance);
 
-// draw and paint objects
-
+namespace uxdevice {
 using op = class op : public display_unit_t {
 public:
   op(op_t _op) : display_unit_t(_op), value(std::get<op_t>(_data)) {}
-  op &operator=(const op &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+  op &operator=(const op &other) { return *this; }
   op(const op &other) : display_unit_t(other), value(std::get<op_t>(_data)) {}
 
   void invoke(display_context_t &context) {
     is_processed = true;
     cairo_set_operator(context.cr, static_cast<cairo_operator_t>(value));
   }
+  HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), value)
   op_t &value;
   TYPED_INDEX_INTERFACE(op)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::op);
 
+namespace uxdevice {
 using close_path = class close_path : public drawing_output_t {
 public:
   close_path() {}
   ~close_path() {}
-  close_path &operator=(const close_path &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+  close_path &operator=(const close_path &other) { return *this; }
   close_path(const close_path &other) : drawing_output_t(other) {}
 
   void invoke(display_context_t &context) {
@@ -826,8 +928,13 @@ public:
     cairo_close_path(context.cr);
   }
   TYPED_INDEX_INTERFACE(close_path)
+  HASH_OBJECT_MEMBERS(drawing_output_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), value)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::close_path);
 
+namespace uxdevice {
 using arc = class arc : public drawing_output_t {
 public:
   arc(double _xc, double _yc, double _radius, double _angle1, double _angle2)
@@ -853,6 +960,10 @@ public:
     is_processed = true;
     cairo_arc(context.cr, xc, yc, radius, angle1, angle2);
   }
+  HASH_OBJECT_MEMBERS(drawing_output_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), xc, yc, radius,
+                      angle1, angle2)
+
   double &xc;
   double &yc;
   double &radius;
@@ -860,7 +971,10 @@ public:
   double &angle2;
   TYPED_INDEX_INTERFACE(arc)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::arc);
 
+namespace uxdevice {
 using negative_arc = class negative_arc : public drawing_output_t {
 public:
   negative_arc(double _xc, double _yc, double _radius, double _angle1,
@@ -871,11 +985,7 @@ public:
         radius(std::get<std::vector<double>>(_data)[2]),
         angle1(std::get<std::vector<double>>(_data)[3]),
         angle2(std::get<std::vector<double>>(_data)[4]) {}
-  negative_arc &operator=(const negative_arc &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+  negative_arc &operator=(const negative_arc &other) { return *this; }
   negative_arc(const negative_arc &other)
       : drawing_output_t(other), xc(std::get<std::vector<double>>(_data)[0]),
         yc(std::get<std::vector<double>>(_data)[1]),
@@ -887,6 +997,9 @@ public:
     is_processed = true;
     cairo_arc_negative(context.cr, xc, yc, radius, angle1, angle2);
   }
+  HASH_OBJECT_MEMBERS(drawing_output_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), xc, yc, radius,
+                      angle1, angle2)
   double &xc;
   double &yc;
   double &radius;
@@ -894,7 +1007,10 @@ public:
   double &angle2;
   TYPED_INDEX_INTERFACE(negative_arc)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::negative_arc);
 
+namespace uxdevice {
 using curve = class curve : public drawing_output_t {
 public:
   curve(double _x1, double _y1, double _x2, double _y2, double _x3, double _y3)
@@ -905,11 +1021,7 @@ public:
         y2(std::get<std::vector<double>>(_data)[3]),
         x3(std::get<std::vector<double>>(_data)[4]),
         y3(std::get<std::vector<double>>(_data)[5]) {}
-  curve &operator=(const curve &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+  curve &operator=(const curve &other) { return *this; }
   curve(const curve &other)
       : drawing_output_t(other), x1(std::get<std::vector<double>>(_data)[0]),
         y1(std::get<std::vector<double>>(_data)[1]),
@@ -924,20 +1036,24 @@ public:
     else
       cairo_curve_to(context.cr, x1, y1, x2, y2, x3, y3);
   }
+
+  HASH_OBJECT_MEMBERS(drawing_output_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), x1, y1, x2, y2,
+                      x3, y3)
+
   double &x1, &y1, &x2, &y2, &x3, &y3;
   TYPED_INDEX_INTERFACE(curve)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::curve);
 
+namespace uxdevice {
 using line = class line : public drawing_output_t {
 public:
   line(double _x, double _y)
       : drawing_output_t(_x, _y), x(std::get<std::vector<double>>(_data)[0]),
         y(std::get<std::vector<double>>(_data)[1]) {}
-  line &operator=(const line &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+  line &operator=(const line &other) { return *this; }
   line(const line &other)
       : drawing_output_t(other), x(std::get<std::vector<double>>(_data)[0]),
         y(std::get<std::vector<double>>(_data)[1]) {}
@@ -949,17 +1065,19 @@ public:
     else
       cairo_line_to(context.cr, x, y);
   }
+  HASH_OBJECT_MEMBERS(drawing_output_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), x, y)
   double &x, &y;
   TYPED_INDEX_INTERFACE(line)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::line);
+
+namespace uxdevice {
 using hline = class hline : public drawing_output_t {
 public:
   hline(double _x) : drawing_output_t(_x), x(std::get<double>(_data)) {}
-  hline &operator=(const hline &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+  hline &operator=(const hline &other) { return *this; }
   hline(const hline &other)
       : drawing_output_t(other), x(std::get<double>(_data)) {}
 
@@ -976,9 +1094,15 @@ public:
         cairo_line_to(context.cr, x, cury);
     }
   }
+  HASH_OBJECT_MEMBERS(drawing_output_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), x)
   double &x;
   TYPED_INDEX_INTERFACE(hline)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::hline);
+
+namespace uxdevice {
 using vline = class vline : public drawing_output_t {
 public:
   vline(double _y) : drawing_output_t(_y), y(std::get<double>(_data)) {}
@@ -1002,9 +1126,15 @@ public:
         cairo_line_to(context.cr, curx, y);
     }
   }
+  HASH_OBJECT_MEMBERS(drawing_output_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), y)
   double &y;
   TYPED_INDEX_INTERFACE(vline)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::vline);
+
+namespace uxdevice {
 using move_to = class move_to : public drawing_output_t {
 public:
   move_to(double _x, double _y)
@@ -1025,9 +1155,15 @@ public:
     else
       cairo_move_to(context.cr, x, y);
   }
+  HASH_OBJECT_MEMBERS(drawing_output_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), x, y)
   double &x, &y;
   TYPED_INDEX_INTERFACE(move_to)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::move_to);
+
+namespace uxdevice {
 using rectangle = class rectangle : public drawing_output_t {
 public:
   rectangle(double _x, double _y, double _width, double _height)
@@ -1051,18 +1187,23 @@ public:
     is_processed = true;
     cairo_rectangle(context.cr, x, y, width, height);
   }
+  HASH_OBJECT_MEMBERS(drawing_output_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), x, y, width,
+                      height)
   double &x, &y, &width, &height;
   TYPED_INDEX_INTERFACE(rectangle)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::rectangle);
 
+namespace uxdevice {
 using stroke_path_preserve =
     class stroke_path_preserve : public drawing_output_t {
 public:
   stroke_path_preserve(painter_brush_t &p)
       : drawing_output_t(p), value(std::get<painter_brush_t>(_data)) {}
   stroke_path_preserve &operator=(const stroke_path_preserve &other) {
-    _data = other._data;
-    key = other.key;
+
     return *this;
   }
   stroke_path_preserve(const stroke_path_preserve &other)
@@ -1073,18 +1214,20 @@ public:
     value.emit(context.cr);
     cairo_stroke_preserve(context.cr);
   }
+  HASH_OBJECT_MEMBERS(drawing_output_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), value)
   painter_brush_t &value;
   TYPED_INDEX_INTERFACE(stroke_path_preserve)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::stroke_path_preserve);
+
+namespace uxdevice {
 using stroke_path = class stroke_path : public drawing_output_t {
 public:
   stroke_path(painter_brush_t &p)
       : drawing_output_t(p), value(std::get<painter_brush_t>(_data)) {}
-  stroke_path &operator=(const stroke_path &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+  stroke_path &operator=(const stroke_path &other) { return *this; }
   stroke_path(const stroke_path &other)
       : drawing_output_t(other), value(std::get<painter_brush_t>(_data)) {}
 
@@ -1093,16 +1236,21 @@ public:
     value.emit(context.cr);
     cairo_stroke(context.cr);
   }
+  HASH_OBJECT_MEMBERS(drawing_output_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), value)
   painter_brush_t &value;
   TYPED_INDEX_INTERFACE(stroke_path)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::stroke_path);
+
+namespace uxdevice {
 using fill_path_preserve = class fill_path_preserve : public drawing_output_t {
 public:
   fill_path_preserve(painter_brush_t &p)
       : drawing_output_t(p), value(std::get<painter_brush_t>(_data)) {}
   fill_path_preserve &operator=(const fill_path_preserve &other) {
-    _data = other._data;
-    key = other.key;
+
     return *this;
   }
   fill_path_preserve(const fill_path_preserve &other)
@@ -1113,18 +1261,20 @@ public:
     value.emit(context.cr);
     cairo_fill_preserve(context.cr);
   }
+  HASH_OBJECT_MEMBERS(drawing_output_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), value)
   painter_brush_t &value;
   TYPED_INDEX_INTERFACE(fill_path_preserve)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::fill_path_preserve);
+
+namespace uxdevice {
 using fill_path = class fill_path : public drawing_output_t {
 public:
   fill_path(painter_brush_t &p)
       : drawing_output_t(p), value(std::get<painter_brush_t>(_data)) {}
-  fill_path &operator=(const fill_path &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+  fill_path &operator=(const fill_path &other) { return *this; }
   fill_path(const fill_path &other)
       : drawing_output_t(other), value(std::get<painter_brush_t>(_data)) {}
 
@@ -1133,35 +1283,39 @@ public:
     value.emit(context.cr);
     cairo_fill(context.cr);
   }
+  HASH_OBJECT_MEMBERS(drawing_output_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), value)
   painter_brush_t &value;
   TYPED_INDEX_INTERFACE(fill_path)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::fill_path);
+
+namespace uxdevice {
 using mask = class mask : public drawing_output_t {
 public:
   mask(painter_brush_t &p)
       : drawing_output_t(p), value(std::get<painter_brush_t>(_data)) {}
   mask(painter_brush_t &p, double x, double y)
       : drawing_output_t(p, x, y), value(std::get<painter_brush_t>(_data)) {}
-  mask &operator=(const mask &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+  mask &operator=(const mask &other) { return *this; }
   mask(const mask &other)
       : drawing_output_t(other), value(std::get<painter_brush_t>(_data)) {}
+
+  HASH_OBJECT_MEMBERS(drawing_output_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), value)
   painter_brush_t &value;
   TYPED_INDEX_INTERFACE(mask)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::mask);
 
+namespace uxdevice {
 using paint = class paint : public drawing_output_t {
 public:
   paint(double alpha = 1.0)
       : drawing_output_t(alpha), value(std::get<double>(_data)) {}
-  paint &operator=(const paint &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+  paint &operator=(const paint &other) { return *this; }
   paint(const paint &other)
       : drawing_output_t(other), value(std::get<double>(_data)) {}
 
@@ -1173,29 +1327,39 @@ public:
       cairo_paint_with_alpha(context.cr, value);
     }
   }
+  HASH_OBJECT_MEMBERS(drawing_output_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code(), value)
   double &value;
   TYPED_INDEX_INTERFACE(paint)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::paint);
 
+namespace uxdevice {
 using relative = class relative : public display_unit_t {
-  relative &operator=(const relative &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+public:
+  relative &operator=(const relative &other) { return *this; }
   relative(const relative &other) : display_unit_t(other) {}
+  HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code())
   TYPED_INDEX_INTERFACE(relative)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::relative);
+
+namespace uxdevice {
 using absolute = class absolute : public display_unit_t {
-  absolute &operator=(const absolute &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+public:
+  absolute &operator=(const absolute &other) { return *this; }
   absolute(const absolute &other) : display_unit_t(other) {}
+  HASH_OBJECT_MEMBERS(display_unit_t::hash_code(),
+                      std::type_index(typeid(this)).hash_code())
   TYPED_INDEX_INTERFACE(absolute)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::absolute);
 
+namespace uxdevice {
 // listeners are named from this base class.
 using listener = class listener : public display_unit_t {
 public:
@@ -1214,7 +1378,10 @@ public:
   event_handler_t evtDispatcher = {};
   TYPED_INDEX_INTERFACE(listener)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::listener);
 
+namespace uxdevice {
 // Named event listeners shorten the code a little and make the code more
 // readable. pasting macros would be nice, however, its not the c++ standard
 using listen_paint = class listen_paint : public listener {
@@ -1229,6 +1396,10 @@ public:
   listen_paint(const listen_paint &other) : listener(other) {}
   TYPED_INDEX_INTERFACE(listen_paint)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::listen_paint);
+
+namespace uxdevice {
 using listen_focus = class listen_focus : public listener {
 public:
   listen_focus(const event_handler_t &_evtDispatcher)
@@ -1241,6 +1412,10 @@ public:
   listen_focus(const listen_focus &other) : listener(other) {}
   TYPED_INDEX_INTERFACE(listen_focus)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::listen_focus);
+
+namespace uxdevice {
 using listen_blur = class listen_blur : public listener {
 public:
   listen_blur(const event_handler_t &_evtDispatcher)
@@ -1253,6 +1428,10 @@ public:
   listen_blur(const listen_blur &other) : listener(other) {}
   TYPED_INDEX_INTERFACE(listen_blur)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::listen_blur);
+
+namespace uxdevice {
 using listen_resize = class listen_resize : public listener {
 public:
   listen_resize(const event_handler_t &_evtDispatcher)
@@ -1265,6 +1444,10 @@ public:
   listen_resize(const listen_resize &other) : listener(other) {}
   TYPED_INDEX_INTERFACE(listen_resize)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::listen_resize);
+
+namespace uxdevice {
 using listen_keydown = class listen_keydown : public listener {
 public:
   listen_keydown(const event_handler_t &_evtDispatcher)
@@ -1277,6 +1460,10 @@ public:
   listen_keydown(const listen_keydown &other) : listener(other) {}
   TYPED_INDEX_INTERFACE(listen_keydown)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::listen_keydown);
+
+namespace uxdevice {
 using listen_keyup = class listen_keyup : public listener {
 public:
   listen_keyup(const event_handler_t &_evtDispatcher)
@@ -1289,6 +1476,10 @@ public:
   listen_keyup(const listen_keyup &other) : listener(other) {}
   TYPED_INDEX_INTERFACE(listen_keyup)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::listen_keyup);
+
+namespace uxdevice {
 using listen_keypress = class listen_keypress : public listener {
 public:
   listen_keypress(const event_handler_t &_evtDispatcher)
@@ -1301,6 +1492,10 @@ public:
   listen_keypress(const listen_keypress &other) : listener(other) {}
   TYPED_INDEX_INTERFACE(listen_keypress)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::listen_keypress);
+
+namespace uxdevice {
 using listen_mouseenter = class listen_mouseenter : public listener {
 public:
   listen_mouseenter(const event_handler_t &_evtDispatcher)
@@ -1313,6 +1508,10 @@ public:
   listen_mouseenter(const listen_mouseenter &other) : listener(other) {}
   TYPED_INDEX_INTERFACE(listen_mouseenter)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::listen_mouseenter);
+
+namespace uxdevice {
 using listen_mousemove = class listen_mousemove : public listener {
 public:
   listen_mousemove(const event_handler_t &_evtDispatcher)
@@ -1325,6 +1524,10 @@ public:
   listen_mousemove(const listen_mousemove &other) : listener(other) {}
   TYPED_INDEX_INTERFACE(listen_mousemove)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::listen_mousemove);
+
+namespace uxdevice {
 using listen_mousedown = class listen_mousedown : public listener {
 public:
   listen_mousedown(const event_handler_t &_evtDispatcher)
@@ -1337,6 +1540,10 @@ public:
   listen_mousedown(const listen_mousedown &other) : listener(other) {}
   TYPED_INDEX_INTERFACE(listen_mousedown)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::listen_mousedown);
+
+namespace uxdevice {
 using listen_mouseup = class listen_mouseup : public listener {
 public:
   listen_mouseup(const event_handler_t &_evtDispatcher)
@@ -1349,6 +1556,10 @@ public:
   listen_mouseup(const listen_mouseup &other) : listener(other) {}
   TYPED_INDEX_INTERFACE(listen_mouseup)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::listen_mouseup);
+
+namespace uxdevice {
 using listen_click = class listen_click : public listener {
 public:
   listen_click(const event_handler_t &_evtDispatcher)
@@ -1361,6 +1572,10 @@ public:
   listen_click(const listen_click &other) : listener(other) {}
   TYPED_INDEX_INTERFACE(listen_click)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::listen_click);
+
+namespace uxdevice {
 using listen_dblclick = class listen_dblclick : public listener {
 public:
   listen_dblclick(const event_handler_t &_evtDispatcher)
@@ -1373,6 +1588,10 @@ public:
   listen_dblclick(const listen_dblclick &other) : listener(other) {}
   TYPED_INDEX_INTERFACE(listen_dblclick)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::listen_dblclick);
+
+namespace uxdevice {
 using listen_contextmenu = class listen_contextmenu : public listener {
 public:
   listen_contextmenu(const event_handler_t &_evtDispatcher)
@@ -1385,28 +1604,29 @@ public:
   listen_contextmenu(const listen_contextmenu &other) : listener(other) {}
   TYPED_INDEX_INTERFACE(listen_contextmenu)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::listen_contextmenu);
+
+namespace uxdevice {
 using listen_wheel = class listen_wheel : public listener {
 public:
   listen_wheel(const event_handler_t &_evtDispatcher)
       : listener(eventType::wheel, _evtDispatcher) {}
-  listen_wheel &operator=(const listen_wheel &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+  listen_wheel &operator=(const listen_wheel &other) { return *this; }
   listen_wheel(const listen_wheel &other) : listener(other) {}
   TYPED_INDEX_INTERFACE(listen_wheel)
 };
+} // namespace uxdevice
+STD_HASHABLE(uxdevice::listen_wheel);
+
+namespace uxdevice {
 using listen_mouseleave = class listen_mouseleave : public listener {
 public:
   listen_mouseleave(const event_handler_t &_evtDispatcher)
       : listener(eventType::mouseleave, _evtDispatcher) {}
-  listen_mouseleave &operator=(const listen_mouseleave &other) {
-    _data = other._data;
-    key = other.key;
-    return *this;
-  }
+  listen_mouseleave &operator=(const listen_mouseleave &other) { return *this; }
   listen_mouseleave(const listen_mouseleave &other) : listener(other) {}
   TYPED_INDEX_INTERFACE(listen_mouseleave)
 };
 } // namespace uxdevice
+STD_HASHABLE(uxdevice::listen_mouseleave);
