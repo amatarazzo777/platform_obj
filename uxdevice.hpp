@@ -63,6 +63,7 @@ options when compiling the text_color_t.
 #include "uxpaint.hpp"
 
 #include "uxdisplaycontext.hpp"
+#include "uxdisplayunitbase.hpp"
 #include "uxdisplayunits.hpp"
 
 std::string _errorReport(std::string text_color_tFile, int ln,
@@ -116,30 +117,6 @@ public:
                  const painter_brush_t &background);
   ~surface_area_t();
 
-  std::unordered_map<indirect_index_display_unit_t,
-                     std::shared_ptr<display_unit_t>>
-      mapped_objects = {};
-
-  /* the macro creates the stream interface for both constant references
-  and shared pointers as well as establishes the prototype for the insertion
-  function
-  */
-
-#define STREAM_INPUT(CLASS_NAME)                                               \
-public:                                                                        \
-  surface_area_t &operator<<(const CLASS_NAME &data) {                         \
-    stream_input(data);                                                        \
-    return *this;                                                              \
-  }                                                                            \
-  surface_area_t &operator<<(const std::shared_ptr<CLASS_NAME> data) {         \
-    stream_input(data);                                                        \
-    return *this;                                                              \
-  }                                                                            \
-                                                                               \
-private:                                                                       \
-  surface_area_t &stream_input(const CLASS_NAME &_val);                        \
-  surface_area_t &stream_input(const std::shared_ptr<CLASS_NAME> _val);
-
   template <typename T> surface_area_t &operator<<(const T &data) {
     std::ostringstream s;
     s << data;
@@ -148,71 +125,94 @@ private:                                                                       \
     return *this;
   }
 
-  STREAM_INPUT(std::string)
-  STREAM_INPUT(std::stringstream)
-  STREAM_INPUT(char *)
-  STREAM_INPUT(coordinates_t)
+  /*
+   Declare interface only.  uxdevice.cpp contains implementation.
+   These are the stream interface with a function prototype for the invoke().
+   The uxdevice.cpp file contains the implementation.
 
-  STREAM_INPUT(antialias_t)
-  STREAM_INPUT(line_width_t)
-  STREAM_INPUT(line_cap_t)
-  STREAM_INPUT(line_join_t)
-  STREAM_INPUT(miter_limit_t)
-  STREAM_INPUT(line_dashes_t)
+   surface_area_t &uxdevice::surface_area_t::stream_input(
+    const CLASS_NAME _val)
 
-  STREAM_INPUT(text_font_t)
-  STREAM_INPUT(text_color_t)
-  STREAM_INPUT(text_fill_t)
-  STREAM_INPUT(text_outline_t)
-  STREAM_INPUT(text_shadow_t)
-  STREAM_INPUT(text_fill_off_t)
-  STREAM_INPUT(text_outline_off_t)
-  STREAM_INPUT(text_shadow_off_t)
-  STREAM_INPUT(text_alignment_t)
-  STREAM_INPUT(text_alignment_options_t)
+  */
+  DECLARE_STREAM_INTERFACE(std::string)
+  DECLARE_STREAM_INTERFACE(std::stringstream)
+  DECLARE_STREAM_INTERFACE(char *)
 
-  STREAM_INPUT(text_indent_t)
-  STREAM_INPUT(text_ellipsize_t)
-  STREAM_INPUT(text_line_space_t)
-  STREAM_INPUT(text_tab_stops_t)
+  /* declares the interface and implementation for these
+   objects
+   when these are invoked, the current_units class is also updated.
+   When rendering objects are created, text, image or other, these
+   these shared pointers are used as a reference local member initialized
+   at invoke() public member. The parameters and options are validated as well.
+    */
+  DECLARE_STREAM_IMPLEMENTATION(coordinates_t)
 
-  STREAM_INPUT(image_block_t)
-  STREAM_INPUT(stroke_path_t)
-  STREAM_INPUT(fill_path_t)
-  STREAM_INPUT(stroke_path_preserve_t)
-  STREAM_INPUT(fill_path_preserve_t)
-  STREAM_INPUT(close_path_t)
+  DECLARE_STREAM_IMPLEMENTATION(text_font_t)
+  DECLARE_STREAM_IMPLEMENTATION(text_color_t)
+  DECLARE_STREAM_IMPLEMENTATION(text_fill_t)
+  DECLARE_STREAM_IMPLEMENTATION(text_outline_t)
+  DECLARE_STREAM_IMPLEMENTATION(text_shadow_t)
+  DECLARE_STREAM_IMPLEMENTATION(text_fill_off_t)
+  DECLARE_STREAM_IMPLEMENTATION(text_outline_off_t)
+  DECLARE_STREAM_IMPLEMENTATION(text_shadow_off_t)
+  DECLARE_STREAM_IMPLEMENTATION(text_alignment_t)
+  DECLARE_STREAM_IMPLEMENTATION(text_alignment_options_t)
 
-  STREAM_INPUT(arc_t)
-  STREAM_INPUT(negative_arc_t)
-  STREAM_INPUT(curve_t)
-  STREAM_INPUT(line_t)
-  STREAM_INPUT(hline_t)
-  STREAM_INPUT(vline_t)
-  STREAM_INPUT(move_to_t)
-  STREAM_INPUT(rectangle_t)
-  STREAM_INPUT(tollerance_t)
-  STREAM_INPUT(op)
-  STREAM_INPUT(absolute_coordinates_t)
-  STREAM_INPUT(relative_coordinates_t)
+  DECLARE_STREAM_IMPLEMENTATION(text_indent_t)
+  DECLARE_STREAM_IMPLEMENTATION(text_ellipsize_t)
+  DECLARE_STREAM_IMPLEMENTATION(text_line_space_t)
+  DECLARE_STREAM_IMPLEMENTATION(text_tab_stops_t)
 
-  STREAM_INPUT(listener_t)
-  STREAM_INPUT(listen_paint_t)
-  STREAM_INPUT(listen_focus_t)
-  STREAM_INPUT(listen_blur_t)
-  STREAM_INPUT(listen_resize_t)
-  STREAM_INPUT(listen_keydown_t)
-  STREAM_INPUT(listen_keyup_t)
-  STREAM_INPUT(listen_keypress_t)
-  STREAM_INPUT(listen_mouseenter_t)
-  STREAM_INPUT(listen_mousemove_t)
-  STREAM_INPUT(listen_mousedown_t)
-  STREAM_INPUT(listen_mouseup_t)
-  STREAM_INPUT(listen_click_t)
-  STREAM_INPUT(listen_dblclick_t)
-  STREAM_INPUT(listen_contextmenu_t)
-  STREAM_INPUT(listen_wheel_t)
-  STREAM_INPUT(listen_mouseleave_t)
+  /* these are recorded within the current units structure as well.
+   These options persist within the display context and stick.
+   They relate to drawing operations and their options on rendering.
+    */
+
+  DECLARE_STREAM_IMPLEMENTATION(antialias_t)
+  DECLARE_STREAM_IMPLEMENTATION(graphic_operator_t)
+
+  DECLARE_STREAM_IMPLEMENTATION(line_width_t)
+  DECLARE_STREAM_IMPLEMENTATION(line_cap_t)
+  DECLARE_STREAM_IMPLEMENTATION(line_join_t)
+  DECLARE_STREAM_IMPLEMENTATION(line_dashes_t)
+
+  DECLARE_STREAM_IMPLEMENTATION(miter_limit_t)
+  DECLARE_STREAM_IMPLEMENTATION(tollerance_t)
+  DECLARE_STREAM_IMPLEMENTATION(absolute_coordinates_t)
+  DECLARE_STREAM_IMPLEMENTATION(relative_coordinates_t)
+
+  DECLARE_STREAM_IMPLEMENTATION(image_block_t)
+  DECLARE_STREAM_IMPLEMENTATION(stroke_path_t)
+  DECLARE_STREAM_IMPLEMENTATION(fill_path_t)
+  DECLARE_STREAM_IMPLEMENTATION(stroke_fill_path_t)
+  DECLARE_STREAM_IMPLEMENTATION(close_path_t)
+
+  DECLARE_STREAM_IMPLEMENTATION(arc_t)
+  DECLARE_STREAM_IMPLEMENTATION(negative_arc_t)
+  DECLARE_STREAM_IMPLEMENTATION(curve_t)
+  DECLARE_STREAM_IMPLEMENTATION(line_t)
+  DECLARE_STREAM_IMPLEMENTATION(hline_t)
+  DECLARE_STREAM_IMPLEMENTATION(vline_t)
+  DECLARE_STREAM_IMPLEMENTATION(move_to_t)
+  DECLARE_STREAM_IMPLEMENTATION(rectangle_t)
+
+  DECLARE_STREAM_IMPLEMENTATION(listener_t)
+  DECLARE_STREAM_IMPLEMENTATION(listen_paint_t)
+  DECLARE_STREAM_IMPLEMENTATION(listen_focus_t)
+  DECLARE_STREAM_IMPLEMENTATION(listen_blur_t)
+  DECLARE_STREAM_IMPLEMENTATION(listen_resize_t)
+  DECLARE_STREAM_IMPLEMENTATION(listen_keydown_t)
+  DECLARE_STREAM_IMPLEMENTATION(listen_keyup_t)
+  DECLARE_STREAM_IMPLEMENTATION(listen_keypress_t)
+  DECLARE_STREAM_IMPLEMENTATION(listen_mouseenter_t)
+  DECLARE_STREAM_IMPLEMENTATION(listen_mousemove_t)
+  DECLARE_STREAM_IMPLEMENTATION(listen_mousedown_t)
+  DECLARE_STREAM_IMPLEMENTATION(listen_mouseup_t)
+  DECLARE_STREAM_IMPLEMENTATION(listen_click_t)
+  DECLARE_STREAM_IMPLEMENTATION(listen_dblclick_t)
+  DECLARE_STREAM_IMPLEMENTATION(listen_contextmenu_t)
+  DECLARE_STREAM_IMPLEMENTATION(listen_wheel_t)
+  DECLARE_STREAM_IMPLEMENTATION(listen_mouseleave_t)
 
 public:
   display_unit_t &operator[](const indirect_index_display_unit_t &idx) {
@@ -275,14 +275,19 @@ private:
   bool relative_coordinates_t = false;
   void maintain_index(std::shared_ptr<display_unit_t> obj);
 
+private:
   display_context_t context = display_context_t();
   std::atomic<bool> bProcessing = false;
   errorHandler fnError = nullptr;
   event_handler_t fnEvents = nullptr;
 
-  typedef std::list<std::shared_ptr<display_unit_t>> display_unit_storage_t;
-  display_unit_storage_t DL = {};
-  display_unit_storage_t::iterator itDL_Processed = DL.begin();
+  typedef std::list<std::shared_ptr<display_unit_t>> display_unit_list_t;
+  display_unit_list_t DL = {};
+  display_unit_list_t::iterator itDL_Processed = DL.begin();
+
+  std::unordered_map<indirect_index_display_unit_t,
+                     std::shared_ptr<display_unit_t>>
+      mapped_objects = {};
 
   std::atomic_flag DL_readwrite = ATOMIC_FLAG_INIT;
 

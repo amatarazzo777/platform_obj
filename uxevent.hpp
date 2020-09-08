@@ -33,7 +33,6 @@ namespace uxdevice {
 events that can be dispatched by the system.
 */
 
-
 /**
 \class event
 
@@ -44,32 +43,29 @@ given within the parameters.
 */
 using event_t = class event_t {
 public:
-  event_t(const std::type_info &et) : type(et) {}
-  event_t(const std::type_info &et, const char &k) : type(et), key(k) {}
-  event_t(const std::type_info &et, const unsigned int &vk)
+  event_t(const std::type_index &et) : type(et) {}
+  event_t(const std::type_index &et, const char &k) : type(et), key(k) {}
+  event_t(const std::type_index &et, const unsigned int &vk)
       : type(et), virtualKey(vk), isVirtualKey(true) {}
 
-  event_t(const std::type_info &et, const short &mx, const short &my,
+  event_t(const std::type_index &et, const short &mx, const short &my,
           const short &mb_dis)
       : type(et), x(mx), y(my) {
-
-    if (et == std::type_info<typeid>(listen_wheel))
-      distance = mb_dis;
-    else
-      button = static_cast<char>(mb_dis);
+    distance = mb_dis;
+    button = static_cast<char>(mb_dis);
   }
-  event_t(const std::type_info &et, const short &_w, const short &_h)
+  event_t(const std::type_index &et, const short &_w, const short &_h)
       : type(et), x(_w), y(_h), w(_w), h(_h) {}
 
-  event_t(const std::type_info &et, const short &_x, const short &_y,
+  event_t(const std::type_index &et, const short &_x, const short &_y,
           const short &_w, const short &_h)
       : type(et), x(_x), y(_y), w(_w), h(_h) {}
-  event_t(const std::type_info &et, const short &_distance)
+  event_t(const std::type_index &et, const short &_distance)
       : type(et), distance(_distance) {}
   ~event_t(){};
 
 public:
-  std::type_info type = {};
+  std::type_index type = std::type_index(typeid(this));
 
   unsigned int virtualKey = 0;
   std::wstring unicodeKeys = L"";

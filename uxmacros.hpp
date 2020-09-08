@@ -44,7 +44,8 @@ void hash_combine(std::size_t &seed, const T &v, const Rest &... rest) {
 \def STD_HASHABLE(CLASS_NAME)
 \param CLASS_NAME to make std::hash aware.
 \brief creates an operator() that is accessible from std::hash<>
-These objects must expose a method named hash_code() which returns a std::size_t.
+These objects must expose a method named hash_code() which returns a
+std::size_t.
 */
 #define STD_HASHABLE(CLASS_NAME)                                               \
   template <> struct std::hash<CLASS_NAME> {                                   \
@@ -73,8 +74,8 @@ These objects must expose a method named hash_code() which returns a std::size_t
 \internal
 \def HASH_OBJECT_MEMBERS
 \param ... - variadic parameter expanding to hash combine each listed.
-\brief Creates interface routines for the hashing system and change detection logic.
-  Hashes each of the listed values within the macro parameters.
+\brief Creates interface routines for the hashing system and change detection
+logic. Hashes each of the listed values within the macro parameters.
 */
 #define HASH_OBJECT_MEMBERS(...)                                               \
   std::size_t hash_code(void) const noexcept {                                 \
@@ -98,154 +99,57 @@ These objects must expose a method named hash_code() which returns a std::size_t
     return value;                                                              \
   }
 
-/**
-\internal
-\def DECLARE_PAINTER_BRUSH_DISPLAY_UNIT(CLASS_NAME)
-\brief creates a painter brush object that is also a display unit.
-class inherits publically display_unit_t and painter_brush_t
+/* the macro creates the stream interface for both constant references
+and shared pointers as well as establishes the prototype for the insertion
+function. The implementation is not standard and will need definition.
+This is the route for formatting objects that accept numerical data and process
+to human readable values. Modern implementations include the processing of size
+information. Yet within the c++ implementation, the data structures that report
+and hold information is elaborate.
 */
-#define DECLARE_PAINTER_BRUSH_DISPLAY_UNIT(CLASS_NAME)                         \
-  namespace uxdevice {                                                         \
-  using CLASS_NAME = class CLASS_NAME : public display_unit_t,                 \
-        public painter_brush_t {                                               \
-  public:                                                                      \
-    using painter_brush_t::painter_brush_t;                                    \
-    CLASS_NAME &operator=(const CLASS_NAME &other) {                           \
-      painter_brush_t::operator=(other);                                       \
-      display_unit_t::operator=(other);                                        \
-      return *this;                                                            \
-    }                                                                          \
-    CLASS_NAME(const CLASS_NAME &other)                                        \
-        : painter_brush_t(other), display_unit_t(other) {}                     \
-    CLASS_NAME(CLASS_NAME &&other)                                             \
-        : painter_brush_t(other), display_unit_t(other) {}                     \
-    void emit(cairo_t *cr) {                                                   \
-      painter_brush_t::emit(cr);                                               \
-      cairo_set_line_width(cr, lineWidth);                                     \
-    }                                                                          \
-    void emit(cairo_t *cr, double x, double y, double w, double h) {           \
-      painter_brush_t::emit(cr);                                               \
-      cairo_set_line_width(cr, lineWidth);                                     \
-    }                                                                          \
-    HASH_OBJECT_MEMBERS(display_unit_t::hash_code(), HASH_TYPE_ID_THIS,        \
-                        painter_brush_t::hash_code(), lineWidth, radius, x, y) \
-    double lineWidth = 1;                                                      \
-    unsigned short radius = 3;                                                 \
-    double x = 1, y = 1;                                                       \
-    TYPED_INDEX_INTERFACE(CLASS_NAME)                                          \
-  };                                                                           \
-  }                                                                            \
-  STD_HASHABLE(uxdevice::CLASS_NAME)
 
-/**
-\internal
-\def DECLARE_MARKER_DISPLAY_UNIT(CLASS_NAME)
-\brief declares a class that marks a unit but does not store a value.
-This is useful for switch and state logic. When the ite is present, the
-invoke method is called. class inherits publically display_unit_t
+#define DECLARE_STREAM_INTERFACE(CLASS_NAME)                                   \
+public:                                                                        \
+  surface_area_t &operator<<(const CLASS_NAME &data) {                         \
+    stream_input(data);                                                        \
+    return *this;                                                              \
+  }                                                                            \
+  surface_area_t &operator<<(const std::shared_ptr<CLASS_NAME> data) {         \
+    stream_input(data);                                                        \
+    return *this;                                                              \
+  }                                                                            \
+                                                                               \
+private:                                                                       \
+  surface_area_t &stream_input(const CLASS_NAME &_val);                        \
+  surface_area_t &stream_input(const std::shared_ptr<CLASS_NAME> _val);
+
+/*
+The macro provides a creation of necessary input stream routines that
+maintains the display lists. These routines are private within the class
+and are activated by the << operator. These are the underlying operations.
+
 */
-#define DECLARE_MARKER_DISPLAY_UNIT(CLASS_NAME)                                \
-  namespace uxdevice {                                                         \
-  using CLASS_NAME = class CLASS_NAME : public display_unit_t {                \
-  public:                                                                      \
-    CLASS_NAME() {}                                                            \
-                                                                               \
-    CLASS_NAME &operator=(CLASS_NAME &&other) noexcept {                       \
-      display_unit_t::operator=(other);                                        \
-    }                                                                          \
-                                                                               \
-    CLASS_NAME &operator=(const CLASS_NAME &other) {                           \
-      display_unit_t::operator=(other);                                        \
-      return *this;                                                            \
-    }                                                                          \
-                                                                               \
-    CLASS_NAME(CLASS_NAME &&other) noexcept {                                  \
-      display_unit_t(other);                                                   \
-      return *this;                                                            \
-    }                                                                          \
-    CLASS_NAME(const CLASS_NAME &other) { display_unit_t(other); }             \
-                                                                               \
-    virtual ~CLASS_NAME() {}                                                   \
-    void invoke(display_unit_t &); \
-                                                                               \
-    TYPED_INDEX_INTERFACE(CLASS_NAME)                                          \
-    HASH_OBJECT_MEMBERS(display_unit_t::hash_code(), HASH_TYPE_ID_THIS)        \
-  };                                                                           \
+#define DECLARE_STREAM_IMPLEMENTATION(CLASS_NAME)                              \
+public:                                                                        \
+  surface_area_t &operator<<(const CLASS_NAME &data) {                         \
+    stream_input(data);                                                        \
+    return *this;                                                              \
   }                                                                            \
-  STD_HASHABLE(uxdevice::CLASS_NAME);
-
-/**
-\internal
-\def DECLARE_STORING_EMITTER_DISPLAY_UNIT(CLASS_NAME, STORAGE_TYPE)
-\param CLASS_NAME - the name the display unit should assume.
-\param STORAGE_TYPE - the storage class or trivial type.
-
-\brief provides the flexibility to store associated data. the invoke
-public method is called. The class has a public member named "value" of the
-given type within the second macro parameter.
-*/
-#define DECLARE_STORING_EMITTER_DISPLAY_UNIT(CLASS_NAME, STORAGE_TYPE)         \
-  namespace uxdevice {                                                         \
-  using CLASS_NAME = class CLASS_NAME : public display_unit_t {                \
-  public:                                                                      \
-    using STORAGE_TYPE::STORAGE_TYPE;                                          \
-    CLASS_NAME &operator=(const CLASS_NAME &other) {                           \
-      display_unit_t::operator=(other);                                        \
-      return *this;                                                            \
-    }                                                                          \
-    CLASS_NAME &operator=(CLASS_NAME &&other) noexcept {                       \
-      index_by_t::operator=(other);                                            \
-    }                                                                          \
-    CLASS_NAME(const CLASS_NAME &other)                                        \
-        : display_unit_t(other), value(other.value) {}                         \
-    CLASS_NAME(CLASS_NAME &&other)                                             \
-    noexcept                                                                   \
-        : display_unit_t(other), value(std::move(other.value)),                \
-          display_unit_t(other) {}                                             \
-                                                                               \
-    virtual ~CLASS_NAME() {}                                                   \
-                                                                               \
-    void invoke(display_context_t &context);                                   \
-                                                                               \
-    TYPED_INDEX_INTERFACE(CLASS_NAME)                                          \
-    HASH_OBJECT_MEMBERS(display_unit_t::hash_code(), HASH_TYPE_ID_THIS, value) \
-                                                                               \
-    STORAGE_TYPE &value;                                                       \
-  };                                                                           \
+  surface_area_t &operator<<(const std::shared_ptr<CLASS_NAME> data) {         \
+    stream_input(data);                                                        \
+    return *this;                                                              \
   }                                                                            \
-  STD_HASHABLE(uxdevice::CLASS_NAME);
-
-/**
-\internal
-\def DECLARE_NAMED_LISTENER_DISPLAY_UNIT(CLASS_NAME)
-\brief the macro creates a named listener which inherits
-the listener_t interface publicly. The type_info is stored within
-the based class.
-*/
-#define DECLARE_NAMED_LISTENER_DISPLAY_UNIT(CLASS_NAME)                        \
-  namespace uxdevice {                                                         \
-  using CLASS_NAME = class CLASS_NAME : public listener_t {                    \
-  public:                                                                      \
-    CLASS_NAME(const event_handler_t &_evtDispatcher)                          \
-        : listener_t(std::make_tuple<std::type_info, event_handler>(           \
-              std::type_info(this), _evtDispatcher)) {}                        \
-    CLASS_NAME &operator=(const CLASS_NAME &other) {                           \
-      listener_t::operator=(other);                                            \
-      return *this;                                                            \
-    }                                                                          \
-    CLASS_NAME &operator=(CLASS_NAME &&other) noexcept {                       \
-      listener_t::operator=(other);                                            \
-    }                                                                          \
-    CLASS_NAME(const CLASS_NAME &other) : listener_t(other) {}                 \
-    CLASS_NAME(CLASS_NAME &&other)                                             \
-    noexcept                                                                   \
-        : display_unit_t(other), value(std::move(other.value)),                \
-          display_unit_t(other) {}                                             \
                                                                                \
-    virtual ~CLASS_NAME() {}                                                   \
-                                                                               \
-    HASH_OBJECT_MEMBERS(listener_t::hash_code(), HASH_TYPE_ID_THIS)            \
-    TYPED_INDEX_INTERFACE(CLASS_NAME)                                          \
-  };                                                                           \
+private:                                                                       \
+  surface_area_t &stream_input(const CLASS_NAME &_val) {                       \
+    stream_input(make_shared<CLASS_NAME>(_val));                               \
+    return *this;                                                              \
   }                                                                            \
-  STD_HASHABLE(uxdevice::CLASS_NAME);
+  surface_area_t &stream_input(const shared_ptr<CLASS_NAME> _val) {            \
+    DL_SPIN;                                                                   \
+    auto item = DL.emplace_back(_val);                                         \
+    item->invoke(context);                                                     \
+    DL_CLEAR;                                                                  \
+    maintain_index(item);                                                      \
+    return *this;                                                              \
+  }

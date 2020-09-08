@@ -86,6 +86,7 @@ typedef struct _draw_buffer_t {
 
 class current_units_t {
 public:
+  bool text_rendering_path = false;
   std::shared_ptr<text_font_t> text_font = nullptr;
   std::shared_ptr<antialias_t> antialias = nullptr;
   std::shared_ptr<text_shadow_t> text_shadow = nullptr;
@@ -95,7 +96,6 @@ public:
   std::shared_ptr<text_data_t> text = nullptr;
   std::shared_ptr<text_alignment_t> text_alignment = nullptr;
   std::shared_ptr<coordinates_t> coordinates = nullptr;
-  std::shared_ptr<index_by_t> index_by = nullptr;
   std::shared_ptr<line_width_t> line_width = nullptr;
   std::shared_ptr<text_indent_t> text_indent = nullptr;
   std::shared_ptr<text_ellipsize_t> text_ellipsize = nullptr;
@@ -232,53 +232,6 @@ public:
   cairo_status_t error_check(cairo_t *cr) { return cairo_status(cr); }
 
   current_units_t current_units = current_units_t();
-
-  void set_unit(std::shared_ptr<text_data_t> text) {
-    current_units.text = text;
-  };
-  void set_unit(std::shared_ptr<text_font_t> text_font) {
-    current_units.text_font = text_font;
-  };
-  void set_unit(std::shared_ptr<antialias_t> antialias) {
-    current_units.antialias = antialias;
-  };
-  void set_unit(std::shared_ptr<text_shadow_t> text_shadow) {
-    current_units.text_shadow = text_shadow;
-  };
-  void set_unit(std::shared_ptr<text_fill_t> text_fill) {
-    current_units.text_fill = text_fill;
-  };
-  void set_unit(std::shared_ptr<text_outline_t> text_outline) {
-    current_units.text_outline = text_outline;
-  };
-  void set_unit(std::shared_ptr<text_color_t> text_color) {
-    current_units.text_color = text_color;
-  };
-
-  void set_unit(std::shared_ptr<text_alignment_t> text_alignment) {
-    current_units.text_alignment = text_alignment;
-  };
-  void set_unit(std::shared_ptr<coordinates_t> coordinates) {
-    current_units.coordinates = coordinates;
-  };
-  void set_unit(std::shared_ptr<index_by_t> _val) {
-    current_units.index_by = _val;
-  };
-  void set_unit(std::shared_ptr<line_width_t> _val) {
-    current_units.line_width = _val;
-  };
-  void set_unit(std::shared_ptr<text_indent_t> _val) {
-    current_units.text_indent = _val;
-  };
-  void set_unit(std::shared_ptr<text_ellipsize_t> _val) {
-    current_units.text_ellipsize = _val;
-  };
-  void set_unit(std::shared_ptr<text_line_space_t> _val) {
-    current_units.text_line_space = _val;
-  };
-  void set_unit(std::shared_ptr<text_tab_stops_t> _val) {
-    current_units.text_tab_stops = _val;
-  };
 
   HASH_OBJECT_MEMBERS(current_units.hash_code(), HASH_TYPE_ID_THIS, window_x,
                       window_y, window_width, window_height, window_open,

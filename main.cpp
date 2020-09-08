@@ -567,5 +567,5 @@ void draw_lines(surface_area_t &vis) {
       coord(gen), coord(gen), coord(gen), coord(gen),
       {{_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}});
 
-  vis << stroke_fill_path(ps,pf);
+  vis << stroke_fill_path(ps, pf);
 }
