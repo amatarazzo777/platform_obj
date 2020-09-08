@@ -1,15 +1,41 @@
+/*
+ * This file is part of the PLATFORM_OBJ distribution
+ * {https://github.com/amatarazzo777/platform_obj). Copyright (c) 2020 Anthony
+ * Matarazzo.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/**
+\author Anthony Matarazzo
+\file main.cpp
+\date 9/7/20
+\version 1.0
+\brief
+*/
+
 #include "uxdevice.hpp"
 
 using namespace std;
 using namespace uxdevice;
 
-void show_time(surface_area &vis, double x, double y);
-std::shared_ptr<std::string> insert_text(surface_area &vis, bool bfast,
+void show_time(surface_area_t &vis, double x, double y);
+std::shared_ptr<std::string> insert_text(surface_area_t &vis, bool bfast,
                                          string &stxt);
-void draw_shapes(surface_area &vis);
-void draw_images(surface_area &vis);
-void draw_text(surface_area &vis, bool bfast);
-void draw_lines(surface_area &vis);
+void draw_shapes(surface_area_t &vis);
+void draw_images(surface_area_t &vis);
+void draw_text(surface_area_t &vis, bool bfast);
+void draw_lines(surface_area_t &vis);
 std::string generate_text(void);
 
 void event_dispatch(const event &evt);
@@ -19,7 +45,7 @@ void handle_error(const std::string errText) {
 
 // inline PNG data using the RFC2397 base 64 encoding scheme.
 // This may be useful in some cases, yet raw byte data will be smaller in memory
-// description but larger in the text_color description perhaps unless the c++
+// description but larger in the text_color_t description perhaps unless the c++
 // RAW literanl input format is used for literal string data.
 const char *stripes =
     "data:image/"
@@ -77,7 +103,7 @@ std::string sSVG_BUTTON =
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:xlink="http://www.w3.org/1999/xlink"
-   xmlns:sodipodi="http://sodipodi.text_colorforge.net/DTD/sodipodi-0.dtd"
+   xmlns:sodipodi="http://sodipodi.text_color_tforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    enable-background="new"
    id="svg8"
@@ -269,7 +295,7 @@ std::string sSVG_BUTTON =
          rdf:about="">
         <dc:format>image/svg+xml</dc:format>
         <dc:type
-           rdf:retext_color="http://purl.org/dc/dcmitype/StillImage" />
+           rdf:retext_color_t="http://purl.org/dc/dcmitype/StillImage" />
         <dc:title />
       </cc:Work>
     </rdf:RDF>
@@ -347,16 +373,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 #define _C color(gen)
 #define _A opac(gen)
 
-  surface_area vis = surface_area({500, 500}, "Information Title",
-                                  painter_brush_t("darkgreen"));
+  surface_area_t vis = surface_area_t({500, 500}, "Information Title",
+                                      painter_brush_t("darkgreen"));
 
-  vis << listen_keypress([&vis](auto &evt) {
+  vis << listen_keypress_t([&vis](auto &evt) {
     string s = " ";
     s[0] = evt.key;
     // draw_text(vis, true, s);
   });
 
-  vis << listen_mousemove([](auto &evt) {
+  vis << listen_mousemove_t([](auto &evt) {
     if (evt.y < my) {
       oy = oy - .1;
     } else {
@@ -379,20 +405,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
   // easily index  properties for specific access later.
   // creating shared objects allows for some interface architectures
   // to be crafted easier.
-  vis << text_font("28px").index("paragraphfont");
-  vis << text_shadow("green") << coordinates{0, 100, 600, 300}
-      << text_color("white") << paragraph_text << '\n';
+  vis << text_font_t("28px").index("paragraphfont");
+  vis << text_shadow_t("green") << coordinates_t{0, 100, 600, 300}
+      << text_color_t("white") << paragraph_text << '\n';
 
   vis[paragraph_text] =
       "New text is applied without an indirect index, more simplified syntax. ";
   vis["paragraphfont"] = "40px";
 
   for (int i = 0; i < 5; i++) {
-    vis << coordinates{i * 130.0, 200, 150, 240} << image_block{sSVG_BUTTON}
-        << text_shadow("black")
-        << text_fill(0, 0, 5, 30, {{"orange"}, {"yellow"}})
-        << text_outline(stripes) << text_font("16px") << line_width(5)
-        << coordinates{20.0 + i * 130.0, 210, 150, 240} << button_caption;
+    vis << coordinates_t{i * 130.0, 200, 150, 240} << image_block_t{sSVG_BUTTON}
+        << text_shadow_t("black")
+        << text_fill_t(0, 0, 5, 30, {{"orange"}, {"yellow"}})
+        << text_outline_t(stripes) << text_font_t("16px") << line_width_t(5)
+        << coordinates_t{20.0 + i * 130.0, 210, 150, 240} << button_caption;
   }
 
   vis.notify_complete();
@@ -400,25 +426,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
     std::this_thread::sleep_for(std::chrono::milliseconds(DRAW_SLEEP));
 
     // show_time(vis, 0, 0);
-    vis[paragraph_text] = generate_text();
+    *paragraph_text = generate_text();
     vis.notify_complete();
   }
 
   return 0;
 }
 
-void show_time(surface_area &vis, double x, double y) {
+void show_time(surface_area_t &vis, double x, double y) {
   std::time_t t = std::time(nullptr);
   char mbstr[100];
   std::strftime(mbstr, sizeof(mbstr), "%A %c", std::localtime(&t));
 
-  vis << text_fill_off() << text_outline_off() << text_font("28px")
-      << text_shadow("darkgrey") << coordinates{x, y, 600, 300}
-      << text_color(0, 0, 10, 10, {{"white"}, {"grey"}}) << mbstr << "  "
+  vis << text_fill_off_t() << text_outline_off_t() << text_font_t("28px")
+      << text_shadow_t("darkgrey") << coordinates_t{x, y, 600, 300}
+      << text_color_t(0, 0, 10, 10, {{"white"}, {"grey"}}) << mbstr << "  "
       << '\n';
 }
 
-std::shared_ptr<std::string> insert_text(surface_area &vis, bool bfast,
+std::shared_ptr<std::string> insert_text(surface_area_t &vis, bool bfast,
                                          string &stxt) {
 
   std::uniform_real_distribution<> scrn(0, 400.0);
@@ -436,27 +462,29 @@ std::shared_ptr<std::string> insert_text(surface_area &vis, bool bfast,
   std::uniform_int_distribution<> fill(1, 2);
 
   if (bfast) {
-    vis << text_fill_off{} << text_outline_off{} << text_shadow_off{}
-        << alignment_t::left << coordinates{10, 10, 300, 300} << ps;
+    vis << text_fill_off_t{} << text_outline_off_t{} << text_shadow_off_t{}
+        << text_alignment_options_t::left << coordinates_t{10, 10, 300, 300}
+        << ps;
 
   } else {
 
-    vis << text_fill{coord(gen),
-                     coord(gen),
-                     coord(gen),
-                     coord(gen),
-                     {{_C, _C, _C, _C, _A},
-                      {_C, _C, _C, _C, _A},
-                      {_C, _C, _C, _C, _A}}}
-        << text_outline{coord(gen),
-                        coord(gen),
-                        coord(gen),
-                        coord(gen),
-                        {{_C, _C, _C, _C, _A},
-                         {_C, _C, _C, _C, _A},
-                         {_C, _C, _C, _C, _A}}}
-        << text_shadow{"green"} << line_width{lw(gen)} << alignment_t::left
-        << coordinates{10, 10, 300, 300} << ps;
+    vis << text_fill_t{coord(gen),
+                       coord(gen),
+                       coord(gen),
+                       coord(gen),
+                       {{_C, _C, _C, _C, _A},
+                        {_C, _C, _C, _C, _A},
+                        {_C, _C, _C, _C, _A}}}
+        << text_outline_t{coord(gen),
+                          coord(gen),
+                          coord(gen),
+                          coord(gen),
+                          {{_C, _C, _C, _C, _A},
+                           {_C, _C, _C, _C, _A},
+                           {_C, _C, _C, _C, _A}}}
+        << text_shadow_t{"green"} << line_width_t{lw(gen)}
+        << text_alignment_options_t::left << coordinates_t{10, 10, 300, 300}
+        << ps;
   }
   return ps;
 }
@@ -500,7 +528,7 @@ std::string generate_text(void) {
   }
   return ret;
 }
-void draw_lines(surface_area &vis) {
+void draw_lines(surface_area_t &vis) {
 
   std::uniform_real_distribution<> scrn(0, 1000);
   std::uniform_real_distribution<> dcir(5.0, 20.0);
@@ -511,26 +539,26 @@ void draw_lines(surface_area &vis) {
   std::uniform_real_distribution<> coord(55.0, 100.0);
   std::uniform_int_distribution<> shape(1, 3);
 
-  vis << move_to(scrn(gen), scrn(gen));
+  vis << coordinates_t(scrn(gen), scrn(gen));
 
   for (int c = 0; c < NUM_SEGMENTS; c++) {
 
     switch (shape(gen)) {
     case 1:
-      vis << line(scrn(gen), scrn(gen));
+      vis << line_t(scrn(gen), scrn(gen));
       break;
     case 2:
-      vis << arc(scrn(gen), scrn(gen), dimen(gen), dimen(gen), dimen(gen));
+      vis << arc_t(scrn(gen), scrn(gen), dimen(gen), dimen(gen), dimen(gen));
       break;
     case 3:
-      vis << curve(scrn(gen), scrn(gen), scrn(gen), scrn(gen), scrn(gen),
-                   scrn(gen));
+      vis << curve_t(scrn(gen), scrn(gen), scrn(gen), scrn(gen), scrn(gen),
+                     scrn(gen));
       break;
     }
   }
-  vis << close_path();
+  vis << close_path_t();
 
-  vis << line_width(lw(gen));
+  vis << line_width_t(lw(gen));
   auto ps = painter_brush_t(
       coord(gen), coord(gen), coord(gen), coord(gen),
       {{_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}});
@@ -539,55 +567,5 @@ void draw_lines(surface_area &vis) {
       coord(gen), coord(gen), coord(gen), coord(gen),
       {{_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}});
 
-  vis << stroke_path_preserve(ps) << fill_path(pf);
+  vis << stroke_fill_path(ps,pf);
 }
-
-#if 0
-void draw_lines(surface_area &vis) {
-
-  std::uniform_real_distribution<> scrn(0, 1000);
-  std::uniform_real_distribution<> dcir(5.0, 20.0);
-  std::uniform_real_distribution<> dimen(25.0, 300.0);
-  std::uniform_real_distribution<> color(0, 1.0);
-  std::uniform_real_distribution<> opac(.5, 1);
-  std::uniform_real_distribution<> lw(7, 30.0);
-  std::uniform_real_distribution<> coord(55.0, 100.0);
-  std::uniform_int_distribution<> shape(1, 1);
-
-  vis.move_to(scrn(gen), scrn(gen));
-  auto &myshape = vis.group("testgroup");
-
-  for (int c = 0; c < NUM_SEGMENTS; c++) {
-
-    switch (shape(gen)) {
-    case 1:
-      myshape.line(scrn(gen), scrn(gen));
-      break;
-    case 2:
-      myshape.arc(scrn(gen), scrn(gen), dimen(gen), dimen(gen), dimen(gen));
-      break;
-    case 3:
-      myshape.curve(scrn(gen), scrn(gen), scrn(gen), scrn(gen), scrn(gen),
-                    scrn(gen));
-      break;
-    }
-  }
-  myshape.close_path();
-
-  myshape.line_width(lw(gen));
-  auto ps =
-      painter_brush_t(coord(gen), coord(gen), coord(gen), coord(gen),
-            {{_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}});
-
-  auto pf =
-      painter_brush_t(coord(gen), coord(gen), coord(gen), coord(gen),
-            {{_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}});
-
-  myshape.stroke_preserve(ps).fill(pf);
-
-  auto &myshape1 = vis.group("testgroup2");
-  myshape1.move_to(10, 10).relative().hline(10).vline(10).hline(-10).vline(-10);
-  myshape1.stroke_preserve(ps).fill(pf);
-
-}
-#endif

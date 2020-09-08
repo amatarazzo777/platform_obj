@@ -1,11 +1,29 @@
+/*
+ * This file is part of the PLATFORM_OBJ distribution
+ * {https://github.com/amatarazzo777/platform_obj). Copyright (c) 2020 Anthony
+ * Matarazzo.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 /**
 \author Anthony Matarazzo
-\file uxevent.hpp
-\date 5/12/20
+\file uxpaint.hpp
+\date 9/7/20
 \version 1.0
- \details  paint class
-
+\brief
 */
+
 #pragma once
 
 namespace uxdevice {
@@ -97,7 +115,7 @@ public:
     virtual void emit(cairo_t *cr) {}
     virtual void emit(cairo_t *cr, double x, double y, double w, double h) {}
 
-    bool is_text_color_description(void) {
+    bool is_color_description(void) {
       bool bret = false;
       if (pango_color_parse(&pango_color, description.data())) {
         bret = true;
@@ -147,8 +165,7 @@ public:
         : paint_definition_base_t(other) {}
     virtual ~descriptive_definition_t() {}
 
-    HASH_OBJECT_MEMBERS(paint_definition_base_t::hash_code(),
-                        std::type_index(typeid(this)).hash_code())
+    HASH_OBJECT_MEMBERS(paint_definition_base_t::hash_code(), HASH_TYPE_ID_THIS)
   };
 
   class color_definition_t : public paint_definition_base_t {
@@ -206,8 +223,9 @@ public:
   public:
     linear_gradient_definition_t(const std::string &_description, double _x0,
                                  double _y0, double _x1, double _y1,
-                                 const color_stops_t &__cs, filter_t _filter,
-                                 extend_t _extend)
+                                 const color_stops_t &__cs,
+                                 filter_options_t _filter,
+                                 extend_options_t _extend)
         : paint_definition_base_t(paint_definition_class_t::linear_gradient,
                                   _description),
           x0(_x0), y0(_x0), x1(_x0), y1(_x0), cs(__cs), filter(_filter),
@@ -248,8 +266,8 @@ public:
     double x1 = {};
     double y1 = {};
     color_stops_t cs = {};
-    filter_t filter = {};
-    extend_t extend = {};
+    filter_options_t filter = {};
+    extend_options_t extend = {};
     cairo_pattern_t *pattern = {};
   };
 
@@ -258,8 +276,9 @@ public:
     radial_gradient_definition_t(const std::string &_description, double _cx0,
                                  double _cy0, double _radius0, double _cx1,
                                  double _cy1, double _radius1,
-                                 const color_stops_t &_cs, filter_t _filter,
-                                 extend_t _extend)
+                                 const color_stops_t &_cs,
+                                 filter_options_t _filter,
+                                 extend_options_t _extend)
         : paint_definition_base_t(paint_definition_class_t::radial_gradient,
                                   _description),
           cx0(_cx0), cy0(_cy0), radius0(_radius0), cx1(_cx1), cy1(_cy1),
@@ -290,10 +309,11 @@ public:
       cairo_set_source(cr, pattern);
     }
 
-    HASH_OBJECT_MEMBERS_CONTAINING_VECTOR(
-        cs, color_stop_t, paint_definition_base_t::hash_code(),
-        std::type_index(typeid(this)).hash_code(), cx0, cy0, radius0, cx1, cy1,
-        radius1, filter, extend, pattern)
+    HASH_OBJECT_MEMBERS_CONTAINING_VECTOR(cs, color_stop_t,
+                                          paint_definition_base_t::hash_code(),
+                                          HASH_TYPE_ID_THIS, cx0, cy0, radius0,
+                                          cx1, cy1, radius1, filter, extend,
+                                          pattern)
 
     double cx0 = {};
     double cy0 = {};
@@ -302,8 +322,8 @@ public:
     double cy1 = {};
     double radius1 = {};
     color_stops_t cs = {};
-    filter_t filter = {};
-    extend_t extend = {};
+    filter_options_t filter = {};
+    extend_options_t extend = {};
     cairo_pattern_t *pattern = {};
   };
 
@@ -318,7 +338,8 @@ public:
     image_block_pattern_source_definition_t(const std::string &_description,
                                             double _width, double _height,
                                             cairo_surface_t *_image,
-                                            filter_t _filter, extend_t _extend)
+                                            filter_options_t _filter,
+                                            extend_options_t _extend)
         : paint_definition_base_t(paint_definition_class_t::image_block_pattern,
                                   _description),
           width(_width), height(_height), image_block(_image), filter(_filter),
@@ -362,8 +383,8 @@ public:
     double height = {};
     cairo_surface_t *image_block = {};
     cairo_pattern_t *pattern = {};
-    filter_t filter = {};
-    extend_t extend = {};
+    filter_options_t filter = {};
+    extend_options_t extend = {};
   };
 
   /**
@@ -399,15 +420,15 @@ public:
   painter_brush_t(double x0, double y0, double x1, double y1,
                   const color_stops_t &cs)
       : data_storage(std::make_shared<linear_gradient_definition_t>(
-            "linear_gradient", x0, y0, x1, y1, cs, filter_t::fast,
-            extend_t::off)) {}
+            "linear_gradient", x0, y0, x1, y1, cs, filter_options_t::fast,
+            extend_options_t::off)) {}
 
   // specify a radial gradient
   painter_brush_t(double cx0, double cy0, double radius0, double cx1,
                   double cy1, double radius1, const color_stops_t &cs)
       : data_storage(std::make_shared<radial_gradient_definition_t>(
             "radial_gradient", cx0, cy0, radius0, cx1, cy1, radius1, cs,
-            filter_t::fast, extend_t::off)) {}
+            filter_options_t::fast, extend_options_t::off)) {}
 
   painter_brush_t(const painter_brush_t &other) { *this = other; }
   painter_brush_t &operator=(const painter_brush_t &other) {
@@ -441,7 +462,7 @@ public:
 
   typedef std::shared_ptr<paint_definition_base_t> data_storage_t;
   data_storage_t data_storage = {};
-}; // namespace uxdevice
+};
 
 } // namespace uxdevice
 

@@ -1,9 +1,34 @@
+/*
+ * This file is part of the PLATFORM_OBJ distribution
+ * {https://github.com/amatarazzo777/platform_obj). Copyright (c) 2020 Anthony
+ * Matarazzo.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/**
+\author Anthony Matarazzo
+\file uxdisplayunits.hpp
+\date 9/7/20
+\version 1.0
+\brief
+*/
 /**
 \author Anthony Matarazzo
 \file uxworkstate.hpp
 \date 5/12/20
 \version 1.0
- \details  Routines for cairo image_block
+ \details  Routines for cairo image_block_t
 
 */
 #include "uxdevice.hpp"
@@ -51,7 +76,7 @@ cairo_status_t uxdevice::read_contents(const gchar *file_name,
 
 /**
 \internal
-\brief creates an image_block surface from an svg.
+\brief creates an image_block_t surface from an svg.
 */
 cairo_surface_t *uxdevice::image_surface_SVG(bool bDataPassed,
                                              std::string &info, double width,
@@ -85,7 +110,7 @@ cairo_surface_t *uxdevice::image_surface_SVG(bool bDataPassed,
     goto error_exit;
   }
 
-  // scale to the image_block requested.
+  // scale to the image_block_t requested.
   dWidth = width;
   dHeight = height;
   rsvg_handle_get_dimensions(handle, &dimensions);
@@ -102,7 +127,7 @@ cairo_surface_t *uxdevice::image_surface_SVG(bool bDataPassed,
     dHeight /= dimensions.height;
   }
 
-  // render the image_block to surface
+  // render the image_block_t to surface
   img = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
   status = cairo_surface_status(img);
   if (status != CAIRO_STATUS_SUCCESS) {
@@ -150,7 +175,7 @@ error_exit:
 
 /**
 \internal
-\brief reads the image_block and creates a cairo surface image_block.
+\brief reads the image_block_t and creates a cairo surface image_block_t.
 */
 cairo_surface_t *uxdevice::read_image(std::string &data, double w, double h) {
   const string dataPNG = string("data:image/png;base64,");

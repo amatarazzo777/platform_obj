@@ -1,3 +1,28 @@
+/*
+ * This file is part of the PLATFORM_OBJ distribution
+ * {https://github.com/amatarazzo777/platform_obj). Copyright (c) 2020 Anthony
+ * Matarazzo.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/**
+\author Anthony Matarazzo
+\file uxdisplayunits.hpp
+\date 9/7/20
+\version 1.0
+\brief
+*/
 /**
 \author Anthony Matarazzo
 \file uxenums.hpp
@@ -8,7 +33,7 @@
 */
 #pragma once
 namespace uxdevice {
-enum class alias_t {
+enum class antialias_options_t {
   def = CAIRO_ANTIALIAS_DEFAULT,
 
   /* method */
@@ -22,7 +47,7 @@ enum class alias_t {
   best = CAIRO_ANTIALIAS_BEST
 };
 
-enum class filter_t {
+enum class filter_options_t {
   fast = CAIRO_FILTER_FAST,
   good = CAIRO_FILTER_GOOD,
   best = CAIRO_FILTER_BEST,
@@ -31,26 +56,26 @@ enum class filter_t {
   gaussian = CAIRO_FILTER_GAUSSIAN
 };
 
-enum class extend_t {
+enum class extend_options_t {
   off = CAIRO_EXTEND_NONE,
   repeat = CAIRO_EXTEND_REPEAT,
   reflect = CAIRO_EXTEND_REFLECT,
   pad = CAIRO_EXTEND_PAD
 };
 
-enum class line_cap_t {
+enum class line_cap_options_t {
   butt = CAIRO_LINE_CAP_BUTT,
   round = CAIRO_LINE_CAP_ROUND,
   square = CAIRO_LINE_CAP_SQUARE
 };
 
-enum class line_join_t {
+enum class line_join_options_t {
   miter = CAIRO_LINE_JOIN_MITER,
   round = CAIRO_LINE_JOIN_ROUND,
   bevel = CAIRO_LINE_JOIN_BEVEL
 };
 
-enum op_t {
+enum graphic_operator_options_t {
   opClear = CAIRO_OPERATOR_CLEAR,
   opSource = CAIRO_OPERATOR_SOURCE,
   opOver = CAIRO_OPERATOR_OVER,
@@ -81,19 +106,19 @@ enum op_t {
   opHSLColor = CAIRO_OPERATOR_HSL_COLOR,
   opHSLLuminosity = CAIRO_OPERATOR_HSL_LUMINOSITY
 };
-enum class alignment_t {
+enum class text_alignment_options_t {
   left = PangoAlignment::PANGO_ALIGN_LEFT,
   center = PangoAlignment::PANGO_ALIGN_CENTER,
   right = PangoAlignment::PANGO_ALIGN_RIGHT,
   justified = 4
 };
-enum class ellipsize_t {
+enum class text_ellipsize_options_t {
   off = PANGO_ELLIPSIZE_NONE,
   start = PANGO_ELLIPSIZE_START,
   middle = PANGO_ELLIPSIZE_MIDDLE,
   end = PANGO_ELLIPSIZE_END
 };
-enum class content_t {
+enum class content_options_t {
   color = CAIRO_CONTENT_COLOR,
   alpha = CAIRO_CONTENT_ALPHA,
   all = CAIRO_CONTENT_COLOR_ALPHA

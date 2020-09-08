@@ -1,3 +1,28 @@
+/*
+ * This file is part of the PLATFORM_OBJ distribution
+ * {https://github.com/amatarazzo777/platform_obj). Copyright (c) 2020 Anthony
+ * Matarazzo.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/**
+\author Anthony Matarazzo
+\file uxdisplayunits.hpp
+\date 9/7/20
+\version 1.0
+\brief
+*/
 /**
 \file uxdevice.cpp
 
@@ -23,7 +48,7 @@ rectangle list. The surface may change due to user resizing the gui
 window so a spin flag is used to accommodate the functionality. That is
 drawing cannot occur on the graphical while the surface is being resized.
 */
-void uxdevice::surface_area::render_loop(void) {
+void uxdevice::surface_area_t::render_loop(void) {
   while (bProcessing) {
 
     // surfacePrime checks to see if the surface exists.
@@ -33,7 +58,7 @@ void uxdevice::surface_area::render_loop(void) {
     // of the paint event. As well, the underlying surface may
     // need to be resized. This function acquires locks on these
     // small lists for the multi-threaded necessity.
-    // searches for unready and syncs display context
+    // searc_thes for unready and syncs display context
     // if no work exists  it waits on the cvRenderWork condition variable.
     if (context.surface_prime()) {
       context.render();
@@ -51,51 +76,12 @@ If default
 necessary operation.
 
 */
-void uxdevice::surface_area::dispatch_event(const event_t &evt) {
+void uxdevice::surface_area_t::dispatch_event(const event_t &evt) {
 
-  switch (evt.type) {
-  case eventType::none:
-    break;
-  case eventType::paint: {
+  if(evt.type==type_info{typeid(listen_paint_t))
     context.state_surface(evt.x, evt.y, evt.w, evt.h);
-  } break;
-  case eventType::resize:
+  else if(evt.type==type_info{typeid(listen_resize_t))
     context.resize_surface(evt.w, evt.h);
-    break;
-  case eventType::keydown: {
-
-  } break;
-  case eventType::keyup: {
-
-  } break;
-  case eventType::keypress: {
-
-  } break;
-  case eventType::mousemove:
-    break;
-  case eventType::mousedown:
-
-    break;
-  case eventType::mouseup:
-    break;
-  case eventType::wheel:
-    break;
-
-  case eventType::focus:
-    break;
-  case eventType::blur:
-    break;
-  case eventType::mouseenter:
-    break;
-  case eventType::click:
-    break;
-  case eventType::dblclick:
-    break;
-  case eventType::contextmenu:
-    break;
-  case eventType::mouseleave:
-    break;
-  }
 
   if (fnEvents)
     fnEvents(evt);
@@ -111,10 +97,10 @@ programs as vlc, the routine simply places pixels into the memory
 buffer. while on windows the direct x library is used in combination
 with windows message queue processing.
 */
-void uxdevice::surface_area::start_processing(void) {
+void uxdevice::surface_area_t::start_processing(void) {
   // setup the event dispatcher
-  event_handler_t ev = std::bind(&uxdevice::surface_area::dispatch_event, this,
-                                 std::placeholders::_1);
+  event_handler_t ev = std::bind(&uxdevice::surface_area_t::dispatch_event,
+                                 this, std::placeholders::_1);
   context.cache_threshold = 2000;
   std::thread thrRenderer([=]() {
     bProcessing = true;
@@ -134,12 +120,12 @@ void uxdevice::surface_area::start_processing(void) {
 \internal
 
 \brief The function maps the event id to the appropriate vector.
-This is kept statically here for retext_color management.
+This is kept statically here for retext_color_t management.
 
 \param eventType evtType
 */
 std::list<event_handler_t> &
-uxdevice::surface_area::get_event_vector(eventType evtType) {
+uxdevice::surface_area_t::get_event_vector(eventType evtType) {
   static std::unordered_map<eventType, std::list<event_handler_t> &>
       eventTypeMap = {{eventType::focus, onfocus},
                       {eventType::blur, onblur},
@@ -182,7 +168,7 @@ from the platform device. However, this may be invoked by the soft
 generation of events.
 
 */
-void uxdevice::surface_area::dispatch(const event &e) {
+void uxdevice::surface_area_t::dispatch(const event &e) {
   auto &v = getEventVector(e.evtType);
   for (auto &fn : v)
     fn(e);
@@ -194,24 +180,28 @@ void uxdevice::surface_area::dispatch(const event &e) {
   \brief opens a window on the target OS
 
 */
-uxdevice::surface_area::surface_area() {}
-uxdevice::surface_area::surface_area(const std::string &ssurface_areaTitle) {}
+uxdevice::surface_area_t::surface_area_t() {}
+uxdevice::surface_area_t::surface_area_t(
+    const std::string &surface_area_title) {}
 
-uxdevice::surface_area::surface_area(const event_handler_t &evtDispatcher) {}
-uxdevice::surface_area::surface_area(const CoordinateList &coordinates) {}
+uxdevice::surface_area_t::surface_area_t(const event_handler_t &evtDispatcher) {
+}
+uxdevice::surface_area_t::surface_area_t(
+    const coordinate_list_t &coordinates_t) {}
 
-uxdevice::surface_area::surface_area(const CoordinateList &coordinates,
-                                     const std::string &ssurface_areaTitle) {}
+uxdevice::surface_area_t::surface_area_t(
+    const coordinate_list_t &coordinates_t,
+    const std::string &surface_area_title) {}
 
-uxdevice::surface_area::surface_area(const CoordinateList &coordinates,
-                                     const std::string &ssurface_areaTitle,
-                                     const event_handler_t &evtDispatcher,
-                                     const painter_brush_t &background) {}
+uxdevice::surface_area_t::surface_area_t(const coordinate_list_t &coordinates_t,
+                                         const std::string &surface_area_title,
+                                         const event_handler_t &evtDispatcher,
+                                         const painter_brush_t &background) {}
 
-uxdevice::surface_area::surface_area(const CoordinateList &coord,
-                                     const std::string &sWindowTitle,
-                                     const painter_brush_t &background) {
-  surface_area ret;
+uxdevice::surface_area_t::surface_area_t(const coordinate_list_t &coord,
+                                         const std::string &sWindowTitle,
+                                         const painter_brush_t &background) {
+  surface_area_t ret;
   auto it = coord.begin();
 
   context.window_width = *it;
@@ -365,7 +355,7 @@ uxdevice::surface_area::surface_area(const CoordinateList &coord,
 
 
 */
-uxdevice::surface_area::~surface_area(void) { close_window(); }
+uxdevice::surface_area_t::~surface_area_t(void) { close_window(); }
 
 /**
   \internal
@@ -373,7 +363,7 @@ uxdevice::surface_area::~surface_area(void) { close_window(); }
 
 
 */
-void uxdevice::surface_area::close_window(void) {
+void uxdevice::surface_area_t::close_window(void) {
   if (context.xcbSurface) {
     cairo_surface_destroy(context.xcbSurface);
     context.xcbSurface = nullptr;
@@ -410,7 +400,7 @@ void uxdevice::surface_area::close_window(void) {
 operating system. The function is called from processEvents.
 
 */
-void uxdevice::surface_area::message_loop(void) {
+void uxdevice::surface_area_t::message_loop(void) {
   xcb_generic_event_t *xcbEvent;
 
   // is window open?
@@ -550,23 +540,23 @@ display list to not get in the way of the rendering loop,
 \brief clears the display list
 */
 
-void uxdevice::surface_area::clear(void) {
+void uxdevice::surface_area_t::clear(void) {
   DL_SPIN;
   context.clear();
   DL.clear();
   DL_CLEAR;
 }
 
-void uxdevice::surface_area::notify_complete(void) {
+void uxdevice::surface_area_t::notify_complete(void) {
   context.state_notify_complete();
 }
 
 /**
 \brief called by each of the stream input functions to index the item if a key
-exists. A key can be given as a textual_data or an integer. The [] operator is
+exists. A key can be given as a text_data_t or an integer. The [] operator is
 used to access the data.
 */
-void uxdevice::surface_area::maintain_index(
+void uxdevice::surface_area_t::maintain_index(
     std::shared_ptr<display_unit_t> obj) {
   mapped_objects[obj->key] = obj;
   return;
@@ -575,12 +565,12 @@ void uxdevice::surface_area::maintain_index(
 /**
 \brief sets the text
 */
-surface_area &uxdevice::surface_area::stream_input(const std::string &s) {
+surface_area_t &uxdevice::surface_area_t::stream_input(const std::string &s) {
   DL_SPIN;
-  auto item = DL.emplace_back(make_shared<textual_data>(s));
-  context.set_unit(std::dynamic_pointer_cast<textual_data>(item));
+  auto item = DL.emplace_back(make_shared<text_data_t>(s));
+  context.set_unit(std::dynamic_pointer_cast<text_data_t>(item));
   auto textrender = DL.emplace_back(make_shared<textual_render>(
-      std::dynamic_pointer_cast<textual_data>(item)));
+      std::dynamic_pointer_cast<text_data_t>(item)));
   textrender->invoke(context);
   DL_CLEAR;
   context.add_drawable(std::dynamic_pointer_cast<drawing_output_t>(textrender));
@@ -588,28 +578,28 @@ surface_area &uxdevice::surface_area::stream_input(const std::string &s) {
   return *this;
 }
 //////////////////////////////////////////logic bugs, where left off
-surface_area &
-uxdevice::surface_area::stream_input(const std::shared_ptr<std::string> _val) {
+surface_area_t &uxdevice::surface_area_t::stream_input(
+    const std::shared_ptr<std::string> _val) {
   DL_SPIN;
-  auto item = DL.emplace_back(make_shared<textual_data>(*_val));
+  auto item = DL.emplace_back(make_shared<text_data_t>(*_val));
   item->key = reinterpret_cast<std::size_t>(_val.get());
   maintain_index(item);
-  context.set_unit(std::dynamic_pointer_cast<textual_data>(item));
+  context.set_unit(std::dynamic_pointer_cast<text_data_t>(item));
   auto textrender = DL.emplace_back(make_shared<textual_render>(
-      std::dynamic_pointer_cast<textual_data>(item)));
+      std::dynamic_pointer_cast<text_data_t>(item)));
   textrender->invoke(context);
   DL_CLEAR;
   context.add_drawable(std::dynamic_pointer_cast<drawing_output_t>(textrender));
 
   return *this;
 }
-surface_area &
-uxdevice::surface_area::stream_input(const std::stringstream &_val) {
+surface_area_t &
+uxdevice::surface_area_t::stream_input(const std::stringstream &_val) {
   DL_SPIN;
-  auto item = DL.emplace_back(make_shared<textual_data>(_val.str()));
-  context.set_unit(std::dynamic_pointer_cast<textual_data>(item));
+  auto item = DL.emplace_back(make_shared<text_data_t>(_val.str()));
+  context.set_unit(std::dynamic_pointer_cast<text_data_t>(item));
   auto textrender = DL.emplace_back(make_shared<textual_render>(
-      std::dynamic_pointer_cast<textual_data>(item)));
+      std::dynamic_pointer_cast<text_data_t>(item)));
   textrender->invoke(context);
   DL_CLEAR;
   context.add_drawable(std::dynamic_pointer_cast<drawing_output_t>(textrender));
@@ -626,11 +616,12 @@ uxdevice::surface_area::stream_input(const std::stringstream &_val) {
   objects that draw.
 */
 #define STREAM_DL(CLASS_NAME)                                                  \
-  surface_area &uxdevice::surface_area::stream_input(const CLASS_NAME &_val) { \
+  surface_area_t &uxdevice::surface_area_t::stream_input(                      \
+      const CLASS_NAME &_val) {                                                \
     stream_input(make_shared<CLASS_NAME>(_val));                               \
     return *this;                                                              \
   }                                                                            \
-  surface_area &uxdevice::surface_area::stream_input(                          \
+  surface_area_t &uxdevice::surface_area_t::stream_input(                      \
       const shared_ptr<CLASS_NAME> _val) {                                     \
     DL_SPIN;                                                                   \
     auto item = DL.emplace_back(_val);                                         \
@@ -641,11 +632,12 @@ uxdevice::surface_area::stream_input(const std::stringstream &_val) {
   }
 
 #define STREAM_DL_UNIT(CLASS_NAME)                                             \
-  surface_area &uxdevice::surface_area::stream_input(const CLASS_NAME &_val) { \
+  surface_area_t &uxdevice::surface_area_t::stream_input(                      \
+      const CLASS_NAME &_val) {                                                \
     stream_input(make_shared<CLASS_NAME>(_val));                               \
     return *this;                                                              \
   }                                                                            \
-  surface_area &uxdevice::surface_area::stream_input(                          \
+  surface_area_t &uxdevice::surface_area_t::stream_input(                      \
       const shared_ptr<CLASS_NAME> _val) {                                     \
     DL_SPIN;                                                                   \
     auto item = DL.emplace_back(_val);                                         \
@@ -657,11 +649,12 @@ uxdevice::surface_area::stream_input(const std::stringstream &_val) {
   }
 
 #define STREAM_DL_DRAWABLE(CLASS_NAME)                                         \
-  surface_area &uxdevice::surface_area::stream_input(const CLASS_NAME &_val) { \
+  surface_area_t &uxdevice::surface_area_t::stream_input(                      \
+      const CLASS_NAME &_val) {                                                \
     stream_input(make_shared<CLASS_NAME>(_val));                               \
     return *this;                                                              \
   }                                                                            \
-  surface_area &uxdevice::surface_area::stream_input(                          \
+  surface_area_t &uxdevice::surface_area_t::stream_input(                      \
       const shared_ptr<CLASS_NAME> _val) {                                     \
     DL_SPIN;                                                                   \
     auto item = DL.emplace_back(_val);                                         \
@@ -672,74 +665,75 @@ uxdevice::surface_area::stream_input(const std::stringstream &_val) {
     return *this;                                                              \
   }
 
-STREAM_DL_UNIT(antialias)
-STREAM_DL_UNIT(text_color)
-STREAM_DL_UNIT(text_outline)
-STREAM_DL_UNIT(text_fill)
-STREAM_DL_UNIT(text_shadow)
-STREAM_DL_UNIT(text_outline_off)
-STREAM_DL_UNIT(text_fill_off)
-STREAM_DL_UNIT(text_shadow_off)
-STREAM_DL_UNIT(text_alignment)
+STREAM_DL_UNIT(antialias_t)
+STREAM_DL_UNIT(text_color_t)
+STREAM_DL_UNIT(text_outline_t)
+STREAM_DL_UNIT(text_fill_t)
+STREAM_DL_UNIT(text_shadow_t)
+STREAM_DL_UNIT(text_outline_off_t)
+STREAM_DL_UNIT(text_fill_off_t)
+STREAM_DL_UNIT(text_shadow_off_t)
+STREAM_DL_UNIT(text_alignment_t)
 
 // text alignment can also be set by the enumeration values, it creates an
 // object but the caller only specifies the value alone.
-surface_area &uxdevice::surface_area::stream_input(const alignment_t &_val) {
-  stream_input(make_shared<text_alignment>(_val));
+surface_area_t &
+uxdevice::surface_area_t::stream_input(const text_alignment_options_t &_val) {
+  stream_input(make_shared<text_alignment_t>(_val));
   return *this;
 }
-STREAM_DL_UNIT(coordinates)
-STREAM_DL_UNIT(line_width)
+STREAM_DL_UNIT(coordinates_t)
+STREAM_DL_UNIT(line_width_t)
 
-STREAM_DL_UNIT(indent)
-STREAM_DL_UNIT(ellipsize)
-STREAM_DL_UNIT(line_space)
-STREAM_DL_UNIT(tab_stops)
-STREAM_DL_UNIT(text_font)
-STREAM_DL_UNIT(line_cap)
-STREAM_DL_UNIT(line_join)
-STREAM_DL_UNIT(miter_limit)
-STREAM_DL_UNIT(line_dashes)
-STREAM_DL_DRAWABLE(image_block)
+STREAM_DL_UNIT(text_indent_t)
+STREAM_DL_UNIT(text_ellipsize_t)
+STREAM_DL_UNIT(text_line_space_t)
+STREAM_DL_UNIT(text_tab_stops_t)
+STREAM_DL_UNIT(text_font_t)
+STREAM_DL_UNIT(line_cap_t)
+STREAM_DL_UNIT(line_join_t)
+STREAM_DL_UNIT(miter_limit_t)
+STREAM_DL_UNIT(line_dashes_t)
+STREAM_DL_DRAWABLE(image_block_t)
 
-STREAM_DL(listener)
+STREAM_DL(listener_t)
 
-STREAM_DL(listen_paint)
-STREAM_DL(listen_focus)
-STREAM_DL(listen_blur)
-STREAM_DL(listen_resize)
-STREAM_DL(listen_keydown)
-STREAM_DL(listen_keyup)
-STREAM_DL(listen_keypress)
-STREAM_DL(listen_mouseenter)
-STREAM_DL(listen_mousemove)
-STREAM_DL(listen_mousedown)
-STREAM_DL(listen_mouseup)
-STREAM_DL(listen_click)
-STREAM_DL(listen_dblclick)
-STREAM_DL(listen_contextmenu)
-STREAM_DL(listen_wheel)
-STREAM_DL(listen_mouseleave)
+STREAM_DL(listen_paint_t)
+STREAM_DL(listen_focus_t)
+STREAM_DL(listen_blur_t)
+STREAM_DL(listen_resize_t)
+STREAM_DL(listen_keydown_t)
+STREAM_DL(listen_keyup_t)
+STREAM_DL(listen_keypress_t)
+STREAM_DL(listen_mouseenter_t)
+STREAM_DL(listen_mousemove_t)
+STREAM_DL(listen_mousedown_t)
+STREAM_DL(listen_mouseup_t)
+STREAM_DL(listen_click_t)
+STREAM_DL(listen_dblclick_t)
+STREAM_DL(listen_contextmenu_t)
+STREAM_DL(listen_wheel_t)
+STREAM_DL(listen_mouseleave_t)
 
-STREAM_DL(tollerance)
+STREAM_DL(tollerance_t)
 STREAM_DL(op)
 
-STREAM_DL_DRAWABLE(arc)
-STREAM_DL_DRAWABLE(negative_arc)
+STREAM_DL_DRAWABLE(arc_t)
+STREAM_DL_DRAWABLE(negative_arc_t)
 
-STREAM_DL_DRAWABLE(curve)
+STREAM_DL_DRAWABLE(curve_t)
 STREAM_DL_DRAWABLE(line)
 STREAM_DL_DRAWABLE(hline)
 STREAM_DL_DRAWABLE(vline)
-STREAM_DL_DRAWABLE(rectangle)
-STREAM_DL_DRAWABLE(stroke_path)
-STREAM_DL_DRAWABLE(stroke_path_preserve)
-STREAM_DL_DRAWABLE(fill_path)
-STREAM_DL_DRAWABLE(fill_path_preserve)
-STREAM_DL_DRAWABLE(close_path)
-STREAM_DL_DRAWABLE(move_to)
+STREAM_DL_DRAWABLE(rectangle_t)
+STREAM_DL_DRAWABLE(stroke_path_t)
+STREAM_DL_DRAWABLE(stroke_path_preserve_t)
+STREAM_DL_DRAWABLE(fill_path_t)
+STREAM_DL_DRAWABLE(fill_path_preserve_t)
+STREAM_DL_DRAWABLE(close_path_t)
+STREAM_DL_DRAWABLE(move_to_t)
 
-surface_area &uxdevice::surface_area::surface_brush(painter_brush_t &b) {
+surface_area_t &uxdevice::surface_area_t::surface_brush(painter_brush_t &b) {
   context.surface_brush(b);
   return *this;
 }
@@ -747,10 +741,10 @@ surface_area &uxdevice::surface_area::surface_brush(painter_brush_t &b) {
 /**
 \brief
 */
-surface_area &uxdevice::surface_area::save(void) {
+surface_area_t &uxdevice::surface_area_t::save(void) {
   using namespace std::placeholders;
   DL_SPIN;
-  cairo_function func = std::bind(cairo_save, _1);
+  cairo_function_t func = std::bind(cairo_save, _1);
   auto item = DL.emplace_back(make_shared<function_object_t>(func));
   item->invoke(context);
   maintain_index(item);
@@ -760,10 +754,10 @@ surface_area &uxdevice::surface_area::save(void) {
 /**
 \brief
 */
-surface_area &uxdevice::surface_area::restore(void) {
+surface_area_t &uxdevice::surface_area_t::restore(void) {
   using namespace std::placeholders;
   DL_SPIN;
-  cairo_function func = std::bind(cairo_restore, _1);
+  cairo_function_t func = std::bind(cairo_restore, _1);
   auto item = DL.emplace_back(make_shared<function_object_t>(func));
   item->invoke(context);
   maintain_index(item);
@@ -771,15 +765,15 @@ surface_area &uxdevice::surface_area::restore(void) {
   return *this;
 }
 
-surface_area &uxdevice::surface_area::push(content_t c) {
+surface_area_t &uxdevice::surface_area_t::push(content_options_t c) {
   using namespace std::placeholders;
   DL_SPIN;
-  cairo_function func;
-  if (c == content_t::all) {
+  cairo_function_t func;
+  if (c == content_options_t::all) {
     func = std::bind(cairo_push_group, _1);
   } else {
     func = std::bind(cairo_push_group_with_content, _1,
-                     static_cast<cairo_content_t>(c));
+                     static_cast<cairo_content_options_t>(c));
   }
   auto item = DL.emplace_back(make_shared<function_object_t>(func));
   item->invoke(context);
@@ -788,10 +782,10 @@ surface_area &uxdevice::surface_area::push(content_t c) {
   return *this;
 }
 
-surface_area &uxdevice::surface_area::pop(bool bToSource) {
+surface_area_t &uxdevice::surface_area_t::pop(bool bToSource) {
   using namespace std::placeholders;
   DL_SPIN;
-  cairo_function func;
+  cairo_function_t func;
   if (bToSource) {
     func = std::bind(cairo_pop_group_to_source, _1);
   } else {
@@ -807,10 +801,10 @@ surface_area &uxdevice::surface_area::pop(bool bToSource) {
 /**
 \brief
 */
-surface_area &uxdevice::surface_area::translate(double x, double y) {
+surface_area_t &uxdevice::surface_area_t::translate(double x, double y) {
   using namespace std::placeholders;
   DL_SPIN;
-  cairo_function func = std::bind(cairo_translate, _1, x, y);
+  cairo_function_t func = std::bind(cairo_translate, _1, x, y);
   auto item = DL.emplace_back(make_shared<function_object_t>(func));
   item->invoke(context);
   maintain_index(item);
@@ -820,10 +814,10 @@ surface_area &uxdevice::surface_area::translate(double x, double y) {
 /**
 \brief
 */
-surface_area &uxdevice::surface_area::rotate(double angle) {
+surface_area_t &uxdevice::surface_area_t::rotate(double angle) {
   using namespace std::placeholders;
   DL_SPIN;
-  cairo_function func = std::bind(cairo_rotate, _1, angle);
+  cairo_function_t func = std::bind(cairo_rotate, _1, angle);
   auto item = DL.emplace_back(make_shared<function_object_t>(func));
   item->invoke(context);
   maintain_index(item);
@@ -833,7 +827,7 @@ surface_area &uxdevice::surface_area::rotate(double angle) {
 /**
 \brief
 */
-surface_area &uxdevice::surface_area::device_offset(double x, double y) {
+surface_area_t &uxdevice::surface_area_t::device_offset(double x, double y) {
   context.device_offset(x, y);
   return *this;
 }
@@ -841,7 +835,7 @@ surface_area &uxdevice::surface_area::device_offset(double x, double y) {
 /**
 \brief
 */
-surface_area &uxdevice::surface_area::device_scale(double x, double y) {
+surface_area_t &uxdevice::surface_area_t::device_scale(double x, double y) {
   context.device_scale(x, y);
   return *this;
 }
@@ -849,10 +843,10 @@ surface_area &uxdevice::surface_area::device_scale(double x, double y) {
 /**
 \brief
 */
-surface_area &uxdevice::surface_area::scale(double x, double y) {
+surface_area_t &uxdevice::surface_area_t::scale(double x, double y) {
   using namespace std::placeholders;
   DL_SPIN;
-  cairo_function func = std::bind(cairo_scale, _1, x, y);
+  cairo_function_t func = std::bind(cairo_scale, _1, x, y);
   auto item = DL.emplace_back(make_shared<function_object_t>(func));
   item->invoke(context);
   maintain_index(item);
@@ -862,10 +856,10 @@ surface_area &uxdevice::surface_area::scale(double x, double y) {
 /**
 \brief
 */
-surface_area &uxdevice::surface_area::transform(const Matrix &m) {
+surface_area_t &uxdevice::surface_area_t::transform(const Matrix &m) {
   using namespace std::placeholders;
   DL_SPIN;
-  cairo_function func = std::bind(cairo_transform, _1, &m._matrix);
+  cairo_function_t func = std::bind(cairo_transform, _1, &m._matrix);
   auto item = DL.emplace_back(make_shared<function_object_t>(func));
   item->invoke(context);
   maintain_index(item);
@@ -875,10 +869,10 @@ surface_area &uxdevice::surface_area::transform(const Matrix &m) {
 /**
 \brief
 */
-surface_area &uxdevice::surface_area::matrix(const Matrix &m) {
+surface_area_t &uxdevice::surface_area_t::matrix(const Matrix &m) {
   using namespace std::placeholders;
   DL_SPIN;
-  cairo_function func = std::bind(cairo_set_matrix, _1, &m._matrix);
+  cairo_function_t func = std::bind(cairo_set_matrix, _1, &m._matrix);
   auto item = DL.emplace_back(make_shared<function_object_t>(func));
   item->invoke(context);
   maintain_index(item);
@@ -888,10 +882,10 @@ surface_area &uxdevice::surface_area::matrix(const Matrix &m) {
 /**
 \brief
 */
-surface_area &uxdevice::surface_area::identity(void) {
+surface_area_t &uxdevice::surface_area_t::identity(void) {
   using namespace std::placeholders;
   DL_SPIN;
-  cairo_function func = std::bind(cairo_identity_matrix, _1);
+  cairo_function_t func = std::bind(cairo_identity_matrix, _1);
   auto item = DL.emplace_back(make_shared<function_object_t>(func));
   item->invoke(context);
   maintain_index(item);
@@ -902,7 +896,7 @@ surface_area &uxdevice::surface_area::identity(void) {
 /**
 \brief
 */
-surface_area &uxdevice::surface_area::device(double &x, double &y) {
+surface_area_t &uxdevice::surface_area_t::device(double &x, double &y) {
   using namespace std::placeholders;
   DL_SPIN;
   auto fn = [](cairo_t *cr, double &x, double &y) {
@@ -913,7 +907,7 @@ surface_area &uxdevice::surface_area::device(double &x, double &y) {
     y = _y;
   };
 
-  cairo_function func = std::bind(fn, _1, x, y);
+  cairo_function_t func = std::bind(fn, _1, x, y);
   auto item = DL.emplace_back(make_shared<function_object_t>(func));
   item->invoke(context);
   maintain_index(item);
@@ -923,7 +917,8 @@ surface_area &uxdevice::surface_area::device(double &x, double &y) {
 /**
 \brief
 */
-surface_area &uxdevice::surface_area::device_distance(double &x, double &y) {
+surface_area_t &uxdevice::surface_area_t::device_distance(double &x,
+                                                          double &y) {
   using namespace std::placeholders;
   DL_SPIN;
   auto fn = [](cairo_t *cr, double &x, double &y) {
@@ -934,7 +929,7 @@ surface_area &uxdevice::surface_area::device_distance(double &x, double &y) {
     y = _y;
   };
 
-  cairo_function func = std::bind(fn, _1, x, y);
+  cairo_function_t func = std::bind(fn, _1, x, y);
   auto item = DL.emplace_back(make_shared<function_object_t>(func));
   item->invoke(context);
   maintain_index(item);
@@ -944,7 +939,7 @@ surface_area &uxdevice::surface_area::device_distance(double &x, double &y) {
 /**
 \brief
 */
-surface_area &uxdevice::surface_area::user(double &x, double &y) {
+surface_area_t &uxdevice::surface_area_t::user(double &x, double &y) {
   using namespace std::placeholders;
   DL_SPIN;
   auto fn = [](cairo_t *cr, double &x, double &y) {
@@ -954,7 +949,7 @@ surface_area &uxdevice::surface_area::user(double &x, double &y) {
     y = _y;
   };
 
-  cairo_function func = std::bind(fn, _1, x, y);
+  cairo_function_t func = std::bind(fn, _1, x, y);
   auto item = DL.emplace_back(make_shared<function_object_t>(func));
   item->invoke(context);
   maintain_index(item);
@@ -962,7 +957,7 @@ surface_area &uxdevice::surface_area::user(double &x, double &y) {
   return *this;
 }
 
-surface_area &uxdevice::surface_area::user_distance(double &x, double &y) {
+surface_area_t &uxdevice::surface_area_t::user_distance(double &x, double &y) {
   using namespace std::placeholders;
   DL_SPIN;
   auto fn = [](cairo_t *cr, double &x, double &y) {
@@ -972,7 +967,7 @@ surface_area &uxdevice::surface_area::user_distance(double &x, double &y) {
     y = _y;
   };
 
-  cairo_function func = std::bind(fn, _1, x, y);
+  cairo_function_t func = std::bind(fn, _1, x, y);
   auto item = DL.emplace_back(make_shared<function_object_t>(func));
   item->invoke(context);
   maintain_index(item);
@@ -986,12 +981,13 @@ surface_area &uxdevice::surface_area::user_distance(double &x, double &y) {
   \internal
   \brief the function draws the cursor.
   */
-void uxdevice::surface_area::draw_caret(const int x, const int y, const int h) {
-}
+void uxdevice::surface_area_t::draw_caret(const int x, const int y,
+                                          const int h) {}
 
-std::string _errorReport(std::string text_colorFile, int ln, std::string sfunc,
-                         std::string cond, std::string ecode) {
+std::string _errorReport(std::string text_color_tFile, int ln,
+                         std::string sfunc, std::string cond,
+                         std::string ecode) {
   std::stringstream ss;
-  ss << text_colorFile << "(" << ln << ") " << sfunc << "  " << cond << ecode;
+  ss << text_color_tFile << "(" << ln << ") " << sfunc << "  " << cond << ecode;
   return ss.str();
 }

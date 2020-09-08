@@ -1,3 +1,28 @@
+/*
+ * This file is part of the PLATFORM_OBJ distribution
+ * {https://github.com/amatarazzo777/platform_obj). Copyright (c) 2020 Anthony
+ * Matarazzo.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/**
+\author Anthony Matarazzo
+\file uxdisplayunits.hpp
+\date 9/7/20
+\version 1.0
+\brief
+*/
 /**
 \author Anthony Matarazzo
 \file uxdisplaycontext.hpp
@@ -14,29 +39,33 @@
 #pragma once
 
 namespace uxdevice {
+class index_by_t;
 
-class image_block;
-class text_font;
-class antialias;
-class text_shadow;
-class text_fill;
-class text_outline;
-class coordinates;
-class text_color;
-class text_alignment;
-class index_by;
-class line_width;
-class indent;
-class ellipsize;
-class line_space;
-class tab_stops;
-class textual_render;
-class function_object_t;
-class option_function_object_t;
-class textual_data;
-class draw_function_object_t;
 class display_unit_t;
 class drawing_output_t;
+
+class coordinates_t;
+
+class antialias_t;
+class line_width_t;
+
+class text_font_t;
+class text_color_t;
+class text_fill_t;
+class text_outline_t;
+class text_shadow_t;
+class text_alignment_t;
+class text_indent_t;
+class text_ellipsize_t;
+class text_line_space_t;
+class text_tab_stops_t;
+class textual_render;
+class text_data_t;
+class image_block_t;
+
+class function_object_t;
+class option_function_object_t;
+class draw_function_object_t;
 
 typedef std::list<std::shared_ptr<display_unit_t>> display_unit_collection_t;
 typedef std::list<std::shared_ptr<display_unit_t>>::iterator
@@ -57,22 +86,23 @@ typedef struct _draw_buffer_t {
 
 class current_units_t {
 public:
-  std::shared_ptr<text_font> _text_font = nullptr;
-  std::shared_ptr<antialias> _antialias = nullptr;
-  std::shared_ptr<text_shadow> _text_shadow = nullptr;
-  std::shared_ptr<text_fill> _text_fill = nullptr;
-  std::shared_ptr<text_outline> _text_outline = nullptr;
-  std::shared_ptr<text_color> _text_color = nullptr;
-  std::shared_ptr<textual_data> _text = nullptr;
-  std::shared_ptr<text_alignment> _text_alignment = nullptr;
-  std::shared_ptr<coordinates> _coordinates = nullptr;
-  std::shared_ptr<index_by> _index_by = nullptr;
-  std::shared_ptr<line_width> _line_width = nullptr;
-  std::shared_ptr<indent> _indent = nullptr;
-  std::shared_ptr<ellipsize> _ellipsize = nullptr;
-  std::shared_ptr<line_space> _line_space = nullptr;
-  std::shared_ptr<tab_stops> _tab_stops = nullptr;
-  cairo_option_function_t _options = {};
+  std::shared_ptr<text_font_t> text_font = nullptr;
+  std::shared_ptr<antialias_t> antialias = nullptr;
+  std::shared_ptr<text_shadow_t> text_shadow = nullptr;
+  std::shared_ptr<text_fill_t> text_fill = nullptr;
+  std::shared_ptr<text_outline_t> text_outline = nullptr;
+  std::shared_ptr<text_color_t> text_color = nullptr;
+  std::shared_ptr<text_data_t> text = nullptr;
+  std::shared_ptr<text_alignment_t> text_alignment = nullptr;
+  std::shared_ptr<coordinates_t> coordinates = nullptr;
+  std::shared_ptr<index_by_t> index_by = nullptr;
+  std::shared_ptr<line_width_t> line_width = nullptr;
+  std::shared_ptr<text_indent_t> text_indent = nullptr;
+  std::shared_ptr<text_ellipsize_t> text_ellipsize = nullptr;
+  std::shared_ptr<text_line_space_t> text_line_space = nullptr;
+  std::shared_ptr<text_tab_stops_t> text_tab_stops = nullptr;
+  cairo_option_function_t drawing_options_fn = {};
+  std::size_t hash_code(void) const noexcept;
 };
 
 class display_context_t {
@@ -203,50 +233,56 @@ public:
 
   current_units_t current_units = current_units_t();
 
-  void set_unit(std::shared_ptr<textual_data> _text) {
-    current_units._text = _text;
+  void set_unit(std::shared_ptr<text_data_t> text) {
+    current_units.text = text;
   };
-  void set_unit(std::shared_ptr<text_font> _font) {
-    current_units._text_font = _font;
+  void set_unit(std::shared_ptr<text_font_t> text_font) {
+    current_units.text_font = text_font;
   };
-  void set_unit(std::shared_ptr<antialias> _antialias) {
-    current_units._antialias = _antialias;
+  void set_unit(std::shared_ptr<antialias_t> antialias) {
+    current_units.antialias = antialias;
   };
-  void set_unit(std::shared_ptr<text_shadow> _text_shadow) {
-    current_units._text_shadow = _text_shadow;
+  void set_unit(std::shared_ptr<text_shadow_t> text_shadow) {
+    current_units.text_shadow = text_shadow;
   };
-  void set_unit(std::shared_ptr<text_fill> _text_fill) {
-    current_units._text_fill = _text_fill;
+  void set_unit(std::shared_ptr<text_fill_t> text_fill) {
+    current_units.text_fill = text_fill;
   };
-  void set_unit(std::shared_ptr<text_outline> _text_outline) {
-    current_units._text_outline = _text_outline;
+  void set_unit(std::shared_ptr<text_outline_t> text_outline) {
+    current_units.text_outline = text_outline;
   };
-  void set_unit(std::shared_ptr<text_color> _text_color) {
-    current_units._text_color = _text_color;
+  void set_unit(std::shared_ptr<text_color_t> text_color) {
+    current_units.text_color = text_color;
   };
 
-  void set_unit(std::shared_ptr<text_alignment> _align) {
-    current_units._text_alignment = _align;
+  void set_unit(std::shared_ptr<text_alignment_t> text_alignment) {
+    current_units.text_alignment = text_alignment;
   };
-  void set_unit(std::shared_ptr<coordinates> _pos) {
-    current_units._coordinates = _pos;
+  void set_unit(std::shared_ptr<coordinates_t> coordinates) {
+    current_units.coordinates = coordinates;
   };
-  void set_unit(std::shared_ptr<index_by> _val) {
-    current_units._index_by = _val;
+  void set_unit(std::shared_ptr<index_by_t> _val) {
+    current_units.index_by = _val;
   };
-  void set_unit(std::shared_ptr<line_width> _val) {
-    current_units._line_width = _val;
+  void set_unit(std::shared_ptr<line_width_t> _val) {
+    current_units.line_width = _val;
   };
-  void set_unit(std::shared_ptr<indent> _val) { current_units._indent = _val; };
-  void set_unit(std::shared_ptr<ellipsize> _val) {
-    current_units._ellipsize = _val;
+  void set_unit(std::shared_ptr<text_indent_t> _val) {
+    current_units.text_indent = _val;
   };
-  void set_unit(std::shared_ptr<line_space> _val) {
-    current_units._line_space = _val;
+  void set_unit(std::shared_ptr<text_ellipsize_t> _val) {
+    current_units.text_ellipsize = _val;
   };
-  void set_unit(std::shared_ptr<tab_stops> _val) {
-    current_units._tab_stops = _val;
+  void set_unit(std::shared_ptr<text_line_space_t> _val) {
+    current_units.text_line_space = _val;
   };
+  void set_unit(std::shared_ptr<text_tab_stops_t> _val) {
+    current_units.text_tab_stops = _val;
+  };
+
+  HASH_OBJECT_MEMBERS(current_units.hash_code(), HASH_TYPE_ID_THIS, window_x,
+                      window_y, window_width, window_height, window_open,
+                      brush.hash_code())
 
 public:
   short window_x = 0;
@@ -254,7 +290,7 @@ public:
   unsigned short window_width = 0;
   unsigned short window_height = 0;
   bool window_open = false;
-  std::atomic<bool> relative = false;
+  std::atomic<bool> relative_coordinates_t = false;
 
   std::atomic_flag lockBrush = ATOMIC_FLAG_INIT;
 #define BRUSH_SPIN while (lockBrush.test_and_set(std::memory_order_acquire))

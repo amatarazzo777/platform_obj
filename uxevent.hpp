@@ -1,7 +1,25 @@
+/*
+ * This file is part of the PLATFORM_OBJ distribution
+ * {https://github.com/amatarazzo777/platform_obj). Copyright (c) 2020 Anthony
+ * Matarazzo.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 /**
 \author Anthony Matarazzo
 \file uxevent.hpp
-\date 5/12/20
+\date 9/7/20
 \version 1.0
  \details  event class
 
@@ -14,25 +32,7 @@ namespace uxdevice {
 \brief the eventType enumeration contains a sequenced value for all of the
 events that can be dispatched by the system.
 */
-enum class eventType : uint8_t {
-  none,
-  paint,
-  focus,
-  blur,
-  resize,
-  keydown,
-  keyup,
-  keypress,
-  mouseenter,
-  mousemove,
-  mousedown,
-  mouseup,
-  click,
-  dblclick,
-  contextmenu,
-  wheel,
-  mouseleave
-};
+
 
 /**
 \class event
@@ -44,32 +44,32 @@ given within the parameters.
 */
 using event_t = class event_t {
 public:
-  event_t(const eventType &et) : type(et) {}
-  event_t(const eventType &et, const char &k) : type(et), key(k) {}
-  event_t(const eventType &et, const unsigned int &vk)
+  event_t(const std::type_info &et) : type(et) {}
+  event_t(const std::type_info &et, const char &k) : type(et), key(k) {}
+  event_t(const std::type_info &et, const unsigned int &vk)
       : type(et), virtualKey(vk), isVirtualKey(true) {}
 
-  event_t(const eventType &et, const short &mx, const short &my,
+  event_t(const std::type_info &et, const short &mx, const short &my,
           const short &mb_dis)
       : type(et), x(mx), y(my) {
 
-    if (et == eventType::wheel)
+    if (et == std::type_info<typeid>(listen_wheel))
       distance = mb_dis;
     else
       button = static_cast<char>(mb_dis);
   }
-  event_t(const eventType &et, const short &_w, const short &_h)
+  event_t(const std::type_info &et, const short &_w, const short &_h)
       : type(et), x(_w), y(_h), w(_w), h(_h) {}
 
-  event_t(const eventType &et, const short &_x, const short &_y,
+  event_t(const std::type_info &et, const short &_x, const short &_y,
           const short &_w, const short &_h)
       : type(et), x(_x), y(_y), w(_w), h(_h) {}
-  event_t(const eventType &et, const short &_distance)
+  event_t(const std::type_info &et, const short &_distance)
       : type(et), distance(_distance) {}
   ~event_t(){};
 
 public:
-  eventType type = eventType::none;
+  std::type_info type = {};
 
   unsigned int virtualKey = 0;
   std::wstring unicodeKeys = L"";

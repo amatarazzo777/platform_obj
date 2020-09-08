@@ -1,11 +1,36 @@
+/*
+ * This file is part of the PLATFORM_OBJ distribution
+ * {https://github.com/amatarazzo777/platform_obj). Copyright (c) 2020 Anthony
+ * Matarazzo.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 /**
 \author Anthony Matarazzo
-\file uxdisplaycontext.hpp
+\file uxdisplayunits.hpp
+\date 9/7/20
+\version 1.0
+\brief
+*/
+/**
+\author Anthony Matarazzo
+\file uxpaint.hpp
 \date 5/12/20
 \version 1.0
  \details CLass provides the painting object interface which invokes the
  appropriate cairo api. The notable virtual method is the emit function
- which applies the cairo text_color setting.
+ which applies the cairo text_color_t setting.
 
 */
 #include "uxdevice.hpp"
@@ -14,67 +39,68 @@
 \brief color stops interface
 */
 uxdevice::color_stop_t::color_stop_t(u_int32_t c) : color_stop_t(-1, c) {
-  _bAutoOffset = true;
+  bAutoOffset = true;
 }
 
 uxdevice::color_stop_t::color_stop_t(double o, u_int32_t c) {
-  _bRGBA = false;
-  _bAutoOffset = false;
-  _offset = o;
-  _r = static_cast<u_int8_t>(c >> 16) / 255.0;
-  _g = static_cast<u_int8_t>(c >> 8) / 255.0;
-  _b = static_cast<u_int8_t>(c) / 255.0;
-  _a = 1.0;
+  bRGBA = false;
+  bAutoOffset = false;
+  offset = o;
+  r = static_cast<u_int8_t>(c >> 16) / 255.0;
+  g = static_cast<u_int8_t>(c >> 8) / 255.0;
+  b = static_cast<u_int8_t>(c) / 255.0;
+  a = 1.0;
 }
 
-uxdevice::color_stop_t::color_stop_t(double r, double g, double b)
-    : _bAutoOffset(true), _bRGBA(false), _offset(-1), _r(r), _g(g), _b(b),
-      _a(1) {}
+uxdevice::color_stop_t::color_stop_t(double _r, double _g, double _b)
+    : bAutoOffset(true), bRGBA(false), offset(-1), r(_r), g(_g), b(_b), a(1) {}
 
-uxdevice::color_stop_t::color_stop_t(double o, double r, double g, double b)
-    : _bAutoOffset(false), _bRGBA(false), _offset(o), _r(r), _g(g), _b(b),
-      _a(1) {}
+uxdevice::color_stop_t::color_stop_t(double _offset, double _r, double _g,
+                                     double _b)
+    : bAutoOffset(false), bRGBA(false), offset(_offset), r(_r), g(_g), b(_b),
+      a(1) {}
 
-uxdevice::color_stop_t::color_stop_t(double o, double r, double g, double b,
-                                     double a)
-    : _bAutoOffset(false), _bRGBA(true), _offset(o), _r(r), _g(g), _b(b),
-      _a(a) {}
+uxdevice::color_stop_t::color_stop_t(double _offset, double _r, double _g,
+                                     double _b, double _a)
+    : bAutoOffset(false), bRGBA(true), offset(_offset), r(_r), g(_g), b(_b),
+      a(_a) {}
 
-uxdevice::color_stop_t::color_stop_t(const std::string &s)
-    : color_stop_t(-1, s) {
+uxdevice::color_stop_t::color_stop_t(const std::string &_s)
+    : color_stop_t(-1, _s) {
   _bAutoOffset = true;
 }
-uxdevice::color_stop_t::color_stop_t(const std::string &s, double a)
-    : color_stop_t(-1, s, a) {
+uxdevice::color_stop_t::color_stop_t(const std::string &_s, double _a)
+    : color_stop_t(-1, _s, _a) {
   _bAutoOffset = true;
 }
-uxdevice::color_stop_t::color_stop_t(double o, const std::string &s) {
-  _bAutoOffset = false;
-  _bRGBA = false;
-  _offset = o;
-  parse_color(s);
+uxdevice::color_stop_t::color_stop_t(double _o, const std::string &_s) {
+  bAutoOffset = false;
+  bRGBA = false;
+  offset = _o;
+  parse_color(_s);
 }
 
-uxdevice::color_stop_t::color_stop_t(double o, const std::string &s, double a) {
-  _bAutoOffset = false;
-  _bRGBA = true;
-  _offset = o;
-  _a = a;
-  parse_color(s);
+uxdevice::color_stop_t::color_stop_t(double _o, const std::string &_s,
+                                     double _a) {
+  bAutoOffset = false;
+  bRGBA = true;
+  offset = _o;
+  a = _a;
+  parse_color(_s);
 }
 
-void uxdevice::color_stop_t::parse_color(const std::string &s) {
+void uxdevice::color_stop_t::parse_color(const std::string &_s) {
   PangoColor pango_color;
-  if (pango_color_parse(&pango_color, s.data())) {
-    _r = pango_color.red / 65535.0;
-    _g = pango_color.green / 65535.0;
-    _b = pango_color.blue / 65535.0;
+  if (pango_color_parse(&pango_color, _s.data())) {
+    r = pango_color.red / 65535.0;
+    g = pango_color.green / 65535.0;
+    b = pango_color.blue / 65535.0;
   }
 }
 
 /**
 \brief The routine handles the creation of the pattern or surface.
-Patterns can be an image_block file, a description of a linear, actual
+Patterns can be an image_block_t file, a description of a linear, actual
 parameters of linear, a description of a radial, the actual radial parameters
 stored. SVG inline or a base64 data set.
 
@@ -96,10 +122,11 @@ bool uxdevice::painter_brush_t::create(void) {
 
     if (_image) {
 
-      data_storage = std::make_shared<image_block_pattern_source_definition_t>(
-          data_storage->description, cairo_image_surface_get_width(_image),
-          cairo_image_surface_get_height(_image), _image, filter_t::fast,
-          extend_t::repeat);
+      data_storage =
+          std::make_shared<image_block_t_pattern_source_definition_t>(
+              data_storage->description, cairo_image_surface_get_width(_image),
+              cairo_image_surface_get_height(_image), _image,
+              filter_options_t::fast, extend_options_t::repeat);
       data_storage->is_loaded = true;
       // determine if the description is another form such as a gradient or
       // color.
@@ -113,7 +140,7 @@ bool uxdevice::painter_brush_t::create(void) {
 
     } else if (data_storage->is_patch_description()) {
 
-    } else if (data_storage->is_text_color_description()) {
+    } else if (data_storage->is_color_description()) {
       data_storage =
           std::make_shared<color_definition_t>(data_storage->description);
     }
@@ -155,7 +182,7 @@ bool uxdevice::painter_brush_t::create(void) {
   } break;
   case paint_definition_class_t::color: {
   } break;
-  case paint_definition_class_t::image_block_pattern: {
+  case paint_definition_class_t::image_block_t_pattern: {
   } break;
   }
 
@@ -165,33 +192,33 @@ bool uxdevice::painter_brush_t::create(void) {
     return data_storage->is_loaded;
   }
 
-  color_stops_t &_stops = *ptr_cs;
-  if (_stops.size() > 0 && ptr_cp) {
+  color_stops_t &stops = *ptr_cs;
+  if (stops.size() > 0 && ptr_cp) {
     bool bDone = false;
     bool bEdgeEnd = false;
 
     // first one, if auto offset set to
     //   0 - the beginning of the color stops
-    color_stops_iterator_t it = _stops.begin();
-    if (it->_bAutoOffset) {
-      it->_bAutoOffset = false;
-      it->_offset = 0;
+    color_stops_iterator_t it = stops.begin();
+    if (it->bAutoOffset) {
+      it->bAutoOffset = false;
+      it->offset = 0;
     }
-    double dOffset = it->_offset;
+    double dOffset = it->offset;
 
     while (!bDone) {
 
       // find first color stop with a defined offset.
       color_stops_iterator_t it2 = find_if(
-          it + 1, _stops.end(), [](auto const &o) { return !o._bAutoOffset; });
+          it + 1, stops.end(), [](auto const &o) { return !o.bAutoOffset; });
 
       // not found, the last item in color stops did not have a value,
       // assign it 1.0
-      if (it2 == _stops.end()) {
+      if (it2 == stops.end()) {
         bEdgeEnd = true;
         bDone = true;
         // very last one has a setting
-      } else if (it2 == _stops.end() - 1) {
+      } else if (it2 == stops.end() - 1) {
         bDone = true;
       }
 
@@ -203,9 +230,9 @@ bool uxdevice::painter_brush_t::create(void) {
       if (ncolor_stops_t > 0) {
         double incr = 0;
         if (bEdgeEnd) {
-          incr = (1 - it->_offset) / ncolor_stops_t;
+          incr = (1 - it->offset) / ncolor_stops_t;
         } else {
-          incr = (it2->_offset - it->_offset) / ncolor_stops_t;
+          incr = (it2->offset - it->offset) / ncolor_stops_t;
           ncolor_stops_t--;
         }
 
@@ -213,8 +240,8 @@ bool uxdevice::painter_brush_t::create(void) {
         while (ncolor_stops_t) {
           it++;
           dOffset += incr;
-          it->_offset = dOffset;
-          it->_bAutoOffset = false;
+          it->offset = dOffset;
+          it->bAutoOffset = false;
           ncolor_stops_t--;
         }
       }
@@ -222,12 +249,11 @@ bool uxdevice::painter_brush_t::create(void) {
       it = it2;
     }
     // add the color stops
-    std::for_each(_stops.begin(), _stops.end(), [=](auto &n) {
-      if (n._bRGBA)
-        cairo_pattern_add_color_stop_rgba(ptr_cp, n._offset, n._r, n._g, n._b,
-                                          n._a);
+    std::for_each(stops.begin(), stops.end(), [=](auto &n) {
+      if (n.bRGBA)
+        cairo_pattern_add_color_stop_rgba(ptr_cp, n.offset, n.r, n.g, n.b, n.a);
       else
-        cairo_pattern_add_color_stop_rgb(ptr_cp, n._offset, n._r, n._g, n._b);
+        cairo_pattern_add_color_stop_rgb(ptr_cp, n.offset, n.r, n.g, n.b);
     });
 
     cairo_pattern_set_extend(ptr_cp, CAIRO_EXTEND_REPEAT);
@@ -262,7 +288,7 @@ void uxdevice::painter_brush_t::emit(cairo_t *cr, double x, double y, double w,
     if (data_storage->class_type == paint_definition_class_t::linear_gradient ||
         data_storage->class_type == paint_definition_class_t::radial_gradient ||
         data_storage->class_type ==
-            paint_definition_class_t::image_block_pattern)
+            paint_definition_class_t::image_block_t_pattern)
       translate(-x, -y);
   }
 

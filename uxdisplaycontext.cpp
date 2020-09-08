@@ -1,3 +1,28 @@
+/*
+ * This file is part of the PLATFORM_OBJ distribution
+ * {https://github.com/amatarazzo777/platform_obj). Copyright (c) 2020 Anthony
+ * Matarazzo.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/**
+\author Anthony Matarazzo
+\file uxdisplayunits.hpp
+\date 9/7/20
+\version 1.0
+\brief
+*/
 #include "uxdevice.hpp"
 
 // error macro for this source
@@ -128,7 +153,7 @@ void uxdevice::display_context_t::render(void) {
 
   // rectangle of area needs painting background first.
   // these are subareas perhaps multiples exist because of resize
-  // coordinates. The information is generated from the
+  // coordinates_t. The information is generated from the
   // paint dispatch event. When the window is opened
   // render work will contain entire window
 
@@ -142,7 +167,7 @@ void uxdevice::display_context_t::render(void) {
     context_cairo_region_t r = _regions.front();
     _regions.pop_front();
     REGIONS_CLEAR;
-    // os surface requests are ideally full screen block coordinates
+    // os surface requests are ideally full screen block coordinates_t
     // when multiples exist, such as clear, set surface as well as
     // objects that fit within the larger bounds,
     // simply continue as there is no redraw needed
@@ -197,7 +222,7 @@ void uxdevice::display_context_t::render(void) {
 }
 /**
 \internal
-\brief The allocates an xcb and cairo image_block surface.
+\brief The allocates an xcb and cairo image_block_t surface.
 */
 uxdevice::draw_buffer_t
 uxdevice::display_context_t::allocate_buffer(int width, int height) {
@@ -351,7 +376,7 @@ void uxdevice::display_context_t::surface_brush(painter_brush_t &b) {
 /**
 \internal
 \brief The routine accepts a drawing output object and adds the
-associated render work with the object's coordinates.
+associated render work with the object's coordinates_t.
 note stateNotifyComplete must be called after this to inform the renderer
 there is work.
 */
@@ -402,6 +427,26 @@ queue calls this when a resize occurs.
 */
 void uxdevice::display_context_t::state_notify_complete(void) {
   cvRenderWork.notify_one();
+}
+
+std::size_t uxdevice::current_units_t::hash_code(void) const noexcept {
+  std::size_t value = {};
+  hash_combine(value, HASH_OBJECT_MEMBER_SHARED_PTR(text_font),
+               HASH_OBJECT_MEMBER_SHARED_PTR(antialias),
+               HASH_OBJECT_MEMBER_SHARED_PTR(text_shadow),
+               HASH_OBJECT_MEMBER_SHARED_PTR(text_fill),
+               HASH_OBJECT_MEMBER_SHARED_PTR(text_outline),
+               HASH_OBJECT_MEMBER_SHARED_PTR(text_color),
+               HASH_OBJECT_MEMBER_SHARED_PTR(text),
+               HASH_OBJECT_MEMBER_SHARED_PTR(text_alignment),
+               HASH_OBJECT_MEMBER_SHARED_PTR(coordinates),
+               HASH_OBJECT_MEMBER_SHARED_PTR(index_by),
+               HASH_OBJECT_MEMBER_SHARED_PTR(line_width),
+               HASH_OBJECT_MEMBER_SHARED_PTR(text_indent),
+               HASH_OBJECT_MEMBER_SHARED_PTR(text_ellipsize),
+               HASH_OBJECT_MEMBER_SHARED_PTR(text_line_space),
+               HASH_OBJECT_MEMBER_SHARED_PTR(text_tab_stops));
+  return value;
 }
 /**
 \internal
