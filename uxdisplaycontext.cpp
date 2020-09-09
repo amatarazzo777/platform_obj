@@ -349,7 +349,7 @@ void uxdevice::display_context_t::clear(void) {
 
   offsetx = 0;
   offsety = 0;
-  current_units = {};
+  unit_memory = {};
 
   REGIONS_CLEAR;
 
@@ -429,23 +429,12 @@ void uxdevice::display_context_t::state_notify_complete(void) {
   cvRenderWork.notify_one();
 }
 
-std::size_t uxdevice::current_units_t::hash_code(void) const noexcept {
+std::size_t uxdevice::unit_memory_t::hash_code(void) const noexcept {
   std::size_t value = {};
-  hash_combine(value, HASH_OBJECT_MEMBER_SHARED_PTR(text_font),
-               HASH_OBJECT_MEMBER_SHARED_PTR(antialias),
-               HASH_OBJECT_MEMBER_SHARED_PTR(text_shadow),
-               HASH_OBJECT_MEMBER_SHARED_PTR(text_fill),
-               HASH_OBJECT_MEMBER_SHARED_PTR(text_outline),
-               HASH_OBJECT_MEMBER_SHARED_PTR(text_color),
-               HASH_OBJECT_MEMBER_SHARED_PTR(text),
-               HASH_OBJECT_MEMBER_SHARED_PTR(text_alignment),
-               HASH_OBJECT_MEMBER_SHARED_PTR(coordinates),
-               HASH_OBJECT_MEMBER_SHARED_PTR(index_by),
-               HASH_OBJECT_MEMBER_SHARED_PTR(line_width),
-               HASH_OBJECT_MEMBER_SHARED_PTR(text_indent),
-               HASH_OBJECT_MEMBER_SHARED_PTR(text_ellipsize),
-               HASH_OBJECT_MEMBER_SHARED_PTR(text_line_space),
-               HASH_OBJECT_MEMBER_SHARED_PTR(text_tab_stops));
+  for (auto n : unit_memory_storage) {
+    // hash_combine(value,
+  }
+
   return value;
 }
 /**

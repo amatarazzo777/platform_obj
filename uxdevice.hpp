@@ -140,21 +140,21 @@ public:
 
   /* declares the interface and implementation for these
    objects
-   when these are invoked, the current_units class is also updated.
+   when these are invoked, the unit_memory class is also updated.
    When rendering objects are created, text, image or other, these
    these shared pointers are used as a reference local member initialized
    at invoke() public member. The parameters and options are validated as well.
     */
   DECLARE_STREAM_IMPLEMENTATION(coordinates_t)
 
+  DECLARE_STREAM_IMPLEMENTATION(text_render_fast_t)
+  DECLARE_STREAM_IMPLEMENTATION(text_render_path_t)
+
   DECLARE_STREAM_IMPLEMENTATION(text_font_t)
   DECLARE_STREAM_IMPLEMENTATION(text_color_t)
   DECLARE_STREAM_IMPLEMENTATION(text_fill_t)
   DECLARE_STREAM_IMPLEMENTATION(text_outline_t)
   DECLARE_STREAM_IMPLEMENTATION(text_shadow_t)
-  DECLARE_STREAM_IMPLEMENTATION(text_fill_off_t)
-  DECLARE_STREAM_IMPLEMENTATION(text_outline_off_t)
-  DECLARE_STREAM_IMPLEMENTATION(text_shadow_off_t)
   DECLARE_STREAM_IMPLEMENTATION(text_alignment_t)
   DECLARE_STREAM_IMPLEMENTATION(text_alignment_options_t)
 
@@ -282,8 +282,30 @@ private:
   event_handler_t fnEvents = nullptr;
 
   typedef std::list<std::shared_ptr<display_unit_t>> display_unit_list_t;
-  display_unit_list_t DL = {};
-  display_unit_list_t::iterator itDL_Processed = DL.begin();
+  display_unit_list_t display_list_storage = {};
+  display_unit_list_t::iterator itDL_Processed = display_list.begin();
+
+  /// @brief templated function to insert into the display list
+  /// and perform initialization based upon the type. The c++ constexpr
+  /// conditional compiling functionality is used to trim the run time and
+  /// code size.
+  template <class T, typename... Args>
+  std::shared_ptr<T> display_list(const Args &... args) {
+    DL_SPIN;
+
+    auto ptr = std::dynamic_pointer_cast<T>(
+        display_list.emplace_back(std::make_shared<T>(args...)));
+
+    ptr->invoke(context);
+
+    if constexpr (std::is_base_of<drawing_output_t, T>::value)
+      context.add_drawable(std::dynamic_pointer_cast<drawing_output_t>(ptr));
+
+    maintain_index(item);
+    DL_CLEAR;
+
+    return ptr;
+  }
 
   std::unordered_map<indirect_index_display_unit_t,
                      std::shared_ptr<display_unit_t>>

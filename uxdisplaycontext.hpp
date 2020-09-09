@@ -32,7 +32,7 @@
  \details CLass holds the display window context, gui drawing, cairo
  context, and provides an interface for threads running to
  invalidate part of the surface, resize the surface. The
- current_units_t class is within the public members and holds
+ unit_memory_t class is within the public members and holds
  the state of the last used data parameters.
 
 */
@@ -83,27 +83,6 @@ typedef struct _draw_buffer_t {
   cairo_t *cr = nullptr;
   cairo_surface_t *rendered = nullptr;
 } draw_buffer_t;
-
-class current_units_t {
-public:
-  bool text_rendering_path = false;
-  std::shared_ptr<text_font_t> text_font = nullptr;
-  std::shared_ptr<antialias_t> antialias = nullptr;
-  std::shared_ptr<text_shadow_t> text_shadow = nullptr;
-  std::shared_ptr<text_fill_t> text_fill = nullptr;
-  std::shared_ptr<text_outline_t> text_outline = nullptr;
-  std::shared_ptr<text_color_t> text_color = nullptr;
-  std::shared_ptr<text_data_t> text = nullptr;
-  std::shared_ptr<text_alignment_t> text_alignment = nullptr;
-  std::shared_ptr<coordinates_t> coordinates = nullptr;
-  std::shared_ptr<line_width_t> line_width = nullptr;
-  std::shared_ptr<text_indent_t> text_indent = nullptr;
-  std::shared_ptr<text_ellipsize_t> text_ellipsize = nullptr;
-  std::shared_ptr<text_line_space_t> text_line_space = nullptr;
-  std::shared_ptr<text_tab_stops_t> text_tab_stops = nullptr;
-  cairo_option_function_t drawing_options_fn = {};
-  std::size_t hash_code(void) const noexcept;
-};
 
 class display_context_t {
 public:
@@ -231,9 +210,9 @@ public:
   }
   cairo_status_t error_check(cairo_t *cr) { return cairo_status(cr); }
 
-  current_units_t current_units = current_units_t();
+  DECLARE_TYPE_INDEX_MEMORY(unit_memory)
 
-  HASH_OBJECT_MEMBERS(current_units.hash_code(), HASH_TYPE_ID_THIS, window_x,
+  HASH_OBJECT_MEMBERS(unit_memory_hash_code(), HASH_TYPE_ID_THIS, window_x,
                       window_y, window_width, window_height, window_open,
                       brush.hash_code())
 
@@ -309,5 +288,5 @@ public:
     }
   }
   bool preclear = false;
-};
+}; // namespace uxdevice
 } // namespace uxdevice

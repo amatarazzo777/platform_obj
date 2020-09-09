@@ -132,6 +132,17 @@ and are activated by the << operator. These are the underlying operations.
 #define DECLARE_STREAM_IMPLEMENTATION(CLASS_NAME)                              \
 public:                                                                        \
   surface_area_t &operator<<(const CLASS_NAME &data) {                         \
+    display_list<CLASS_NAME>(data);                                            \
+    return *this;                                                              \
+  }                                                                            \
+  surface_area_t &operator<<(const std::shared_ptr<CLASS_NAME> data) {         \
+    display_list<CLASS_NAME>(data);                                            \
+    return *this;                                                              \
+  }
+
+#define DECLARE_STREAM_IMPLEMENTATION(CLASS_NAME)                              \
+public:                                                                        \
+  surface_area_t &operator<<(const CLASS_NAME &data) {                         \
     stream_input(data);                                                        \
     return *this;                                                              \
   }                                                                            \
@@ -147,9 +158,45 @@ private:                                                                       \
   }                                                                            \
   surface_area_t &stream_input(const shared_ptr<CLASS_NAME> _val) {            \
     DL_SPIN;                                                                   \
-    auto item = DL.emplace_back(_val);                                         \
+    auto item = display_list.emplace_back(_val);                               \
     item->invoke(context);                                                     \
     DL_CLEAR;                                                                  \
     maintain_index(item);                                                      \
     return *this;                                                              \
   }
+
+
+
+
+
+/**
+\internal
+\def DECLARE_TYPE_INDEX_MEMORY
+\tparam typename T
+\param const std::shared_ptr<T> ptr)
+
+\brief sets a value at the specific type info. The storage is
+std::any however can be correlated directly back into the type.
+
+*/
+  typedef std::unordered_map<std::type_index, std::any> unit_memory_storage_t;
+
+#define DECLARE_TYPE_INDEX_MEMORY(FUNCTION_NAME)             \
+  unit_memory_storage_t FUNCTION_NAME##_storage = {};                                     \
+                                                                               \
+  template <typename T> void FUNCTION_NAME(const std::shared_ptr<T> ptr) {     \
+    auto ti = std::type_index(typeid(T));                                      \
+     FUNCTION_NAME##_storage[ti] = ptr;                                                    \
+  }                                                                            \
+                                                                               \
+  template <typename T> auto FUNCTION_NAME(void)->const std::shared_ptr<T> {   \
+    std::shared_ptr<T> ptr = {};                                               \
+    auto ti = std::type_index(typeid(T));                                      \
+    auto item =  FUNCTION_NAME##_storage.find(ti);                                         \
+    if (item !=  FUNCTION_NAME##_storage.end()) {                                          \
+      ptr = std::any_cast<std::shared_ptr<T>>(item);                           \
+    }                                                                          \
+    return ptr;                                                                \
+  }
+
+

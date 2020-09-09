@@ -139,21 +139,21 @@ void uxdevice::option_function_object_t::invoke(display_context_t &context) {
   if (std::holds_alternative<cairo_function_t>(_data)) {
     auto &func = std::get<cairo_function_t>(_data);
     auto optType = func.target_type().hash_code();
-    context.current_units.drawing_options_fn.remove_if([=](auto &n) {
+    context.unit_memory.drawing_options_fn.remove_if([=](auto &n) {
       auto &funcTarget = std::get<cairo_function_t>(n->_data);
       return funcTarget.target_type().hash_code() == optType;
     });
-    context.current_units.drawing_options_fn.emplace_back(this);
+    context.unit_memory.drawing_options_fn.emplace_back(this);
   }
   state_hash_code();
 }
 
 void uxdevice::text_render_fast_t::invoke(display_context_t &context) {
-  context.current_units.text_rendering_path = false;
+  context.unit_memory<text_rendering_path_t>(false);
 }
 
 void uxdevice::text_render_path_t::invoke(display_context_t &context) {
-  context.current_units.text_rendering_path = true;
+  context.unit_memory<text_rendering_path_t>(true);
 }
 
 /**
@@ -167,7 +167,7 @@ used.
 
 */
 void text_color_t::invoke(display_context_t &context) {
-  context.current_units.text_color = shared_from_this();
+  context.unit_memory<text_color_t>(shared_from_this());
 }
 void text_color_t::emit(display_context_t &context) { value.emit(context.cr); }
 /**
@@ -190,7 +190,7 @@ this text rendering capability is not as fast as using the text_color_t class.
  */
 
 void text_outline_t::invoke(display_context_t &context) {
-  context.current_units.text_outline = shared_from_this();
+  context.unit_memory<text_outline_t>(shared_from_this());
 }
 
 void text_outline_t::emit(display_context_t &context) {
@@ -215,7 +215,7 @@ this text rendering capability is not as fast as using the text_color_t class.
 
  */
 void text_fill_t::invoke(display_context_t &context) {
-  context.current_units.text_fill = shared_from_this();
+  context.unit_memory<text_fill_t>(shared_from_this());
 }
 void text_fill_t::emit(display_context_t &context) { value.emit(context.cr); }
 
@@ -229,48 +229,9 @@ void text_fill_t::emit(display_context_t &context) { value.emit(context.cr); }
 
  */
 void text_shadow_t::invoke(display_context_t &context) {
-  context.current_units.text_shadow = shared_from_this();
+  context.unit_memory<text_shadow_t>(shared_from_this());
 }
 void text_shadow_t::emit(display_context_t &context) { value.emit(context.cr); }
-
-/**
-\class text_fill_off_t
-\brief turns of text fill rendering capability by resetting the pointer
-        connectivity.
-
-\details
-
-*/
-void text_fill_off_t::invoke(display_context_t &context) {
-  context.current_units.text_fill.reset();
-}
-
-/**
-
-\class text_outline_off_t
-\brief turns of text outline rendering capability by resetting the
-pointer connectivity.
-
-\details
-
- */
-void text_outline_off_t::invoke(display_context_t &context) {
-  context.current_units.text_fill.reset();
-}
-
-/**
-
-\class text_shadow_off_t
-\brief turns of text shadow rendering capability by resetting the
-pointer connectivity.
-
-\details
-
-
- */
-void text_shadow_off_t::invoke(display_context_t &context) {
-  context.current_units.text_shadow.reset();
-}
 
 /**
 
@@ -283,7 +244,7 @@ justified.
 
  */
 void text_alignment_t::invoke(display_context_t &context {
-  context.current_units.text_alignment = shared_from_this();
+  context.unit_memory<text_alignment_t>(shared_from_this());
 }
 
 void text_alignment_t::emit(PangoLayout *layout) {
@@ -306,7 +267,7 @@ void text_alignment_t::emit(PangoLayout *layout) {
 
  */
  void coordinates_t::invoke(display_context_t &context {
-  context.current_units.coordinates = shared_from_this();
+  context.unit_memory<coordinates_t>(shared_from_this());
 }
 void coordinates_t::emit(display_context_t &context) {
   cairo_move_to(context.cr, value.x, value.y);
@@ -322,7 +283,7 @@ void coordinates_t::emit(display_context_t &context) {
 
  */
 void text_indent_t::invoke(display_context_t &context {
-  context.current_units.text_indent = shared_from_this();
+  context.unit_memory<text_indent_t>(shared_from_this());
 }
 void text_indent_t::emit(PangoLayout *layout) {
   int pangoUnits = value * PANGO_SCALE;
@@ -339,7 +300,7 @@ void text_indent_t::emit(PangoLayout *layout) {
 
  */
 void text_ellipsize_t::invoke(display_context_t &context {
-  context.current_units.text_ellipsize = shared_from_this();
+  context.unit_memory<text_ellipsize_t>(shared_from_this());
 }
 void text_ellipsize_t::emit(PangoLayout *layout) {
   PangoEllipsizeMode &correlated_value =
@@ -357,7 +318,7 @@ void text_ellipsize_t::emit(PangoLayout *layout) {
 
  */
 void text_line_space_t::invoke(display_context_t &context {
-  context.current_units.text_line_space = shared_from_this();
+  context.unit_memory<text_line_space_t>(shared_from_this());
 }
 void text_line_space_t::emit(PangoLayout *layout) {
   pango_layout_set_line_spacing(layout, static_cast<float>(value));
@@ -373,7 +334,7 @@ void text_line_space_t::emit(PangoLayout *layout) {
 
 */
 void text_tab_stops_t::invoke(display_context_t &context {
-  context.current_units.text_tab_stops_t = shared_from_this();
+  context.unit_memory<text_tab_stops_t>(shared_from_this());
 }
 
 void text_tab_stops_t::emit(PangoLayout *layout) {
@@ -398,7 +359,7 @@ void text_tab_stops_t::emit(PangoLayout *layout) {
 
  */
 void text_font_t::invoke(display_context_t &context {
-  context.current_units.text_font = shared_from_this();
+  context.unit_memory<text_font_t>(shared_from_this());
 }
 
 void text_font_t::emit(display_context_t &context) {
@@ -416,8 +377,9 @@ void text_font_t::emit(display_context_t &context) {
 
  */
 void text_data_t::invoke(display_context_t &context) {
-  context.current_units.text_data = shared_from_this();
+  context.unit_memory<text_data_t>(shared_from_this());
 }
+
 
 
 /**
@@ -489,6 +451,7 @@ bool uxdevice::textual_render_storage_t::set_layout_options(cairo_t *cr) {
  */
 void uxdevice::textual_render_storage_t::create_shadow(void) {
   if (!shadow_image) {
+    auto text_shadow = rendering_parameter<text_shadow_t>();
     shadow_image = cairo_image_surface_create(
         CAIRO_FORMAT_ARGB32, ink_rectangle.width + text_shadow->x,
         _ink_rectangle.height + text_shadow->y);
@@ -497,8 +460,7 @@ void uxdevice::textual_render_storage_t::create_shadow(void) {
     cairo_move_to(shadow_cr, text_shadow->x, text_shadow->y);
     if (set_layout_options(_shadow_cr))
       pango_cairo_update_layout(shadow_cr, layout);
-    text_shadow->emit(shadow_cr);
-
+    text_shadow->emit(cr, a);
     pango_cairo_show_layout(shadow_cr, layout);
 
 #if defined(USE_STACKBLUR)
@@ -537,31 +499,35 @@ internal_cairo_function_t uxdevice::textual_render_storage_t::precise_rendering_
   text_rendering_lambda_t text_render_type = {};
   internal_cairo_function_t fn;
 
-  if (context.current_units.text_rendering_path) {
-    if (rendering_parameters.text_fill && rendering_parameters.text_outline &&
-        rendering_parameters.text_shadow)
+  if (context.unit_memory<text_rendering_path_t>()) {
+    if (rendering_parameter<text_fill_t>() &&
+        rendering_parameter<text_outline_t>() &&
+        rendering_parameter<text_shadow>())
       text_render_type = text_rendering_fill_outline_shadowed_lambda;
 
-    else if (rendering_parameters.text_fill &&
-             rendering_parameters.text_outline)
+    else if (rendering_parameter<text_fill_t>() &&
+             rendering_parameter<text_outline_t>())
       text_render_type = text_rendering_fill_outline_lambda;
 
-    else if (rendering_parameters.text_fill && rendering_parameters.text_shadow)
+    else if (rendering_parameter<text_fill_t> &&
+             rendering_parameter<text_shadow_t>())
       text_render_type = text_rendering_fill_shadowed_lambda;
 
-    else if (rendering_parameters.text_outline &&
-             rendering_parameters.text_shadow)
+    else if (rendering_parameter<text_outline_t>() &&
+             rendering_parameter<text_shadow_t>())
       text_render_type = text_rendering_outline_shadowed_lambda;
 
-    else if (rendering_parameters.text_fill)
+    else if (rendering_parameter<text_fill_t>())
       text_render_type = text_rendering_fill__lambda;
 
-    else if (rendering_parameters.text_outline)
+    else if (rendering_parameter<text_outline_t>())
       text_render_type = text_rendering_outline_lambda;
   } else {
-    if (rendering_parameters.text_color && rendering_parameters.text_shadow)
+    if (rendering_parameter<text_color_t>() &&
+        rendering_parameter<text_shadow_t>())
       text_render_type = text_rendering_fast_shadowed_lambda;
-    else if (rendering_parameters.text_color)
+
+    else if (rendering_parameter<text_color_t>())
       text_render_type = text_rendering_fast_lambda;
   }
 
@@ -583,7 +549,7 @@ internal_cairo_function_t uxdevice::textual_render_storage_t::precise_rendering_
       drawing_output_t::invoke(cr);
 
       a.emit(cr);
-      rendering_parameters.text_color->emit(cr, a);
+      rendering_parameter<text_color_t>()->emit(cr, a);
       pango_cairo_show_layout(cr, layout);
     };
   } break;
@@ -599,7 +565,7 @@ internal_cairo_function_t uxdevice::textual_render_storage_t::precise_rendering_
       FN_SHADOW
 
       a.emit(cr);
-      rendering_parameters.text_color->emit(cr, a);
+      rendering_parameter<text_color_t>()->emit(cr, a);
       pango_cairo_show_layout(cr, _layout);
     };
 
@@ -615,7 +581,7 @@ internal_cairo_function_t uxdevice::textual_render_storage_t::precise_rendering_
       a.emit(cr);
 
       pango_cairo_layout_path(cr, layout);
-      rendering_parameters.text_fill->emit(cr, a);
+      rendering_parameter<text_fill_t>()->emit(cr, a);
       cairo_fill(context.cr);
     };
 
@@ -631,7 +597,7 @@ internal_cairo_function_t uxdevice::textual_render_storage_t::precise_rendering_
 
       a.emit(context);
       pango_cairo_layout_path(cr, layout);
-      rendering_parameters.text_outline->emit(cr, a);
+      rendering_parameter<text_outline_t>()->emit(cr, a);
       cairo_stroke(cr);
     };
   } break;
@@ -646,9 +612,9 @@ internal_cairo_function_t uxdevice::textual_render_storage_t::precise_rendering_
 
       a.emit(context);
       pango_cairo_layout_path(context, layout);
-      rendering_parameters.text_fill->emit(cr, a);
+      rendering_parameter<text_fill_t>()->emit(cr, a);
       cairo_fill_preserve(cr);
-      rendering_parameters.text_outline->emit(cr, a);
+      rendering_parameter<text_outline_t>()->emit(cr, a);
       cairo_stroke(context.cr);
     };
   } break;
@@ -665,7 +631,7 @@ internal_cairo_function_t uxdevice::textual_render_storage_t::precise_rendering_
 
       a.emit(context);
       pango_cairo_layout_path(cr, layout);
-      rendering_parameters.text_fill->emit(cr, a);
+      rendering_parameter<text_fill_t>()->emit(cr, a);
       cairo_fill(cr);
     };
   } break;
@@ -681,7 +647,7 @@ internal_cairo_function_t uxdevice::textual_render_storage_t::precise_rendering_
 
       a.emit(cr);
       pango_cairo_layout_path(cr, _layout);
-      rendering_parameters.text_outline->emit(cr, a);
+      rendering_parameter<text_outline_t>()->emit(cr, a);
       cairo_stroke(cr);
     };
   } break;
@@ -699,9 +665,9 @@ internal_cairo_function_t uxdevice::textual_render_storage_t::precise_rendering_
 
       a.emit(cr);
       pango_cairo_layout_path(cr, _layout);
-      rendering_parameters.text_fill->emit(cr, a);
+      rendering_parameter<text_fill_t>()->emit(cr, a);
       cairo_fill_preserve(cr);
-      rendering_parameters.text_outline->emit(cr, a);
+      rendering_parameter<text_outline_t>()->emit(cr, a);
       cairo_stroke(context.cr);
     };
 
@@ -725,13 +691,13 @@ void uxdevice::textual_render_storage_t::invoke(display_context_t &context) {
 
   // create a linkage snapshot to the shared pointer
   // within the stream context.
-  rendering_parameters = context.current_units;
+  rendering_parameter_storage = context.unit_memory_storage;
 
   // check the context parameters before operating
-  if (!((rendering_parameters.text_color || rendering_parameters.text_outline ||
-         rendering_parameters.text_fill) &&
-        rendering_parameters.coordinates && rendering_parameters.text_data &&
-        rendering_parameters.text_font)) {
+  if (!((rendering_parameter<text_color_t>() || rendering_parameter<text_outline_t>() ||
+         rendering_parameter<text_fill_t>()) &&
+        rendering_parameter<coordinates_t>() && rendering_parameter<text_data_t>() &&
+        rendering_parameter<text_font>())) {
     const char *s =
         "A draw text object must include the following "
         "attributes. A text_color_t or a text_outline_t or "
@@ -790,8 +756,11 @@ void uxdevice::textual_render_storage_t::invoke(display_context_t &context) {
     auto drawfn = [=](display_context_t &context) {
       // cairo_set_matrix(context.cr, &mat._matrix);
       drawing_output_t::invoke(context.cr);
+      auto &coordinate = rendering_parameter<coordinate_t>();
+
       cairo_set_source_surface(context.cr, internal_buffer.rendered,
-                               coordinates->x, coordinates->y);
+                               coordinate.value.x,
+                               rendering_parameter<coordinate_t>()->value.y);
       double tw, th;
       tw = std::min(_ink_rectangle.width, coordinates->w);
       th = std::min(_ink_rectangle.height, coordinates->h);
@@ -864,8 +833,8 @@ void uxdevice::image_block_storage_t::invoke(display_context_t &context) {
   if (is_loaded)
     return;
 
-  coordinates = context.current_units.coordinates;
-  options = context.current_units.drawing_options_fn;
+  auto coordinates = context.unit_memory<coordinates_t>();
+  auto options = context.unit_memory<drawing_options_fn_t>();
 
   if (!(coordinates && value.size())) {
     const char *s = "An image_block_t object must include the following "
@@ -982,8 +951,7 @@ void option_function_object_t::invoke(display_context_t &context) {
 void uxdevice::draw_function_object_t::invoke(display_context_t &context) {
   using namespace std::placeholders;
 
-  options = context.current_units.drawing_options_fn;
-
+  auto options = context.unit_memory<drawing_options_fn>();
   // set the ink area.
 
   auto fnCache = [=](display_context_t &context) {
@@ -1032,20 +1000,11 @@ state_hash_code();
 \details
 
 
- */
-
-/**
-
-\class antialias_t
-\brief
-
-\details
-
-
 */
 void antialias_t::invoke(display_context_t &context {
-  context.current_units.antialias = shared_from_this();
+  context.unit_memory<antialias_t>(shared_from_this());
 }
+
 void antialias_t::emit(display_context_t &context) {
   cairo_set_antialias(context.cr, static_cast<cairo_antialias_t>(value));
 }
@@ -1061,8 +1020,9 @@ This includes text and line drawing.
 
  */
 void line_width_t::invoke(display_context_t &context {
-  context.current_units.line_width = shared_from_this();
+  context.unit_memory<line_width_t>(shared_from_this());
 }
+
 void line_width_t::emit(display_context_t &context) {
   cairo_set_line_width(context.cr, value);
 }
@@ -1078,7 +1038,7 @@ void line_width_t::emit(display_context_t &context) {
 
 */
 void line_cap_t::invoke(display_context_t &context {
-  context.current_units.line_cap = shared_from_this();
+  context.unit_memory<line_cap_t>(shared_from_this());
 }
 void line_cap_t::emit(display_context_t &context) {
   cairo_set_line_cap_t(context.cr,
@@ -1096,7 +1056,7 @@ void line_cap_t::emit(display_context_t &context) {
 
 */
 void line_join_t::invoke(display_context_t &context {
-  context.current_units.line_join = shared_from_this();
+  context.unit_memory<line_join_t>(shared_from_this());
 }
 void line_join_t::emit(display_context_t &context) {
   cairo_set_line_join_t(context.cr,
@@ -1112,7 +1072,7 @@ void line_join_t::emit(display_context_t &context) {
 
  */
 void miter_limit_t::invoke(display_context_t &context {
-  context.current_units.miter_limit = shared_from_this();
+  context.unit_memory<miter_limit_t>(shared_from_this());
 }
 void miter_limit_t::emit(display_context_t &context) {
   cairo_set_miter_limit_t(context.cr, value);
@@ -1127,7 +1087,7 @@ void miter_limit_t::emit(display_context_t &context) {
 
  */
 void line_dashes_t::invoke(display_context_t &context {
-  context.current_units.line_dashes = shared_from_this();
+  context.unit_memory<line_dashes_t>(shared_from_this());
 }
 void line_dashes_t::emit(display_context_t &context) {
   cairo_set_dash(context.cr, std::get<0>(value).data(),
@@ -1145,7 +1105,7 @@ void line_dashes_t::emit(display_context_t &context) {
 
  */
 void tollerance_t::invoke(display_context_t &context {
-  context.current_units.tollerance = shared_from_this();
+  context.unit_memory<tollerance_t>(shared_from_this());
 }
 void tollerance_t::emit(display_context_t &context){
   cairo_set_tolerance(context.cr, value);
@@ -1161,7 +1121,7 @@ void tollerance_t::emit(display_context_t &context){
 
 */
 void graphic_operator_t::invoke(display_context_t &context {
-  context.current_units.graphic_operator = shared_from_this();
+  context.unit_memory<graphic_operator_t>(shared_from_this());
 }
 void graphic_operator_t::emit(display_context_t &context){
   cairo_set_operator(context.cr, static_cast<cairo_operator_t>(value));

@@ -75,37 +75,38 @@ enum class line_join_options_t {
   bevel = CAIRO_LINE_JOIN_BEVEL
 };
 
-enum graphic_operator_options_t {
-  opClear = CAIRO_OPERATOR_CLEAR,
-  opSource = CAIRO_OPERATOR_SOURCE,
-  opOver = CAIRO_OPERATOR_OVER,
-  opIn = CAIRO_OPERATOR_IN,
-  opOut = CAIRO_OPERATOR_OUT,
-  opAtop = CAIRO_OPERATOR_ATOP,
-  opDest = CAIRO_OPERATOR_DEST,
-  opDestOver = CAIRO_OPERATOR_DEST_OVER,
-  opDestIn = CAIRO_OPERATOR_DEST_IN,
-  opDestOut = CAIRO_OPERATOR_DEST_OUT,
-  opDestAtop = CAIRO_OPERATOR_DEST_ATOP,
-  opXor = CAIRO_OPERATOR_XOR,
-  opAdd = CAIRO_OPERATOR_ADD,
-  opSaturate = CAIRO_OPERATOR_SATURATE,
-  opMultiply = CAIRO_OPERATOR_MULTIPLY,
-  opScreen = CAIRO_OPERATOR_SCREEN,
-  opOverlay = CAIRO_OPERATOR_OVERLAY,
-  opDarken = CAIRO_OPERATOR_DARKEN,
-  opLighten = CAIRO_OPERATOR_LIGHTEN,
-  opColorDodge = CAIRO_OPERATOR_COLOR_DODGE,
-  opColorBurn = CAIRO_OPERATOR_COLOR_BURN,
-  opHardLight = CAIRO_OPERATOR_HARD_LIGHT,
-  opSoftLight = CAIRO_OPERATOR_SOFT_LIGHT,
-  opDifference = CAIRO_OPERATOR_DIFFERENCE,
-  opExclusion = CAIRO_OPERATOR_EXCLUSION,
-  opHSLHUE = CAIRO_OPERATOR_HSL_HUE,
-  opHSLSaturation = CAIRO_OPERATOR_HSL_SATURATION,
-  opHSLColor = CAIRO_OPERATOR_HSL_COLOR,
-  opHSLLuminosity = CAIRO_OPERATOR_HSL_LUMINOSITY
+enum class graphic_operator_options_t {
+  op_clear = CAIRO_OPERATOR_CLEAR,
+  op_source = CAIRO_OPERATOR_SOURCE,
+  op_over = CAIRO_OPERATOR_OVER,
+  op_in = CAIRO_OPERATOR_IN,
+  op_out = CAIRO_OPERATOR_OUT,
+  op_at = CAIRO_OPERATOR_ATOP,
+  op_dest = CAIRO_OPERATOR_DEST,
+  op_dest_over = CAIRO_OPERATOR_DEST_OVER,
+  op_dest_in = CAIRO_OPERATOR_DEST_IN,
+  op_dest_out = CAIRO_OPERATOR_DEST_OUT,
+  op_dest_at = CAIRO_OPERATOR_DEST_ATOP,
+  op_xor = CAIRO_OPERATOR_XOR,
+  op_add = CAIRO_OPERATOR_ADD,
+  op_saturate = CAIRO_OPERATOR_SATURATE,
+  op_multiply = CAIRO_OPERATOR_MULTIPLY,
+  op_screen = CAIRO_OPERATOR_SCREEN,
+  op_overlay = CAIRO_OPERATOR_OVERLAY,
+  op_darken = CAIRO_OPERATOR_DARKEN,
+  op_lighten = CAIRO_OPERATOR_LIGHTEN,
+  op_color_dodge = CAIRO_OPERATOR_COLOR_DODGE,
+  op_color_burn = CAIRO_OPERATOR_COLOR_BURN,
+  op_hard_light = CAIRO_OPERATOR_HARD_LIGHT,
+  op_soft_light = CAIRO_OPERATOR_SOFT_LIGHT,
+  op_difference = CAIRO_OPERATOR_DIFFERENCE,
+  op_exclusion = CAIRO_OPERATOR_EXCLUSION,
+  op_hsl_hue = CAIRO_OPERATOR_HSL_HUE,
+  op_hsl_saturation = CAIRO_OPERATOR_HSL_SATURATION,
+  op_hsl_color = CAIRO_OPERATOR_HSL_COLOR,
+  op_hsl_luminosity = CAIRO_OPERATOR_HSL_LUMINOSITY
 };
+
 enum class text_alignment_options_t {
   left = PangoAlignment::PANGO_ALIGN_LEFT,
   center = PangoAlignment::PANGO_ALIGN_CENTER,
@@ -118,6 +119,7 @@ enum class text_ellipsize_options_t {
   middle = PANGO_ELLIPSIZE_MIDDLE,
   end = PANGO_ELLIPSIZE_END
 };
+
 enum class content_options_t {
   color = CAIRO_CONTENT_COLOR,
   alpha = CAIRO_CONTENT_ALPHA,

@@ -260,13 +260,13 @@ public:
         options(std::move(other.options)),
         ink_rectangle(std::move(other.ink_rectangle)),
         intersection_int(std::move(other.intersection_int)),
-        intersection_double(std::move(other.intersection_double))
-  {}
+        intersection_double(std::move(other.intersection_double)) {}
 
   /// @brief copy constructor
   drawing_output_t(const drawing_output_t &other) {
     // invoke copy operator
-    *this=other; }
+    *this = other;
+  }
 
   ~drawing_output_t() { display_context_t::destroy_buffer(internal_buffer); }
 

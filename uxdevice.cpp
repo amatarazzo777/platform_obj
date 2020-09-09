@@ -78,9 +78,9 @@ necessary operation.
 */
 void uxdevice::surface_area_t::dispatch_event(const event_t &evt) {
 
-  if(evt.type==type_info{typeid(listen_paint_t))
+  if(evt.type==std::type_index{typeid(listen_paint_t))
     context.state_surface(evt.x, evt.y, evt.w, evt.h);
-  else if(evt.type==type_info{typeid(listen_resize_t))
+  else if(evt.type==std::type_index{typeid(listen_resize_t))
     context.resize_surface(evt.w, evt.h);
 
       if (fnEvents)
@@ -548,7 +548,7 @@ display list to not get in the way of the rendering loop,
 void uxdevice::surface_area_t::clear(void) {
       DL_SPIN;
       context.clear();
-      DL.clear();
+      display_list.clear();
       DL_CLEAR;
 }
 
@@ -563,7 +563,9 @@ used to access the data.
 */
 void uxdevice::surface_area_t::maintain_index(
     std::shared_ptr<display_unit_t> obj) {
-      mapped_objects[obj->key] = obj;
+      if (!std::holds_alternative<std::monostate>(obj)) {
+        mapped_objects[obj->key] = obj;
+      }
       return;
 }
 
@@ -581,9 +583,9 @@ in a separate object. The textual_rendering_t object encapsulates the pango cair
 */
 surface_area_t &uxdevice::surface_area_t::stream_input(const std::string &s) {
       DL_SPIN;
-      auto item = DL.emplace_back(make_shared<text_data_t>(s));
-      context.current_units.(std::dynamic_pointer_cast<text_data_t>(item));
-      auto textrender = DL.emplace_back(make_shared<textual_render>(
+      auto item = display_list.emplace_back(make_shared<text_data_t>(s));
+      item->invoke(context);
+      auto textrender = display_list.emplace_back(make_shared<textual_render>(
           std::dynamic_pointer_cast<text_data_t>(item)));
       textrender->invoke(context);
       DL_CLEAR;
@@ -611,11 +613,11 @@ in a separate object. The textual_rendering_t object encapsulates the pango cair
 surface_area_t &uxdevice::surface_area_t::stream_input(
     const std::shared_ptr<std::string> _val) {
       DL_SPIN;
-      auto item = DL.emplace_back(make_shared<text_data_t>(*_val));
+      auto item = display_list.emplace_back(make_shared<text_data_t>(*_val));
       item->key = reinterpret_cast<std::size_t>(_val.get());
       maintain_index(item);
-      context.current_units.(std::dynamic_pointer_cast<text_data_t>(item));
-      auto textrender = DL.emplace_back(make_shared<textual_render>(
+      context.unit_memory<text_data_t>(item));
+      auto textrender = display_list.emplace_back(make_shared<textual_render>(
           std::dynamic_pointer_cast<text_data_t>(item)));
       textrender->invoke(context);
       DL_CLEAR;
@@ -626,15 +628,9 @@ surface_area_t &uxdevice::surface_area_t::stream_input(
 }
 surface_area_t &
 uxdevice::surface_area_t::stream_input(const std::stringstream &_val) {
-      DL_SPIN;
-      auto item = DL.emplace_back(make_shared<text_data_t>(_val.str()));
-      context.current_units.(std::dynamic_pointer_cast<text_data_t>(item));
-      auto textrender = DL.emplace_back(make_shared<textual_render>(
-          std::dynamic_pointer_cast<text_data_t>(item)));
-      textrender->invoke(context);
-      DL_CLEAR;
-      context.add_drawable(
-          std::dynamic_pointer_cast<drawing_output_t>(textrender));
+      auto item = DL<text_data_t>(_val.str());
+      auto textrender = DL<textual_render>(item);
+
       return *this;
 }
 
@@ -670,7 +666,8 @@ surface_area_t &uxdevice::surface_area_t::save(void) {
       using namespace std::placeholders;
       DL_SPIN;
       cairo_function_t func = std::bind(cairo_save, _1);
-      auto item = DL.emplace_back(make_shared<function_object_t>(func));
+      auto item =
+          display_list.emplace_back(make_shared<function_object_t>(func));
       item->invoke(context);
       maintain_index(item);
       DL_CLEAR;
@@ -691,7 +688,8 @@ surface_area_t &uxdevice::surface_area_t::restore(void) {
       using namespace std::placeholders;
       DL_SPIN;
       cairo_function_t func = std::bind(cairo_restore, _1);
-      auto item = DL.emplace_back(make_shared<function_object_t>(func));
+      auto item =
+          display_list.emplace_back(make_shared<function_object_t>(func));
       item->invoke(context);
       maintain_index(item);
       DL_CLEAR;
@@ -719,7 +717,8 @@ surface_area_t &uxdevice::surface_area_t::push(content_options_t c) {
         func = std::bind(cairo_push_group_with_content, _1,
                          static_cast<cairo_content_options_t>(c));
       }
-      auto item = DL.emplace_back(make_shared<function_object_t>(func));
+      auto item =
+          display_list.emplace_back(make_shared<function_object_t>(func));
       item->invoke(context);
       maintain_index(item);
       DL_CLEAR;
@@ -746,7 +745,8 @@ surface_area_t &uxdevice::surface_area_t::pop(bool bToSource) {
       } else {
         func = std::bind(cairo_pop_group, _1);
       }
-      auto item = DL.emplace_back(make_shared<function_object_t>(func));
+      auto item =
+          display_list.emplace_back(make_shared<function_object_t>(func));
       item->invoke(context);
       maintain_index(item);
       DL_CLEAR;
@@ -769,7 +769,8 @@ surface_area_t &uxdevice::surface_area_t::translate(double x, double y) {
       using namespace std::placeholders;
       DL_SPIN;
       cairo_function_t func = std::bind(cairo_translate, _1, x, y);
-      auto item = DL.emplace_back(make_shared<function_object_t>(func));
+      auto item =
+          display_list.emplace_back(make_shared<function_object_t>(func));
       item->invoke(context);
       maintain_index(item);
       DL_CLEAR;
@@ -791,7 +792,8 @@ surface_area_t &uxdevice::surface_area_t::rotate(double angle) {
       using namespace std::placeholders;
       DL_SPIN;
       cairo_function_t func = std::bind(cairo_rotate, _1, angle);
-      auto item = DL.emplace_back(make_shared<function_object_t>(func));
+      auto item =
+          display_list.emplace_back(make_shared<function_object_t>(func));
       item->invoke(context);
       maintain_index(item);
       DL_CLEAR;
@@ -845,7 +847,8 @@ surface_area_t &uxdevice::surface_area_t::scale(double x, double y) {
       using namespace std::placeholders;
       DL_SPIN;
       cairo_function_t func = std::bind(cairo_scale, _1, x, y);
-      auto item = DL.emplace_back(make_shared<function_object_t>(func));
+      auto item =
+          display_list.emplace_back(make_shared<function_object_t>(func));
       item->invoke(context);
       maintain_index(item);
       DL_CLEAR;
@@ -867,7 +870,8 @@ surface_area_t &uxdevice::surface_area_t::transform(const Matrix &m) {
       using namespace std::placeholders;
       DL_SPIN;
       cairo_function_t func = std::bind(cairo_transform, _1, &m._matrix);
-      auto item = DL.emplace_back(make_shared<function_object_t>(func));
+      auto item =
+          display_list.emplace_back(make_shared<function_object_t>(func));
       item->invoke(context);
       maintain_index(item);
       DL_CLEAR;
@@ -889,7 +893,8 @@ surface_area_t &uxdevice::surface_area_t::matrix(const Matrix &m) {
       using namespace std::placeholders;
       DL_SPIN;
       cairo_function_t func = std::bind(cairo_set_matrix, _1, &m._matrix);
-      auto item = DL.emplace_back(make_shared<function_object_t>(func));
+      auto item =
+          display_list.emplace_back(make_shared<function_object_t>(func));
       item->invoke(context);
       maintain_index(item);
       DL_CLEAR;
@@ -910,7 +915,8 @@ surface_area_t &uxdevice::surface_area_t::identity(void) {
       using namespace std::placeholders;
       DL_SPIN;
       cairo_function_t func = std::bind(cairo_identity_matrix, _1);
-      auto item = DL.emplace_back(make_shared<function_object_t>(func));
+      auto item =
+          display_list.emplace_back(make_shared<function_object_t>(func));
       item->invoke(context);
       maintain_index(item);
       DL_CLEAR;
@@ -941,7 +947,8 @@ surface_area_t &uxdevice::surface_area_t::device(double &x, double &y) {
       };
 
       cairo_function_t func = std::bind(fn, _1, x, y);
-      auto item = DL.emplace_back(make_shared<function_object_t>(func));
+      auto item =
+          display_list.emplace_back(make_shared<function_object_t>(func));
       item->invoke(context);
       maintain_index(item);
       DL_CLEAR;
@@ -973,7 +980,8 @@ surface_area_t &uxdevice::surface_area_t::device_distance(double &x,
       };
 
       cairo_function_t func = std::bind(fn, _1, x, y);
-      auto item = DL.emplace_back(make_shared<function_object_t>(func));
+      auto item =
+          display_list.emplace_back(make_shared<function_object_t>(func));
       item->invoke(context);
       maintain_index(item);
       DL_CLEAR;
@@ -1003,7 +1011,8 @@ surface_area_t &uxdevice::surface_area_t::user(double &x, double &y) {
       };
 
       cairo_function_t func = std::bind(fn, _1, x, y);
-      auto item = DL.emplace_back(make_shared<function_object_t>(func));
+      auto item =
+          display_list.emplace_back(make_shared<function_object_t>(func));
       item->invoke(context);
       maintain_index(item);
       DL_CLEAR;
@@ -1033,7 +1042,8 @@ surface_area_t &uxdevice::surface_area_t::user_distance(double &x, double &y) {
       };
 
       cairo_function_t func = std::bind(fn, _1, x, y);
-      auto item = DL.emplace_back(make_shared<function_object_t>(func));
+      auto item =
+          display_list.emplace_back(make_shared<function_object_t>(func));
       item->invoke(context);
       maintain_index(item);
       DL_CLEAR;

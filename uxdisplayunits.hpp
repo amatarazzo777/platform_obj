@@ -31,7 +31,6 @@ as part of a base heirarchy of classes. display_unit_t is the base class.
 
 #pragma once
 
-
 /**
 
 \class coordinate_storage_t
@@ -45,9 +44,8 @@ class coordinate_storage_t {
 public:
   double x, y, w, h;
   HASH_OBJECT_MEMBERS(HASH_TYPE_ID_THIS, x, y, w, h)
-
 };
-}
+} // namespace uxdevice
 STD_HASHABLE(uxdevice::coordinate_storage_t);
 
 /**
@@ -64,7 +62,7 @@ struct arc_storage_t {
   double xc, yc, radius, angle1, angle2;
   HASH_OBJECT_MEMBERS(HASH_TYPE_ID_THIS, xc, yc, radius, angle1, angle2)
 };
-}
+} // namespace uxdevice
 STD_HASHABLE(uxdevice::arc_storage_t);
 
 /**
@@ -81,7 +79,7 @@ struct negative_arc_storage_t {
   double xc, yc, radius, angle1, angle2;
   HASH_OBJECT_MEMBERS(HASH_TYPE_ID_THIS, xc, yc, radius, angle1, angle2)
 };
-}
+} // namespace uxdevice
 STD_HASHABLE(uxdevice::negative_arc_storage_t);
 
 /**
@@ -96,9 +94,9 @@ STD_HASHABLE(uxdevice::negative_arc_storage_t);
 namespace uxdevice {
 struct rectangle_storage_t {
   double x, y, width, height;
- HASH_OBJECT_MEMBERS(HASH_TYPE_ID_THIS, x, y, width, height)
+  HASH_OBJECT_MEMBERS(HASH_TYPE_ID_THIS, x, y, width, height)
 };
-}
+} // namespace uxdevice
 STD_HASHABLE(uxdevice::rectangle_storage_t);
 
 /**
@@ -113,9 +111,9 @@ STD_HASHABLE(uxdevice::rectangle_storage_t);
 namespace uxdevice {
 struct curve_storage_t {
   double x1, y1, x2, y2, x3, y3;
-   HASH_OBJECT_MEMBERS(HASH_TYPE_ID_THIS, x1, y1, x2, y2, x3, y3)
+  HASH_OBJECT_MEMBERS(HASH_TYPE_ID_THIS, x1, y1, x2, y2, x3, y3)
 };
-}
+} // namespace uxdevice
 STD_HASHABLE(uxdevice::curve_storage_t);
 
 /**
@@ -130,9 +128,9 @@ STD_HASHABLE(uxdevice::curve_storage_t);
 namespace uxdevice {
 struct line_storage_t {
   double x, y;
-   HASH_OBJECT_MEMBERS(HASH_TYPE_ID_THIS, x, y)
+  HASH_OBJECT_MEMBERS(HASH_TYPE_ID_THIS, x, y)
 };
-}
+} // namespace uxdevice
 STD_HASHABLE(uxdevice::line_storage_t);
 
 /**
@@ -149,7 +147,7 @@ namespace uxdevice {
 class text_font_data_storage {
 public:
   std::string description;
-  std::atomic<PangoFontDescription *> pango_font_ptr;
+  PangoFontDescription *pango_font_ptr;
 
   // hash function
   std::size_t hash_code(void) {
@@ -202,8 +200,7 @@ public:
   image_block_storage_t &operator=(image_block_storage_t &&other) noexcept {
     image_block_ptr = std::move(other.image_block_ptr);
     is_SVG = other.is_SVG;
-    if (image_block_ptr)
-      is_loaded = true;
+    is_loaded = other.is_loaded;
     coordinates = std::move(other.coordinates);
     return *this;
   }
@@ -212,20 +209,22 @@ public:
   image_block_storage_t &operator=(const image_block_storage_t &other) {
     image_block_ptr = cairo_surface_reference(other.image_block_ptr);
     is_SVG = other.is_SVG;
-    if (image_block_ptr)
-      is_loaded = true;
+    is_loaded = other.is_loaded;
     coordinates = other.coordinates;
     return *this;
   }
 
   /// @brief move constructor
-  image_block_storage_t(display_unit_t &&other) noexcept {
-    index_by_t::operator=(other);
+  image_block_storage_t(display_unit_t &&other) noexcept
+      : image_block_ptr(std::move(other.image_block_ptr)),
+        is_SVG(std::move(other.is_SVG)), is_loaded(std::move(other.is_loaded)),
+        coordinates(std::move(other.coordinates)) {}
 
-    return *this;
-  }
   /// @brief copy constructor
-  image_block_storage_t(const display_unit_t &other) { index_by_t(other); }
+  image_block_storage_t(const display_unit_t &other)
+      : image_block_ptr(cairo_surface_reference(other.image_block_ptr)),
+        is_SVG(other.is_SVG), is_loaded(other.is_loaded),
+        coordinates(other.coordinates) {}
 
   virtual ~image_block_storage_t() {
     if (image_block_ptr)
@@ -235,12 +234,12 @@ public:
   HASH_OBJECT_MEMBERS(drawing_output_t::hash_code(), HASH_TYPE_ID_THIS, value,
                       is_SVG, coordinates ? coordinates->hash_code() : 0)
 
-  cairo_surface_t* image_block_ptr = {};
+  cairo_surface_t *image_block_ptr = {};
   bool is_SVG = {};
   bool is_loaded = {};
   std::shared_ptr<coordinates_t> coordinates = {};
 };
-}
+} // namespace uxdevice
 STD_HASHABLE(uxdevice::image_block_storage_t)
 
 /**
@@ -261,33 +260,54 @@ public:
   internal_cairo_function_t precise_rendering_function(void);
   void invoke(display_context_t &context);
 
-  std::atomic<cairo_surface_t *> shadow_image = nullptr;
-  std::atomic<cairo_t *> shadow_cr = nullptr;
-  std::atomic<PangoLayout *> layout = nullptr;
+  DECLARE_TYPE_INDEX_MEMORY(rendering_parameter, rendering_parameter_storage)
+
+  HASH_OBJECT_MEMBERS(HASH_TYPE_ID_THIS,
+                      pango_layout_get_serial(layout), ink_rect.x, ink_rect.y,
+                      ink_rect.width, ink_rect.height, matrix.hash_code(),
+                      rendering_parameter<text_color_t>()->hash_code(),
+                      rendering_parameter<text_outline_t>()->hash_code(),
+                      rendering_parameter<text_fill_t>()->hash_code(),
+                      rendering_parameter<text_shadow_t>()->hash_code(),
+                      rendering_parameter<text_alignment_t>()->hash_code(),
+                      rendering_parameter<text_indent_t>()->hash_code(),
+                      rendering_parameter<text_ellipsize_t>()->hash_code(),
+                      rendering_parameter<text_line_space_t>()->hash_code(),
+                      rendering_parameter<text_tab_stops_t>()->hash_code(),
+                      rendering_parameter<text_font_t>()->hash_code(),
+                      rendering_parameter<text_data_t>()->hash_code(),
+                      rendering_parameter<coordnates_t>()->hash_code(),
+                      rendering_parameter<antialias_t>()->hash_code(),
+                      rendering_parameter<line_width_t>()->hash_code(),
+                      rendering_parameter<line_cap_t>()->hash_code(),
+                      rendering_parameter<line_join_t>()->hash_code(),
+                      rendering_parameter<miter_limit_t>()->hash_code(),
+                      rendering_parameter<line_dashes_t>()->hash_code(),
+                      rendering_parameter<tollerance_t>()->hash_code(),
+                      rendering_parameter<graphic_operator_t>()->hash_code())
+
+  cairo_surface_t *shadow_image = nullptr;
+  cairo_t *shadow_cr = nullptr;
+  PangoLayout *layout = nullptr;
   PangoRectangle ink_rect = PangoRectangle();
   PangoRectangle logical_rect = PangoRectangle();
   Matrix matrix = {};
-
-  current_units_t rendering_parameters = {}
-
-  HASH_OBJECT_MEMBERS(drawing_output_t::hash_code(), HASH_TYPE_ID_THIS,
-                      rendering_parameters.hash_code(),
-                      pango_layout_get_serial(layout), ink_rect.x, ink_rect.y,
-                      ink_rect.width, ink_rect.height, matrix.hash_code())
 };
 } // namespace uxdevice
 STD_HASHABLE(uxdevice::image_block_storage_t)
 
+// the unit_memory stores items by type id. A boolean with
+// an aliased type can be stored withi nthe list, however it will not
+// be a display unit.
+using text_rendering_path_t = bool;
 
 // text
 DECLARE_MARKER_DISPLAY_UNIT(text_render_fast_t)
+DECLARE_MARKER_DISPLAY_UNIT(text_render_path_t)
 
 DECLARE_PAINTER_BRUSH_DISPLAY_UNIT(text_color_t)
-
-DECLARE_MARKER_DISPLAY_UNIT(text_render_path_t)
 DECLARE_PAINTER_BRUSH_DISPLAY_UNIT(text_outline_t)
 DECLARE_PAINTER_BRUSH_DISPLAY_UNIT(text_fill_t)
-
 DECLARE_PAINTER_BRUSH_DISPLAY_UNIT(text_shadow_t)
 
 DECLARE_STORING_EMITTER_DISPLAY_UNIT(text_alignment_t, text_alignment_options_t)
@@ -332,13 +352,14 @@ DECLARE_STORING_EMITTER_DRAWING_FUNCTION(line_t, line_storage_t)
 DECLARE_STORING_EMITTER_DRAWING_FUNCTION(hline_t, double)
 DECLARE_STORING_EMITTER_DRAWING_FUNCTION(vline_t, double)
 DECLARE_STORING_EMITTER_DRAWING_FUNCTION(rectangle_t, rectangle_storage_t)
-DECLARE_MARKER_DISPLAY_UNIT(close_path_t)
+
 DECLARE_STORING_EMITTER_DRAWING_FUNCTION(stroke_path_t, painter_brush_t)
 DECLARE_STORING_EMITTER_DRAWING_FUNCTION(fill_path_t, painter_brush_t)
 DECLARE_STORING_EMITTER_DRAWING_FUNCTION(
     stroke_fill_path_t, std::tuple<painter_brush_t, painter_brush_t>)
 DECLARE_STORING_EMITTER_DRAWING_FUNCTION(mask_t, painter_brush_t)
 DECLARE_STORING_EMITTER_DRAWING_FUNCTION(paint_t, double)
+DECLARE_MARKER_DISPLAY_UNIT(close_path_t)
 
 // event listeners
 DECLARE_STORING_EMITTER_DISPLAY_UNIT(
