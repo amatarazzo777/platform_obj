@@ -48,6 +48,7 @@
 		<Unit filename="uxdevice.hpp" />
 		<Unit filename="uxdisplaycontext.cpp" />
 		<Unit filename="uxdisplaycontext.hpp" />
+		<Unit filename="uxdisplayunitbase.cpp" />
 		<Unit filename="uxdisplayunitbase.hpp" />
 		<Unit filename="uxdisplayunits.cpp" />
 		<Unit filename="uxdisplayunits.hpp" />

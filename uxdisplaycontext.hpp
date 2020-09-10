@@ -191,28 +191,11 @@ public:
   static void destroy_buffer(draw_buffer_t &_buffer);
   void clear(void);
 
-  std::atomic_flag lockErrors = ATOMIC_FLAG_INIT;
-#define ERRORS_SPIN while (lockErrors.test_and_set(std::memory_order_acquire))
-#define ERRORS_CLEAR lockErrors.clear(std::memory_order_release)
-  std::list<std::string> _errors = {};
-
-  void error_state(const std::string_view &sfunc, const std::size_t linenum,
-                   const std::string_view &sfile, const cairo_status_t stat);
-  void error_state(const std::string_view &sfunc, const std::size_t linenum,
-                   const std::string_view &sfile, const std::string_view &desc);
-  void error_state(const std::string_view &sfunc, const std::size_t linenum,
-                   const std::string_view &sfile, const std::string &desc);
-  bool error_state(void);
-  std::string error_text(bool bclear = true);
-
-  cairo_status_t error_check(cairo_surface_t *sur) {
-    return cairo_surface_status(sur);
-  }
-  cairo_status_t error_check(cairo_t *cr) { return cairo_status(cr); }
+  DECLARE_ERROR_HANDLING
 
   DECLARE_TYPE_INDEX_MEMORY(unit_memory)
 
-  HASH_OBJECT_MEMBERS(unit_memory_hash_code(), HASH_TYPE_ID_THIS, window_x,
+  HASH_OBJECT_MEMBERS(unit_memory_hash_code_all(), HASH_TYPE_ID_THIS, window_x,
                       window_y, window_width, window_height, window_open,
                       brush.hash_code())
 

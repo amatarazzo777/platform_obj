@@ -373,8 +373,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 #define _C color(gen)
 #define _A opac(gen)
 
-  surface_area_t vis = surface_area_t({500, 500}, "Information Title",
-                                      painter_brush_t("darkgreen"));
+  surface_area_t vis =
+      surface_area_t({500, 500}, "Information Title", window_background);
 
   vis << listen_keypress_t([&vis](auto &evt) {
     string s = " ";
@@ -427,6 +427,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 
     // show_time(vis, 0, 0);
     *paragraph_text = generate_text();
+
+    // window_background.value
+
     vis.notify_complete();
   }
 

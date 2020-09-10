@@ -429,14 +429,6 @@ void uxdevice::display_context_t::state_notify_complete(void) {
   cvRenderWork.notify_one();
 }
 
-std::size_t uxdevice::unit_memory_t::hash_code(void) const noexcept {
-  std::size_t value = {};
-  for (auto n : unit_memory_storage) {
-    // hash_combine(value,
-  }
-
-  return value;
-}
 /**
 \internal
 \brief The routine returns whether work is within the system.
@@ -519,66 +511,4 @@ void uxdevice::display_context_t::plot(context_cairo_region_t &plotArea) {
     }
   }
   DRAWABLES_ON_CLEAR;
-}
-/**
-\internal
-\brief The routine stores error conditions.
-*/
-void uxdevice::display_context_t::error_state(const std::string_view &sfunc,
-                                              const std::size_t linenum,
-                                              const std::string_view &sfile,
-                                              const cairo_status_t stat) {
-  error_state(sfunc, linenum, sfile,
-              std::string_view(cairo_status_to_string(stat)));
-}
-/**
-\internal
-\brief The routine stores error conditions.
-*/
-void uxdevice::display_context_t::error_state(const std::string_view &sfunc,
-                                              const std::size_t linenum,
-                                              const std::string_view &sfile,
-                                              const std::string &desc) {
-  error_state(sfunc, linenum, sfile, std::string_view(desc));
-}
-/**
-\internal
-\brief The routine stores error conditions.
-*/
-void uxdevice::display_context_t::error_state(const std::string_view &sfunc,
-                                              const std::size_t linenum,
-                                              const std::string_view &sfile,
-                                              const std::string_view &desc) {
-  ERRORS_SPIN;
-  std::stringstream ss;
-  ss << sfile << "\n" << sfunc << "(" << linenum << ") -  " << desc << "\n";
-  _errors.emplace_back(ss.str());
-
-  ERRORS_CLEAR;
-}
-/**
-\internal
-\brief The routine checks error conditions.
-*/
-bool uxdevice::display_context_t::error_state(void) {
-  ERRORS_SPIN;
-  bool b = !_errors.empty();
-  ERRORS_CLEAR;
-  return b;
-}
-/**
-\internal
-\brief The routine returns a string representing all of the errors that have
-occurred. optionally, by default as well, the error queue list is cleared.
-*/
-std::string uxdevice::display_context_t::error_text(bool bclear) {
-  ERRORS_SPIN;
-  std::string ret;
-  for (auto s : _errors)
-    ret += s;
-  if (bclear)
-    _errors.clear();
-
-  ERRORS_CLEAR;
-  return ret;
 }

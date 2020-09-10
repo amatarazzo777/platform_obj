@@ -18,15 +18,8 @@
 
 /**
 \author Anthony Matarazzo
-\file uxdisplayunits.hpp
-\date 9/7/20
-\version 1.0
-\brief
-*/
-/**
-\author Anthony Matarazzo
 \file uxdevice.hpp
-\date 3/26/20
+\date 9/7/20
 \version 1.0
 \brief interface for the platform.
 
@@ -43,9 +36,34 @@ options when compiling the text_color_t.
 @{
 */
 
-#define DEFAULT_TEXTFACE "arial"
-#define DEFAULT_TEXTSIZE 12
-#define DEFAULT_TEXTCOLOR 0
+/**
+\internal
+\def DEFAULT_WINDOW_TITLE
+\brief when a window title is not provided, this is used.
+
+*/
+#define DEFAULT_WINDOW_TITLE                                                   \
+  std::string(__FILE__) + std::string(_STDC_VERSION__) + std::string("  ") +   \
+      std::string(__DATE__)
+
+/**
+\internal
+\def DEFAULT_TEXTFACE
+\brief default text face
+
+*/
+#define SYSTEM_DEFAULTS                                                        \
+  this << text_render_fast_t{} << text_font_t{"Arial 20px"}                    \
+       << text_color_t{"black"},                                               \
+      << surface_area_brush_t{"white"}, << text_indent_t{100.0},               \
+      << text_alignment_t{text_alignment_options_t::left},                     \
+      << text_ellipsize_t{text_ellipsize_options_t::off},                      \
+      << text_line_space_t{1.1},                                               \
+      << text_tab_stops_t{{250, 250, 250, 250, 250, 250, 250, 250}},           \
+      << surface_area_title_t {                                                \
+    DEFAULT_WINDOW_TITLE                                                       \
+  }
+
 #define USE_STACKBLUR
 
 /**
@@ -90,13 +108,72 @@ public:
 };
 
 /**
+
 \internal
-\class platform
-\brief The platform contains logic to connect the document object model to the
-local operating system.
+
+\def DECLARE_STREAM_INTERFACE
+
+\brief the macro creates the stream interface for both constant references
+and shared pointers as well as establishes the prototype for the insertion
+function. The implementation is not standard and will need definition.
+This is the route for formatting objects that accept numerical data and process
+to human readable values. Modern implementations include the processing of size
+information. Yet within the c++ implementation, the data structures that report
+and hold information is elaborate.
+
+*/
+#define DECLARE_STREAM_INTERFACE(CLASS_NAME)                                   \
+public:                                                                        \
+  surface_area_t &operator<<(const CLASS_NAME &data) {                         \
+    stream_input(data);                                                        \
+    return *this;                                                              \
+  }                                                                            \
+  surface_area_t &operator<<(const std::shared_ptr<CLASS_NAME> data) {         \
+    stream_input(data);                                                        \
+    return *this;                                                              \
+  }                                                                            \
+                                                                               \
+private:                                                                       \
+  surface_area_t &stream_input(const CLASS_NAME &_val);                        \
+  surface_area_t &stream_input(const std::shared_ptr<CLASS_NAME> _val);
+
+/**
+\internal
+
+\def DECLARE_STREAM_IMPLEMENTATION
+
+\brief The macro provides a creation of necessary input stream routines that
+maintains the display lists. These routines are private within the class
+and are activated by the << operator. These are the underlying operations.
+
+*/
+#define DECLARE_STREAM_IMPLEMENTATION(CLASS_NAME)                              \
+public:                                                                        \
+  surface_area_t &operator<<(const CLASS_NAME &data) {                         \
+    display_list<CLASS_NAME>(data);                                            \
+    return *this;                                                              \
+  }                                                                            \
+  surface_area_t &operator<<(const std::shared_ptr<CLASS_NAME> data) {         \
+    display_list<CLASS_NAME>(data);                                            \
+    return *this;                                                              \
+  }
+
+/**
+\typedef coordinate_list_t
+\brief An std::list used to communicate coordinates for the window.
+varying pairs may be given. two or four.
+
+
 */
 typedef std::list<short int> coordinate_list_t;
 
+/**
+\class surface_area_t
+
+\brief The main interface object of the system.
+
+
+*/
 class surface_area_t {
 public:
   surface_area_t();
@@ -145,6 +222,8 @@ public:
    these shared pointers are used as a reference local member initialized
    at invoke() public member. The parameters and options are validated as well.
     */
+
+  DECLARE_STREAM_IMPLEMENTATION(surface_area_brush_t)
   DECLARE_STREAM_IMPLEMENTATION(coordinates_t)
 
   DECLARE_STREAM_IMPLEMENTATION(text_render_fast_t)
@@ -193,7 +272,6 @@ public:
   DECLARE_STREAM_IMPLEMENTATION(line_t)
   DECLARE_STREAM_IMPLEMENTATION(hline_t)
   DECLARE_STREAM_IMPLEMENTATION(vline_t)
-  DECLARE_STREAM_IMPLEMENTATION(move_to_t)
   DECLARE_STREAM_IMPLEMENTATION(rectangle_t)
 
   DECLARE_STREAM_IMPLEMENTATION(listener_t)
@@ -235,7 +313,6 @@ public:
 
   surface_area_t &device_offset(double x, double y);
   surface_area_t &device_scale(double x, double y);
-  surface_area_t &surface_brush(painter_brush_t &b);
   void clear(void);
   void notify_complete(void);
 
@@ -283,28 +360,40 @@ private:
 
   typedef std::list<std::shared_ptr<display_unit_t>> display_unit_list_t;
   display_unit_list_t display_list_storage = {};
-  display_unit_list_t::iterator itDL_Processed = display_list.begin();
+  display_unit_list_t::iterator itDL_Processed = display_list_storage.begin();
 
   /// @brief templated function to insert into the display list
   /// and perform initialization based upon the type. The c++ constexpr
   /// conditional compiling functionality is used to trim the run time and
   /// code size.
   template <class T, typename... Args>
-  std::shared_ptr<T> display_list(const Args &... args) {
-    DL_SPIN;
+  std::shared_ptr<T> display_list(const T &obj, const Args &... args) {
+    return display_list<T>(std::make_shared<T>(args...));
+  }
 
-    auto ptr = std::dynamic_pointer_cast<T>(
-        display_list.emplace_back(std::make_shared<T>(args...)));
+#define DL_SPIN while (DL_readwrite.test_and_set(std::memory_order_acquire))
+#define DL_CLEAR DL_readwrite.clear(std::memory_order_release)
+
+  template <class T, typename... Args>
+  std::shared_ptr<T> display_list(const std::shared_ptr<T> ptr,
+                                  const Args &... args) {
+    DL_SPIN;
 
     ptr->invoke(context);
 
     if constexpr (std::is_base_of<drawing_output_t, T>::value)
       context.add_drawable(std::dynamic_pointer_cast<drawing_output_t>(ptr));
 
-    maintain_index(item);
+    maintain_index(ptr);
     DL_CLEAR;
 
     return ptr;
+  }
+
+  void display_list_clear(void) {
+    DL_SPIN;
+    display_list_storage.clear();
+    DL_CLEAR;
   }
 
   std::unordered_map<indirect_index_display_unit_t,
@@ -332,7 +421,7 @@ private:
   std::list<event_handler_t> oncontextmenu = {};
   std::list<event_handler_t> onwheel = {};
 
-  std::list<event_handler_t> &get_event_vector(eventType evtType);
+  std::list<event_handler_t> &get_event_vector(std::type_index evt_type);
 };
 
 } // namespace uxdevice

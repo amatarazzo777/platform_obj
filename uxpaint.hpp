@@ -149,6 +149,7 @@ public:
     PangoColor pango_color = {0, 0, 0};
     bool is_loaded = false;
   };
+  typedef std::shared_ptr<paint_definition_base_t> data_storage_t;
 
   class descriptive_definition_t : public paint_definition_base_t {
   public:
@@ -223,12 +224,12 @@ public:
   public:
     linear_gradient_definition_t(const std::string &_description, double _x0,
                                  double _y0, double _x1, double _y1,
-                                 const color_stops_t &__cs,
+                                 const color_stops_t &_cs,
                                  filter_options_t _filter,
                                  extend_options_t _extend)
         : paint_definition_base_t(paint_definition_class_t::linear_gradient,
                                   _description),
-          x0(_x0), y0(_x0), x1(_x0), y1(_x0), cs(__cs), filter(_filter),
+          x0(_x0), y0(_x0), x1(_x0), y1(_x0), color_stops(_cs), filter(_filter),
           extend(_extend) {}
     linear_gradient_definition_t(const std::string &_description)
         : paint_definition_base_t(paint_definition_class_t::linear_gradient,
@@ -256,16 +257,16 @@ public:
       cairo_set_source(cr, pattern);
     }
 
-    HASH_OBJECT_MEMBERS_CONTAINING_VECTOR(cs, color_stop_t,
-                                          paint_definition_base_t::hash_code(),
-                                          std::type_index(typeid(this)), x0, y0,
-                                          x1, y1, filter, extend, pattern)
+    HASH_OBJECT_MEMBERS(HASH_VECTOR_OBJECTS(color_stops),
+                        paint_definition_base_t::hash_code(),
+                        std::type_index(typeid(this)), x0, y0, x1, y1, filter,
+                        extend, pattern)
 
     double x0 = {};
     double y0 = {};
     double x1 = {};
     double y1 = {};
-    color_stops_t cs = {};
+    color_stops_t color_stops = {};
     filter_options_t filter = {};
     extend_options_t extend = {};
     cairo_pattern_t *pattern = {};
@@ -282,7 +283,8 @@ public:
         : paint_definition_base_t(paint_definition_class_t::radial_gradient,
                                   _description),
           cx0(_cx0), cy0(_cy0), radius0(_radius0), cx1(_cx1), cy1(_cy1),
-          radius1(_radius1), cs(_cs), filter(_filter), extend(_extend) {}
+          radius1(_radius1), color_stops(_cs), filter(_filter),
+          extend(_extend) {}
     ~radial_gradient_definition_t() {
       if (pattern)
         cairo_pattern_destroy(pattern);
@@ -309,11 +311,10 @@ public:
       cairo_set_source(cr, pattern);
     }
 
-    HASH_OBJECT_MEMBERS_CONTAINING_VECTOR(cs, color_stop_t,
-                                          paint_definition_base_t::hash_code(),
-                                          HASH_TYPE_ID_THIS, cx0, cy0, radius0,
-                                          cx1, cy1, radius1, filter, extend,
-                                          pattern)
+    HASH_OBJECT_MEMBERS(HASH_VECTOR_OBJECTS(color_stops),
+                        paint_definition_base_t::hash_code(), HASH_TYPE_ID_THIS,
+                        cx0, cy0, radius0, cx1, cy1, radius1, filter, extend,
+                        pattern)
 
     double cx0 = {};
     double cy0 = {};
@@ -321,7 +322,7 @@ public:
     double cx1 = {};
     double cy1 = {};
     double radius1 = {};
-    color_stops_t cs = {};
+    color_stops_t color_stops = {};
     filter_options_t filter = {};
     extend_options_t extend = {};
     cairo_pattern_t *pattern = {};
@@ -457,10 +458,8 @@ private:
   bool patch(const std::string &s);
 
 public:
-  HASH_OBJECT_MEMBERS(std::type_index(typeid(this)),
-                      HASH_OBJECT_MEMBER_SHARED_PTR(data_storage))
+  HASH_OBJECT_MEMBERS(std::type_index(typeid(this)), data_storage)
 
-  typedef std::shared_ptr<paint_definition_base_t> data_storage_t;
   data_storage_t data_storage = {};
 };
 

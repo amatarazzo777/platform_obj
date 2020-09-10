@@ -29,6 +29,91 @@ constructor, copy, assignment, and move.
 
 #pragma once
 
+/**
+\internal
+\def ERROR_CHECK(obj)
+Checks the state of the object to determine the error status. These are
+typically reported using an error code. The context object contains all of
+the error handling and capture of error text. When errors occur, they are placed
+into a list. The function bool error_state(void) can be used to
+determine if errors exist.
+
+
+Generally the two macro provide necessary functionality. ERROR_CHECK and
+ERROR_DESC. ERROR_CHECK may be used to check objects and report errors. It
+checks and adds them automatically. The ERROR_DESC(std::string_view) can be used
+to create an error condition for a named description.
+
+std::string error_text(bool bclear) may be used to get a list of the error
+descriptions. All error descriptions are concatenated and returned. Optionally
+sending a boolean value of true to the function will clear the status.
+
+*/
+
+#define ERROR_CHECK(obj)                                                       \
+  {                                                                            \
+    cairo_status_t stat = context.error_check(obj);                            \
+    if (stat)                                                                  \
+      context.error_state(__func__, __LINE__, __FILE__, stat);                 \
+  }
+
+#define ERROR_DESC(s)                                                          \
+  context.error_state(__func__, __LINE__, __FILE__, std::string_view(s));
+
+#define ERRORS_SPIN while (lockErrors.test_and_set(std::memory_order_acquire))
+
+#define ERRORS_CLEAR lockErrors.clear(std::memory_order_release);
+
+#define DECLARE_ERROR_HANDLING                                                 \
+  std::atomic_flag lockErrors = ATOMIC_FLAG_INIT;                              \
+  std::list<std::string> _errors = {};                                         \
+                                                                               \
+  cairo_status_t error_check(cairo_surface_t *sur) {                           \
+    return cairo_surface_status(sur);                                          \
+  }                                                                            \
+  cairo_status_t error_check(cairo_t *cr) { return cairo_status(cr); }         \
+                                                                               \
+  void error_state(const std::string_view &sfunc, const std::size_t linenum,   \
+                   const std::string_view &sfile, const cairo_status_t stat) { \
+    error_state(sfunc, linenum, sfile,                                         \
+                std::string_view(cairo_status_to_string(stat)));               \
+  }                                                                            \
+                                                                               \
+  void error_state(const std::string_view &sfunc, const std::size_t linenum,   \
+                   const std::string_view &sfile, const std::string &desc) {   \
+    error_state(sfunc, linenum, sfile, std::string_view(desc));                \
+  }                                                                            \
+                                                                               \
+  void error_state(const std::string_view &sfunc, const std::size_t linenum,   \
+                   const std::string_view &sfile,                              \
+                   const std::string_view &desc) {                             \
+    ERRORS_SPIN;                                                               \
+    std::stringstream ss;                                                      \
+    ss << sfile << "\n" << sfunc << "(" << linenum << ") -  " << desc << "\n"; \
+    _errors.emplace_back(ss.str());                                            \
+                                                                               \
+    ERRORS_CLEAR;                                                              \
+  }                                                                            \
+                                                                               \
+  bool error_state(void) {                                                     \
+    ERRORS_SPIN;                                                               \
+    bool b = !_errors.empty();                                                 \
+    ERRORS_CLEAR;                                                              \
+    return b;                                                                  \
+  }                                                                            \
+                                                                               \
+  std::string error_text(bool bclear) {                                        \
+    ERRORS_SPIN;                                                               \
+    std::string ret;                                                           \
+    for (auto s : _errors)                                                     \
+      ret += s;                                                                \
+    if (bclear)                                                                \
+      _errors.clear();                                                         \
+                                                                               \
+    ERRORS_CLEAR;                                                              \
+    return ret;                                                                \
+  }
+
 // from -
 // https://stackoverflow.com/questions/2590677/how-do-i-combine-hash-values-in-c0x
 namespace uxdevice {
@@ -79,95 +164,42 @@ logic. Hashes each of the listed values within the macro parameters.
 */
 #define HASH_OBJECT_MEMBERS(...)                                               \
   std::size_t hash_code(void) const noexcept {                                 \
-    std::size_t value = {};                                                    \
-    hash_combine(value, __VA_ARGS__);                                          \
-    return value;                                                              \
+    std::size_t __value = {};                                                  \
+    hash_combine(__value, __VA_ARGS__);                                        \
+    return __value;                                                            \
   }                                                                            \
   std::size_t __used_hash_code = {};                                           \
   void state_hash_code(void) { __used_hash_code = hash_code(); }               \
   bool is_different_hash() { return hash_code() != __used_hash_code; }
 
-#define HASH_OBJECT_MEMBER_SHARED_PTR(PTR_VAR)                                 \
-  PTR_VAR ? PTR_VAR->hash_code() : std::type_index(typeid(PTR_VAR)).hash_code()
+#define DECLARE_HASH_MEMBERS_INTERFACE                                         \
+  std::size_t hash_code(void) const noexcept;                                  \
+  std::size_t __used_hash_code = {};                                           \
+  void state_hash_code(void) { __used_hash_code = hash_code(); }               \
+  bool is_different_hash() { return hash_code() != __used_hash_code; }
 
-#define HASH_OBJECT_MEMBERS_CONTAINING_VECTOR(VECTOR_NAME, CLASS_NAME, ...)    \
-  std::size_t hash_code(void) const noexcept {                                 \
-    std::size_t value = {};                                                    \
-    std::for_each(VECTOR_NAME.begin(), VECTOR_NAME.end(),                      \
-                  [&value](const CLASS_NAME &n) { hash_combine(value, n); });  \
-    hash_combine(value, __VA_ARGS__);                                          \
-    return value;                                                              \
+#define DECLARE_HASH_MEMBERS_IMPLEMENTATION(CLASS_NAME, ...)                   \
+  std::size_t CLASS_NAME## ::hash_code(void) const noexcept {                  \
+    std::size_t __value = {};                                                  \
+    hash_combine(__value, __VA_ARGS__);                                        \
+    return __value;                                                            \
   }
 
-/* the macro creates the stream interface for both constant references
-and shared pointers as well as establishes the prototype for the insertion
-function. The implementation is not standard and will need definition.
-This is the route for formatting objects that accept numerical data and process
-to human readable values. Modern implementations include the processing of size
-information. Yet within the c++ implementation, the data structures that report
-and hold information is elaborate.
-*/
-
-#define DECLARE_STREAM_INTERFACE(CLASS_NAME)                                   \
-public:                                                                        \
-  surface_area_t &operator<<(const CLASS_NAME &data) {                         \
-    stream_input(data);                                                        \
-    return *this;                                                              \
-  }                                                                            \
-  surface_area_t &operator<<(const std::shared_ptr<CLASS_NAME> data) {         \
-    stream_input(data);                                                        \
-    return *this;                                                              \
-  }                                                                            \
-                                                                               \
-private:                                                                       \
-  surface_area_t &stream_input(const CLASS_NAME &_val);                        \
-  surface_area_t &stream_input(const std::shared_ptr<CLASS_NAME> _val);
-
-/*
-The macro provides a creation of necessary input stream routines that
-maintains the display lists. These routines are private within the class
-and are activated by the << operator. These are the underlying operations.
+/**
+\internal
+\def HASH_VECTOR_OBJECTS
+\param VARIABLE_NAME
+\brief invokes a lambda that calls the hash code member of the objects.
+Objects declared with the macros in uxdisplayunitbase.hpp have these functions.
 
 */
-#define DECLARE_STREAM_IMPLEMENTATION(CLASS_NAME)                              \
-public:                                                                        \
-  surface_area_t &operator<<(const CLASS_NAME &data) {                         \
-    display_list<CLASS_NAME>(data);                                            \
-    return *this;                                                              \
-  }                                                                            \
-  surface_area_t &operator<<(const std::shared_ptr<CLASS_NAME> data) {         \
-    display_list<CLASS_NAME>(data);                                            \
-    return *this;                                                              \
-  }
-
-#define DECLARE_STREAM_IMPLEMENTATION(CLASS_NAME)                              \
-public:                                                                        \
-  surface_area_t &operator<<(const CLASS_NAME &data) {                         \
-    stream_input(data);                                                        \
-    return *this;                                                              \
-  }                                                                            \
-  surface_area_t &operator<<(const std::shared_ptr<CLASS_NAME> data) {         \
-    stream_input(data);                                                        \
-    return *this;                                                              \
-  }                                                                            \
-                                                                               \
-private:                                                                       \
-  surface_area_t &stream_input(const CLASS_NAME &_val) {                       \
-    stream_input(make_shared<CLASS_NAME>(_val));                               \
-    return *this;                                                              \
-  }                                                                            \
-  surface_area_t &stream_input(const shared_ptr<CLASS_NAME> _val) {            \
-    DL_SPIN;                                                                   \
-    auto item = display_list.emplace_back(_val);                               \
-    item->invoke(context);                                                     \
-    DL_CLEAR;                                                                  \
-    maintain_index(item);                                                      \
-    return *this;                                                              \
-  }
-
-
-
-
+#define HASH_VECTOR_OBJECTS(VARIABLE_NAME)                                     \
+  std::invoke([&]() {                                                          \
+    std::size_t __value_vec = {};                                              \
+    for (auto n : VARIABLE_NAME)                                               \
+      hash_combine(__value_vec, n);                                            \
+    return __value_vec;                                                        \
+  })
 
 /**
 \internal
@@ -179,24 +211,48 @@ private:                                                                       \
 std::any however can be correlated directly back into the type.
 
 */
-  typedef std::unordered_map<std::type_index, std::any> unit_memory_storage_t;
+typedef std::function<std::size_t(void)> hash_function_t;
+typedef std::tuple<std::any, hash_function_t> unit_memory_storage_object_t;
+typedef std::unordered_map<std::type_index, unit_memory_storage_object_t>
+    unit_memory_storage_t;
 
-#define DECLARE_TYPE_INDEX_MEMORY(FUNCTION_NAME)             \
-  unit_memory_storage_t FUNCTION_NAME##_storage = {};                                     \
+#define DECLARE_TYPE_INDEX_MEMORY(FUNCTION_NAME)                               \
+  unit_memory_storage_t FUNCTION_NAME##_storage = {};                          \
                                                                                \
   template <typename T> void FUNCTION_NAME(const std::shared_ptr<T> ptr) {     \
     auto ti = std::type_index(typeid(T));                                      \
-     FUNCTION_NAME##_storage[ti] = ptr;                                                    \
+    FUNCTION_NAME##_storage[ti] =                                              \
+        std::make_tuple<unit_memory_storage_object_t>(                         \
+            ptr, [&]() { return ptr->hash_code(); });                          \
   }                                                                            \
                                                                                \
-  template <typename T> auto FUNCTION_NAME(void)->const std::shared_ptr<T> {   \
+  template <typename T>                                                        \
+  auto FUNCTION_NAME(void) const noexcept->const std::shared_ptr<T> {          \
     std::shared_ptr<T> ptr = {};                                               \
     auto ti = std::type_index(typeid(T));                                      \
-    auto item =  FUNCTION_NAME##_storage.find(ti);                                         \
-    if (item !=  FUNCTION_NAME##_storage.end()) {                                          \
-      ptr = std::any_cast<std::shared_ptr<T>>(item);                           \
+    auto item = FUNCTION_NAME##_storage.find(ti);                              \
+    if (item != FUNCTION_NAME##_storage.end()) {                               \
+      auto obj_data = std::get<std::any>(item->second);                        \
+      ptr = std::any_cast<std::shared_ptr<T>>(obj_data);                       \
     }                                                                          \
     return ptr;                                                                \
-  }
-
-
+  }                                                                            \
+                                                                               \
+  std::size_t FUNCTION_NAME##_hash_code_all(void) const noexcept {             \
+    std::size_t value = {};                                                    \
+    for (auto &n : FUNCTION_NAME##_storage) {                                  \
+      hash_combine(value, std::get<hash_function_t>(n.second)());              \
+    }                                                                          \
+    return value;                                                              \
+  }                                                                            \
+                                                                               \
+  template <typename T> auto FUNCTION_NAME##_hash_code(void)->std::size_t {    \
+    std::size_t value = {};                                                    \
+    auto ti = std::type_index(typeid(T));                                      \
+    auto item = FUNCTION_NAME##_storage.find(ti);                              \
+    if (item != FUNCTION_NAME##_storage.end()) {                               \
+      value = std::get<hash_function_t>(item->second)();                       \
+    }                                                                          \
+    return value;                                                              \
+  }                                                                            \
+  void FUNCTION_NAME##_clear(void) { FUNCTION_NAME##_storage.clear(); }

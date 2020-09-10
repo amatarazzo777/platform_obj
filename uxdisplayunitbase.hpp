@@ -252,10 +252,10 @@ public:
       : display_unit_t(other),
         internal_buffer(std::move(other.internal_buffer)),
 
-        fn_draw(std::move(other.fn_draw)),
-        fn_draw_clipped(std::move(other.fn_draw_clipped)),
         fn_cache_surface(std::move(other.fn_cache_surface)),
         fn_base_surface(std::move(other.fn_base_surface)),
+        fn_draw(std::move(other.fn_draw)),
+        fn_draw_clipped(std::move(other.fn_draw_clipped)),
 
         options(std::move(other.options)),
         ink_rectangle(std::move(other.ink_rectangle)),
@@ -327,6 +327,23 @@ STD_HASHABLE(uxdevice::drawing_output_t);
 
 /**
 \internal
+\def TYPED_INDEX_INTERFACE(CLASS_NAME)
+\brief adds an index() method while returning
+the reference to *this in continuation syntax. This provides
+the capability to index in the same expression.
+*/
+#define TYPED_INDEX_IMPLEMENTATION(CLASS_NAME)                                 \
+  CLASS_NAME &index(const std::string &_k) {                                   \
+    key = _k;                                                                  \
+    return *this;                                                              \
+  }                                                                            \
+  CLASS_NAME &index(const std::size_t &_k) {                                   \
+    key = _k;                                                                  \
+    return *this;                                                              \
+  }
+
+/**
+\internal
 \def DECLARE_PAINTER_BRUSH_DISPLAY_UNIT(CLASS_NAME)
 \brief creates a painter brush object that is also a display unit.
 class inherits publically display_unit_t and painter_brush_t
@@ -343,9 +360,9 @@ class inherits publically display_unit_t and painter_brush_t
       return *this;                                                            \
     }                                                                          \
     CLASS_NAME(const CLASS_NAME &other)                                        \
-        : painter_brush_t(other), display_unit_t(other) {}                     \
+        : display_unit_t(other), painter_brush_t(other) {}                     \
     CLASS_NAME(CLASS_NAME &&other)                                             \
-        : painter_brush_t(other), display_unit_t(other) {}                     \
+        : display_unit_t(other), painter_brush_t(other) {}                     \
     void invoke(display_context_t &context);                                   \
     void emit(cairo_t *cr) {                                                   \
       painter_brush_t::emit(cr);                                               \
@@ -363,14 +380,14 @@ class inherits publically display_unit_t and painter_brush_t
     TYPED_INDEX_IMPLEMENTATION(CLASS_NAME)                                     \
   };                                                                           \
   }                                                                            \
-  STD_HASHABLE(uxdevice::CLASS_NAME)
+  STD_HASHABLE(uxdevice::CLASS_NAME);
 
 /**
 \internal
 \def DECLARE_MARKER_DISPLAY_UNIT(CLASS_NAME)
 \brief declares a class that marks a unit but does not store a value.
-This is useful for switch and state logic. When the ite is present, the
-invoke method is called. class inherits publically display_unit_t
+This is useful for switch and state logic. When the item is present, the
+invoke method is called. class inherits publicly display_unit_t
 */
 #define DECLARE_MARKER_DISPLAY_UNIT(CLASS_NAME)                                \
   namespace uxdevice {                                                         \
@@ -381,6 +398,7 @@ invoke method is called. class inherits publically display_unit_t
                                                                                \
     CLASS_NAME &operator=(CLASS_NAME &&other) noexcept {                       \
       display_unit_t::operator=(other);                                        \
+      return *this;                                                            \
     }                                                                          \
                                                                                \
     CLASS_NAME &operator=(const CLASS_NAME &other) {                           \
@@ -388,14 +406,11 @@ invoke method is called. class inherits publically display_unit_t
       return *this;                                                            \
     }                                                                          \
                                                                                \
-    CLASS_NAME(CLASS_NAME &&other) noexcept {                                  \
-      display_unit_t(other);                                                   \
-      return *this;                                                            \
-    }                                                                          \
-    CLASS_NAME(const CLASS_NAME &other) { display_unit_t(other); }             \
+    CLASS_NAME(CLASS_NAME &&other) noexcept : display_unit_t(other) {}         \
+    CLASS_NAME(const CLASS_NAME &other) : display_unit_t(other) {}             \
                                                                                \
     virtual ~CLASS_NAME() {}                                                   \
-    void invoke(display_unit_t &);                                             \
+    virtual void invoke(display_context_t &);                                  \
                                                                                \
     TYPED_INDEX_IMPLEMENTATION(CLASS_NAME)                                     \
     HASH_OBJECT_MEMBERS(display_unit_t::hash_code(), HASH_TYPE_ID_THIS)        \
@@ -405,7 +420,7 @@ invoke method is called. class inherits publically display_unit_t
 
 /**
 \internal
-\def DECLARE_STORING_EMITTER_DISPLAY_UNIT(CLASS_NAME, STORAGE_TYPE)
+\def DECLARE_STORAGE_EMITTER_DISPLAY_UNIT(CLASS_NAME, STORAGE_TYPE)
 \param CLASS_NAME - the name the display unit should assume.
 \param STORAGE_TYPE - the storage class or trivial type.
 
@@ -413,25 +428,25 @@ invoke method is called. class inherits publically display_unit_t
 public method is called. The class has a public member named "value" of the
 given type within the second macro parameter.
 */
-#define DECLARE_STORING_EMITTER_DISPLAY_UNIT(CLASS_NAME, STORAGE_TYPE)         \
+#define DECLARE_STORAGE_EMITTER_DISPLAY_UNIT(CLASS_NAME, STORAGE_TYPE)         \
   namespace uxdevice {                                                         \
   using CLASS_NAME = class CLASS_NAME : public display_unit_t,                 \
         std::enable_shared_from_this<CLASS_NAME> {                             \
   public:                                                                      \
-    using STORAGE_TYPE::STORAGE_TYPE;                                          \
+    CLASS_NAME() : value(STORAGE_TYPE{}) {}                                    \
+    CLASS_NAME(const STORAGE_TYPE &o) : value(o) {}                            \
     CLASS_NAME &operator=(const CLASS_NAME &other) {                           \
       display_unit_t::operator=(other);                                        \
       return *this;                                                            \
     }                                                                          \
     CLASS_NAME &operator=(CLASS_NAME &&other) noexcept {                       \
       index_by_t::operator=(other);                                            \
+      return *this;                                                            \
     }                                                                          \
     CLASS_NAME(const CLASS_NAME &other)                                        \
         : display_unit_t(other), value(other.value) {}                         \
     CLASS_NAME(CLASS_NAME &&other)                                             \
-    noexcept                                                                   \
-        : display_unit_t(other), value(std::move(other.value)),                \
-          display_unit_t(other) {}                                             \
+    noexcept : display_unit_t(other), value(other.value) {}                    \
                                                                                \
     virtual ~CLASS_NAME() {}                                                   \
                                                                                \
@@ -439,6 +454,47 @@ given type within the second macro parameter.
                                                                                \
     TYPED_INDEX_IMPLEMENTATION(CLASS_NAME)                                     \
     HASH_OBJECT_MEMBERS(display_unit_t::hash_code(), HASH_TYPE_ID_THIS, value) \
+                                                                               \
+    STORAGE_TYPE value;                                                        \
+  };                                                                           \
+  }                                                                            \
+  STD_HASHABLE(uxdevice::CLASS_NAME);
+
+/**
+\internal
+\def DECLARE_STORAGE_EMITTER_DISPLAY_UNIT(CLASS_NAME, STORAGE_TYPE)
+\param CLASS_NAME - the name the display unit should assume.
+\param STORAGE_TYPE - the storage class or trivial type.
+
+\brief provides the flexibility to store associated data. the invoke
+public method is called. The class has a public member named "value" of the
+given type within the second macro parameter.
+*/
+#define DECLARE_STORAGE_EMITTER_DRAWING_FUNCTION(CLASS_NAME, STORAGE_TYPE)     \
+  namespace uxdevice {                                                         \
+  using CLASS_NAME = class CLASS_NAME : public drawing_output_t,               \
+        std::enable_shared_from_this<CLASS_NAME> {                             \
+  public:                                                                      \
+    CLASS_NAME &operator=(const CLASS_NAME &other) {                           \
+      drawing_output_t::operator=(other);                                      \
+      return *this;                                                            \
+    }                                                                          \
+    CLASS_NAME &operator=(CLASS_NAME &&other) noexcept {                       \
+      index_by_t::operator=(other);                                            \
+      return *this;                                                            \
+    }                                                                          \
+    CLASS_NAME(const CLASS_NAME &other)                                        \
+        : drawing_output_t(other), value(other.value) {}                       \
+    CLASS_NAME(CLASS_NAME &&other)                                             \
+    noexcept : drawing_output_t(other), value(other.value) {}                  \
+                                                                               \
+    virtual ~CLASS_NAME() {}                                                   \
+                                                                               \
+    void invoke(display_context_t &context);                                   \
+                                                                               \
+    TYPED_INDEX_IMPLEMENTATION(CLASS_NAME)                                     \
+    HASH_OBJECT_MEMBERS(drawing_output_t::hash_code(), HASH_TYPE_ID_THIS,      \
+                        value)                                                 \
                                                                                \
     STORAGE_TYPE &value;                                                       \
   };                                                                           \
@@ -457,21 +513,19 @@ the based class.
   using CLASS_NAME = class CLASS_NAME : public listener_t,                     \
         std::enable_shared_from_this<CLASS_NAME> {                             \
   public:                                                                      \
-    CLASS_NAME(const event_handler_t &_evtDispatcher)                          \
-        : listener_t(std::make_tuple<std::type_info, event_handler>(           \
-              std::type_info(this), _evtDispatcher)) {}                        \
+    CLASS_NAME(const event_handler_t &_dispatch_event)                         \
+        : listener_t(listener_storage_t{std::type_index(typeid(this)),         \
+                                        _dispatch_event}) {}                   \
     CLASS_NAME &operator=(const CLASS_NAME &other) {                           \
       listener_t::operator=(other);                                            \
       return *this;                                                            \
     }                                                                          \
     CLASS_NAME &operator=(CLASS_NAME &&other) noexcept {                       \
       listener_t::operator=(other);                                            \
+      return *this;                                                            \
     }                                                                          \
     CLASS_NAME(const CLASS_NAME &other) : listener_t(other) {}                 \
-    CLASS_NAME(CLASS_NAME &&other)                                             \
-    noexcept                                                                   \
-        : display_unit_t(other), value(std::move(other.value)),                \
-          display_unit_t(other) {}                                             \
+    CLASS_NAME(CLASS_NAME &&other) noexcept : listener_t(other) {}             \
                                                                                \
     virtual ~CLASS_NAME() {}                                                   \
                                                                                \

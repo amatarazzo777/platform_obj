@@ -21,15 +21,6 @@
 \file uxdisplayunits.hpp
 \date 9/7/20
 \version 1.0
-\brief
-*/
-
-/**
-\file uxdisplay_unit_ts.cpp
-
-\author Anthony Matarazzo
-
-\date 5/12/20
 \version 1.0
 
 \brief The modules extends the uxdevice namespace. The objects
@@ -46,108 +37,6 @@ shading or texturing derive and publish the painter_brush_t class interface.
 
 #include "uxdevice.hpp"
 
-// error check for this file
-#ifdef ERROR_CHECK
-#undef ERROR_CHECK
-#endif // ERROR_CHECK
-
-#define ERROR_CHECK(obj)                                                       \
-  {                                                                            \
-    cairo_status_t stat = context.error_check(obj);                            \
-    if (stat)                                                                  \
-      context.error_state(__func__, __LINE__, __FILE__, stat);                 \
-  }
-#define ERROR_DRAW_PARAM(s)                                                    \
-  context.error_state(__func__, __LINE__, __FILE__, std::string_view(s));      \
-  error(s);
-
-#define ERROR_DESC(s)                                                          \
-  context.error_state(__func__, __LINE__, __FILE__, std::string_view(s));
-
-void uxdevice::drawing_output_t::invoke(cairo_t *cr) {
-
-  for (auto &fn : options)
-    fn->invoke(cr);
-  is_processed = true;
-  state_hash_code();
-}
-
-void uxdevice::drawing_output_t::intersect(cairo_rectangle_t &r) {
-  if (!has_ink_extents)
-    return;
-  cairo_rectangle_int_t rInt = {(int)r.x, (int)r.y, (int)r.width,
-                                (int)r.height};
-  cairo_region_t *rectregion = cairo_region_create_rectangle(&rInt);
-  cairo_rectangle_int_t objrect = {ink_rectangle.x, ink_rectangle.y,
-                                   ink_rectangle.width, ink_rectangle.height};
-
-  overlap = cairo_region_contains_rectangle(rectregion, &objrect);
-  if (overlap == CAIRO_REGION_OVERLAP_PART) {
-    cairo_region_t *dst = cairo_region_create_rectangle(&objrect);
-    cairo_region_intersect(dst, rectregion);
-    cairo_region_get_extents(dst, &intersection);
-    intersection_double = {(double)intersection.x, (double)intersection.y,
-                           (double)intersection.width,
-                           (double)intersection.height};
-    cairo_region_destroy(dst);
-  }
-
-  cairo_region_destroy(rectregion);
-}
-void uxdevice::drawing_output_t::intersect(context_cairo_region_t &rectregion) {
-  if (!has_ink_extents)
-    return;
-
-  cairo_region_t *dst = cairo_region_create_rectangle(&ink_rectangle);
-  cairo_region_intersect(dst, rectregion._ptr);
-  cairo_region_get_extents(dst, &intersection);
-  intersection_double = {(double)intersection.x, (double)intersection.y,
-                         (double)intersection.width,
-                         (double)intersection.height};
-  cairo_region_destroy(dst);
-}
-
-void uxdevice::drawing_output_t::evaluate_cache(display_context_t &context) {
-  return;
-  if (bRenderBufferCached) {
-    last_render_time = std::chrono::high_resolution_clock::now();
-    if (oncethread)
-      oncethread.reset();
-    return;
-  }
-
-  // evaluate Rendering from cache
-  if (first_time_rendered) {
-    first_time_rendered = false;
-
-  } else if (!oncethread) {
-    auto currentPoint = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> diff =
-        currentPoint - last_render_time;
-    // if rendering requests are for more than 2 frames
-    bool useCache = diff.count() < context.cache_threshold;
-    if (useCache) {
-      oncethread = std::make_unique<std::thread>(
-          [=, &context]() { fn_cache_surface(context); });
-      oncethread->detach();
-    }
-  }
-  last_render_time = std::chrono::high_resolution_clock::now();
-}
-
-void uxdevice::option_function_object_t::invoke(display_context_t &context) {
-  if (std::holds_alternative<cairo_function_t>(_data)) {
-    auto &func = std::get<cairo_function_t>(_data);
-    auto optType = func.target_type().hash_code();
-    context.unit_memory.drawing_options_fn.remove_if([=](auto &n) {
-      auto &funcTarget = std::get<cairo_function_t>(n->_data);
-      return funcTarget.target_type().hash_code() == optType;
-    });
-    context.unit_memory.drawing_options_fn.emplace_back(this);
-  }
-  state_hash_code();
-}
-
 void uxdevice::text_render_fast_t::invoke(display_context_t &context) {
   context.unit_memory<text_rendering_path_t>(false);
 }
@@ -158,15 +47,84 @@ void uxdevice::text_render_path_t::invoke(display_context_t &context) {
 
 /**
 
-\class text_color_t
-\brief controls the color of text
+\fn surface_brush(painter_brush_t &b)
+\param painter_brush_t &b
 
-\details The text_outline_t and text_fill_t when present take precedent over
-this class. The text_fill_off_t,text_outline_off_t,text_shadow_off_t can be
-used.
+\brief Sets the background brush of the surface window.
 
-*/
-void text_color_t::invoke(display_context_t &context) {
+\details WHen rendering occurs, this is painted as the background.
+For flexibility, the background may be a color, gradient or image.
+The painter_brush_t object interface is used.
+
+
+ */
+DECLARE_HASH_MEMBERS_IMPLEMENTATION(
+    textual_render_storage_t, HASH_TYPE_ID_THIS,
+    pango_layout_get_serial(layout), ink_rect.x, ink_rect.y, ink_rect.width,
+    ink_rect.height, matrix.hash_code(),
+    rendering_parameter<text_color_t>()->hash_code(),
+    rendering_parameter<text_outline_t>()->hash_code(),
+    rendering_parameter<text_fill_t>()->hash_code(),
+    rendering_parameter<text_shadow_t>()->hash_code(),
+    rendering_parameter<text_alignment_t>()->hash_code(),
+    rendering_parameter<text_indent_t>()->hash_code(),
+    rendering_parameter<text_ellipsize_t>()->hash_code(),
+    rendering_parameter<text_line_space_t>()->hash_code(),
+    rendering_parameter<text_tab_stops_t>()->hash_code(),
+    rendering_parameter<text_font_t>()->hash_code(),
+    rendering_parameter<text_data_t>()->hash_code(),
+    rendering_parameter<coordnates_t>()->hash_code(),
+    rendering_parameter<antialias_t>()->hash_code(),
+    rendering_parameter<line_width_t>()->hash_code(),
+    rendering_parameter<line_cap_t>()->hash_code(),
+    rendering_parameter<line_join_t>()->hash_code(),
+    rendering_parameter<miter_limit_t>()->hash_code(),
+    rendering_parameter<line_dashes_t>()->hash_code(),
+    rendering_parameter<tollerance_t>()->hash_code(),
+    rendering_parameter<graphic_operator_t>()->hash_code())
+
+DECLARE_HASH_MEMBERS_IMPLEMENTATION(image_block_storage_t, HASH_TYPE_ID_THIS,
+                                    is_SVG,
+                                    coordinates ? coordinates->hash_code() : 0)
+
+/**
+
+\fn surface_brush(painter_brush_t &b)
+\param painter_brush_t &b
+
+\brief Sets the background brush of the surface window.
+
+\details WHen rendering occurs, this is painted as the background.
+For flexibility, the background may be a color, gradient or image.
+The painter_brush_t object interface is used.
+
+
+ */
+surface_area_t &
+uxdevice::surface_area_brush_t::invoke(display_context_t &context) {
+  context.unit_memory<surface_area_brush_t>(shared_from_this());
+  context.surface_brush(b);
+  return *this;
+  `
+}
+void uxdevice::surface_area_brush_t::emit(display_context_t &context) {
+  value.emit(context.cr);
+}
+
+surface_area_title_t
+
+    /**
+
+    \class text_color_t
+    \brief controls the color of text
+
+    \details The text_outline_t and text_fill_t when present take precedent over
+    this class. The text_fill_off_t,text_outline_off_t,text_shadow_off_t can be
+    used.
+
+    */
+    void
+    text_color_t::invoke(display_context_t &context) {
   context.unit_memory<text_color_t>(shared_from_this());
 }
 void text_color_t::emit(display_context_t &context) { value.emit(context.cr); }
@@ -694,9 +652,11 @@ void uxdevice::textual_render_storage_t::invoke(display_context_t &context) {
   rendering_parameter_storage = context.unit_memory_storage;
 
   // check the context parameters before operating
-  if (!((rendering_parameter<text_color_t>() || rendering_parameter<text_outline_t>() ||
+  if (!((rendering_parameter<text_color_t>() ||
+         rendering_parameter<text_outline_t>() ||
          rendering_parameter<text_fill_t>()) &&
-        rendering_parameter<coordinates_t>() && rendering_parameter<text_data_t>() &&
+        rendering_parameter<coordinates_t>() &&
+        rendering_parameter<text_data_t>() &&
         rendering_parameter<text_font>())) {
     const char *s =
         "A draw text object must include the following "
@@ -1308,9 +1268,9 @@ void fill_path_t::invoke(display_context_t &context) {
 
  */
 void stroke_path_t::invoke(display_context_t &context) {
-  std::get<0>(value).emit(context.cr);
+  stroke_fill_path_storage_t value.stroke_brush.emit(context.cr);
   cairo_stroke_preserve(context.cr);
-  std::get < 01(value).emit(context.cr);
+  value.fill_brush.emit(context.cr);
   cairo_fill(context.cr);
 }
 
