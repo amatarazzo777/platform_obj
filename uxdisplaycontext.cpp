@@ -153,7 +153,7 @@ void uxdevice::display_context_t::render(void) {
 
   // rectangle of area needs painting background first.
   // these are subareas perhaps multiples exist because of resize
-  // coordinates_t. The information is generated from the
+  // coordinate_t. The information is generated from the
   // paint dispatch event. When the window is opened
   // render work will contain entire window
 
@@ -167,7 +167,7 @@ void uxdevice::display_context_t::render(void) {
     context_cairo_region_t r = _regions.front();
     _regions.pop_front();
     REGIONS_CLEAR;
-    // os surface requests are ideally full screen block coordinates_t
+    // os surface requests are ideally full screen block coordinate_t
     // when multiples exist, such as clear, set surface as well as
     // objects that fit within the larger bounds,
     // simply continue as there is no redraw needed
@@ -349,7 +349,7 @@ void uxdevice::display_context_t::clear(void) {
 
   offsetx = 0;
   offsety = 0;
-  unit_memory = {};
+  unit_memory_storage.clear();
 
   REGIONS_CLEAR;
 
@@ -376,7 +376,7 @@ void uxdevice::display_context_t::surface_brush(painter_brush_t &b) {
 /**
 \internal
 \brief The routine accepts a drawing output object and adds the
-associated render work with the object's coordinates_t.
+associated render work with the object's coordinate_t.
 note stateNotifyComplete must be called after this to inform the renderer
 there is work.
 */
@@ -438,8 +438,7 @@ bool uxdevice::display_context_t::state(void) {
   // determine if any on screen elements, or their attribute shared pointers
   // have changed.
   for (auto n : viewport_on) {
-    if (n->is_different_hash())
-      add_drawable(n);
+    // if (n->is_different_hash())      add_drawable(n);
   }
 
   REGIONS_SPIN;

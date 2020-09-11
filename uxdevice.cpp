@@ -141,7 +141,7 @@ uxdevice::surface_area_t::get_event_vector(std::type_index evtType) {
           {std::type_index(typeid(listen_mouseenter_t)), onmouseenter},
           {std::type_index(typeid(listen_mouseleave_t)), onmouseleave},
           {std::type_index(typeid(listen_mousemove_t)), onmousemove},
-          {std::type_index(typeid(listen_mousedownt)), onmousedown},
+          {std::type_index(typeid(listen_mousedown_t)), onmousedown},
           {std::type_index(typeid(listen_mouseup_t)), onmouseup},
           {std::type_index(typeid(listen_click_t)), onclick},
           {std::type_index(typeid(listen_dblclick_t)), ondblclick},
@@ -149,20 +149,6 @@ uxdevice::surface_area_t::get_event_vector(std::type_index evtType) {
           {std::type_index(typeid(listen_wheel_t)), onwheel}};
   auto it = eventTypeMap.find(evtType);
   return it->second;
-}
-/**
-\internal
-\brief
-The function will return the address of a std::function for the purposes
-of equality testing. Function from
-https://stackoverflow.com/questions/20833453/comparing-stdfunctions-for-equality
-
-*/
-template <typename T, typename... U>
-size_t getAddress(std::function<T(U...)> f) {
-  typedef T(fnType)(U...);
-  fnType **fnPointer = f.template target<fnType *>();
-  return (size_t)*fnPointer;
 }
 
 #if 0
@@ -209,14 +195,13 @@ uxdevice::surface_area_t::surface_area_t(
   open_window(coordinate_list_t{}, surface_area_title, painter_brush_t{},
               event_handler_t{});
 
-  using text_rendering_path_t = bool;
   set_surface_defaults();
 }
 
 /**
 \overload
 \fn surface_area_t() default window constructor.
-\param const coordinate_list_t &coordinates_t - coordinates and
+\param const coordinate_list_t &coordinate_t - coordinates and
    dimensions of the window.
 
 \brief Opens a default window approximately 60% of window view area
@@ -224,9 +209,8 @@ with the title given. Default background, without an external window
 event handler.
 
 */
-uxdevice::surface_area_t::surface_area_t(
-    const coordinate_list_t &coordinates_t) {
-  open_window(coordinates, DEFAULT_WINDOW_TITLE, surface_background_brush,
+uxdevice::surface_area_t::surface_area_t(const coordinate_list_t &coordinates) {
+  open_window(coordinates, DEFAULT_WINDOW_TITLE, painter_brush_t{},
               event_handler_t{});
 }
 /**
@@ -256,9 +240,9 @@ event handler.
 
 */
 uxdevice::surface_area_t::surface_area_t(
-    const coordinate_list_t &coordinates_t,
+    const coordinate_list_t &coordinates,
     const std::string &surface_area_title) {
-  open_window(coordinates, window_title, surface_background_brush,
+  open_window(coordinates, surface_area_title, painter_brush_t{},
               event_handler_t{});
 }
 
@@ -275,10 +259,10 @@ with the title given. Default background, without an external window
 event handler.
 
 */
-uxdevice::surface_area_t::surface_area_t(const coordinate_list_t &coordinates,
-                                         const std::string &window_title,
-                                         const painter_brush_t &background) {
-  open_window(coordinates, window_title, surface_background_brush,
+uxdevice::surface_area_t::surface_area_t(
+    const coordinate_list_t &coordinates, const std::string &surface_area_title,
+    const painter_brush_t &surface_background_brush) {
+  open_window(coordinates, surface_area_title, surface_background_brush,
               event_handler_t{});
 }
 
@@ -319,11 +303,7 @@ uxdevice::surface_area_t::~surface_area_t(void) { close_window(); }
   \internal
   \brief sets the defaults for the context. font, colors, etc.
 */
-void surface_area_t::set_defaults(void) {
-  using text_rendering_path_t = bool;
-
-  SYSTEM_DEFAULTS
-}
+void surface_area_t::set_surface_defaults(void) { SYSTEM_DEFAULTS }
 
 /**
 \brief API interface, just data is passed to objects. Objects are
@@ -366,7 +346,7 @@ exists. A key can be given as a text_data_t or an integer. The [] operator is
 used to access the data.
 */
 void uxdevice::surface_area_t::maintain_index(
-    std::shared_ptr<display_unit_t> obj) {
+    const std::shared_ptr<display_unit_t> obj) {
   if (!std::holds_alternative<std::monostate>(obj->key))
     mapped_objects[obj->key] = obj;
   return;
@@ -390,7 +370,7 @@ which is also added.
 */
 surface_area_t &uxdevice::surface_area_t::stream_input(const std::string &s) {
   auto item = display_list<text_data_t>(s);
-  auto textrender = display_list<textual_render>(item);
+  auto textrender = display_list<textual_render_t>();
   return *this;
 }
 
@@ -415,7 +395,7 @@ surface_area_t &uxdevice::surface_area_t::stream_input(
     const std::shared_ptr<std::string> _val) {
   auto item = display_list<text_data_t>(*_val);
   item->key = reinterpret_cast<std::size_t>(_val.get());
-  auto textrender = diplay_list<textual_render>(item);
+  auto textrender = display_list<textual_render_t>();
   return *this;
 }
 
@@ -439,8 +419,8 @@ pango cairo api functions.
 */
 surface_area_t &
 uxdevice::surface_area_t::stream_input(const std::stringstream &_val) {
-  auto item = diplay_list<text_data_t>(_val.str());
-  auto textrender = diplay_list<textual_render>(item);
+  auto item = display_list<text_data_t>(_val.str());
+  auto textrender = display_list<textual_render_t>();
   return *this;
 }
 
@@ -493,9 +473,8 @@ surface_area_t &uxdevice::surface_area_t::push(content_options_t c) {
   if (c == content_options_t::all)
     display_list<function_object_t>(std::bind(cairo_push_group, _1));
   else
-    display_list<function_object_t>(
-        std::bind(cairo_push_group_with_content, _1,
-                  static_cast<cairo_content_options_t>(c)));
+    display_list<function_object_t>(std::bind(cairo_push_group_with_content, _1,
+                                              static_cast<cairo_content_t>(c)));
 
   return *this;
 }
@@ -1038,7 +1017,7 @@ void uxdevice::surface_area_t::message_loop(void) {
         xcb_motion_notify_event_t *motion =
             (xcb_motion_notify_event_t *)xcbEvent;
         dispatch_event(event_t{
-            eventType::mousemove,
+            std::type_index{typeid(listen_mousemove_t)},
             (short)motion->event_x,
             (short)motion->event_y,
         });
@@ -1048,12 +1027,15 @@ void uxdevice::surface_area_t::message_loop(void) {
         if (bp->detail == XCB_BUTTON_INDEX_4 ||
             bp->detail == XCB_BUTTON_INDEX_5) {
           dispatch_event(
-              event_t{eventType::wheel, (short)bp->event_x, (short)bp->event_y,
+              event_t{std::type_index{typeid(listen_wheel_t)},
+                      (short)bp->event_x, (short)bp->event_y,
                       (short)(bp->detail == XCB_BUTTON_INDEX_4 ? 1 : -1)});
 
         } else {
-          dispatch_event(event_t{eventType::mousedown, (short)bp->event_x,
-                                 (short)bp->event_y, (short)bp->detail});
+
+          dispatch_event(event_t{std::type_index{typeid(listen_mousedown_t)},
+                                 (short)bp->event_x, (short)bp->event_y,
+                                 (short)bp->detail});
         }
       } break;
       case XCB_BUTTON_RELEASE: {
@@ -1061,8 +1043,9 @@ void uxdevice::surface_area_t::message_loop(void) {
         // ignore button 4 and 5 which are wheel events.
         if (br->detail != XCB_BUTTON_INDEX_4 &&
             br->detail != XCB_BUTTON_INDEX_5)
-          dispatch_event(event_t{eventType::mouseup, (short)br->event_x,
-                                 (short)br->event_y, (short)br->detail});
+          dispatch_event(event_t{std::type_index{typeid(listen_mouseup_t)},
+                                 (short)br->event_x, (short)br->event_y,
+                                 (short)br->detail});
       } break;
       case XCB_KEY_PRESS: {
         xcb_key_press_event_t *kp = (xcb_key_press_event_t *)xcbEvent;
@@ -1080,21 +1063,24 @@ void uxdevice::surface_area_t::message_loop(void) {
           std::array<char, 316> buf{};
           if (XLookupString(&keyEvent, buf.data(), buf.size(), nullptr,
                             nullptr))
-            dispatch_event(event_t{eventType::keypress, (char)buf[0]});
+            dispatch_event(event_t{std::type_index{typeid(listen_keypress_t)},
+                                   (char)buf[0]});
         } else {
-          dispatch_event(event_t{eventType::keydown, sym});
+          dispatch_event(
+              event_t{std::type_index{typeid(listen_keydown_t)}, sym});
         }
       } break;
       case XCB_KEY_RELEASE: {
         xcb_key_release_event_t *kr = (xcb_key_release_event_t *)xcbEvent;
         xcb_keysym_t sym = xcb_key_press_lookup_keysym(context.syms, kr, 0);
-        dispatch_event(event_t{eventType::keyup, sym});
+        dispatch_event(event_t{std::type_index{typeid(listen_keyup_t)}});
       } break;
       case XCB_EXPOSE: {
         xcb_expose_event_t *eev = (xcb_expose_event_t *)xcbEvent;
 
-        dispatch_event(event_t{eventType::paint, (short)eev->x, (short)eev->y,
-                               (short)eev->width, (short)eev->height});
+        dispatch_event(event_t{std::type_index{typeid(listen_paint_t)},
+                               (short)eev->x, (short)eev->y, (short)eev->width,
+                               (short)eev->height});
         bvideo_output = true;
       } break;
       case XCB_CONFIGURE_NOTIFY: {
@@ -1104,7 +1090,8 @@ void uxdevice::surface_area_t::message_loop(void) {
         if (cfgEvent->window == context.window &&
             ((short)cfgEvent->width != context.window_width ||
              (short)cfgEvent->height != context.window_height)) {
-          dispatch_event(event_t{eventType::resize, (short)cfgEvent->width,
+          dispatch_event(event_t{std::type_index{typeid(listen_resize_t)},
+                                 (short)cfgEvent->width,
                                  (short)cfgEvent->height});
           bvideo_output = true;
         }

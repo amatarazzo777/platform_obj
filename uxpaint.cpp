@@ -38,17 +38,17 @@
 /**
 \brief color stops interface
 */
-uxdevice::color_stop_t::color_stop_t(u_int32_t c) : color_stop_t(-1, c) {
+uxdevice::color_stop_t::color_stop_t(u_int32_t _c) : color_stop_t(-1, _c) {
   bAutoOffset = true;
 }
 
-uxdevice::color_stop_t::color_stop_t(double o, u_int32_t c) {
+uxdevice::color_stop_t::color_stop_t(double _o, u_int32_t _c) {
   bRGBA = false;
   bAutoOffset = false;
-  offset = o;
-  r = static_cast<u_int8_t>(c >> 16) / 255.0;
-  g = static_cast<u_int8_t>(c >> 8) / 255.0;
-  b = static_cast<u_int8_t>(c) / 255.0;
+  offset = _o;
+  r = static_cast<u_int8_t>(_c >> 16) / 255.0;
+  g = static_cast<u_int8_t>(_c >> 8) / 255.0;
+  b = static_cast<u_int8_t>(_c) / 255.0;
   a = 1.0;
 }
 
@@ -67,11 +67,11 @@ uxdevice::color_stop_t::color_stop_t(double _offset, double _r, double _g,
 
 uxdevice::color_stop_t::color_stop_t(const std::string &_s)
     : color_stop_t(-1, _s) {
-  _bAutoOffset = true;
+  bAutoOffset = true;
 }
 uxdevice::color_stop_t::color_stop_t(const std::string &_s, double _a)
     : color_stop_t(-1, _s, _a) {
-  _bAutoOffset = true;
+  bAutoOffset = true;
 }
 uxdevice::color_stop_t::color_stop_t(double _o, const std::string &_s) {
   bAutoOffset = false;
@@ -122,11 +122,10 @@ bool uxdevice::painter_brush_t::create(void) {
 
     if (_image) {
 
-      data_storage =
-          std::make_shared<image_block_t_pattern_source_definition_t>(
-              data_storage->description, cairo_image_surface_get_width(_image),
-              cairo_image_surface_get_height(_image), _image,
-              filter_options_t::fast, extend_options_t::repeat);
+      data_storage = std::make_shared<image_block_pattern_source_definition_t>(
+          data_storage->description, cairo_image_surface_get_width(_image),
+          cairo_image_surface_get_height(_image), _image,
+          filter_options_t::fast, extend_options_t::repeat);
       data_storage->is_loaded = true;
       // determine if the description is another form such as a gradient or
       // color.
@@ -166,7 +165,7 @@ bool uxdevice::painter_brush_t::create(void) {
         std::dynamic_pointer_cast<linear_gradient_definition_t>(data_storage);
     p->pattern = cairo_pattern_create_linear(p->x0, p->y0, p->x1, p->y1);
     ptr_cp = p->pattern;
-    ptr_cs = &p->cs;
+    ptr_cs = &p->color_stops;
   } break;
   case paint_definition_class_t::radial_gradient: {
     auto p =
@@ -174,7 +173,7 @@ bool uxdevice::painter_brush_t::create(void) {
     p->pattern = cairo_pattern_create_radial(p->cx0, p->cy0, p->radius0, p->cx1,
                                              p->cy1, p->radius1);
     ptr_cp = p->pattern;
-    ptr_cs = &p->cs;
+    ptr_cs = &p->color_stops;
   } break;
   case paint_definition_class_t::none: {
   } break;
@@ -182,7 +181,7 @@ bool uxdevice::painter_brush_t::create(void) {
   } break;
   case paint_definition_class_t::color: {
   } break;
-  case paint_definition_class_t::image_block_t_pattern: {
+  case paint_definition_class_t::image_block_pattern: {
   } break;
   }
 
@@ -236,7 +235,7 @@ bool uxdevice::painter_brush_t::create(void) {
           ncolor_stops_t--;
         }
 
-        dOffset = it->_offset;
+        dOffset = it->offset;
         while (ncolor_stops_t) {
           it++;
           dOffset += incr;
@@ -288,7 +287,7 @@ void uxdevice::painter_brush_t::emit(cairo_t *cr, double x, double y, double w,
     if (data_storage->class_type == paint_definition_class_t::linear_gradient ||
         data_storage->class_type == paint_definition_class_t::radial_gradient ||
         data_storage->class_type ==
-            paint_definition_class_t::image_block_t_pattern)
+            paint_definition_class_t::image_block_pattern)
       translate(-x, -y);
   }
 

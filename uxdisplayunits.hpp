@@ -44,11 +44,19 @@ as part of a base hierarchy of classes. display_unit_t is the base class.
 namespace uxdevice {
 class coordinate_storage_t {
 public:
-  double x, y, w, h;
+  coordinate_storage_t() {}
+  coordinate_storage_t(double _x, double _y, double _w, double _h)
+      : x(_x), y(_y), w(_w), h(_h) {}
+  coordinate_storage_t(double _x, double _y) : x(_x), y(_y) {}
+  double x = {};
+  double y = {};
+  double w = {};
+  double h = {};
+
   HASH_OBJECT_MEMBERS(HASH_TYPE_ID_THIS, x, y, w, h)
 };
 } // namespace uxdevice
-STD_HASHABLE(uxdevice::coordinate_storage_t);
+REGISTER_STD_HASH_SPECIALIZATION(uxdevice::coordinate_storage_t);
 
 /**
 \internal
@@ -60,12 +68,23 @@ STD_HASHABLE(uxdevice::coordinate_storage_t);
 
  */
 namespace uxdevice {
-struct arc_storage_t {
-  double xc, yc, radius, angle1, angle2;
+class arc_storage_t {
+public:
+  arc_storage_t() {}
+  arc_storage_t(double _xc, double _yc, double _radius, double _angle1,
+                double _angle2)
+      : xc(_xc), yc(_yc), radius(_radius), angle1(_angle1), angle2(_angle2) {}
+
   HASH_OBJECT_MEMBERS(HASH_TYPE_ID_THIS, xc, yc, radius, angle1, angle2)
+
+  double xc = {};
+  double yc = {};
+  double radius = {};
+  double angle1 = {};
+  double angle2 = {};
 };
 } // namespace uxdevice
-STD_HASHABLE(uxdevice::arc_storage_t);
+REGISTER_STD_HASH_SPECIALIZATION(uxdevice::arc_storage_t);
 
 /**
 \internal
@@ -78,11 +97,22 @@ STD_HASHABLE(uxdevice::arc_storage_t);
  */
 namespace uxdevice {
 struct negative_arc_storage_t {
-  double xc, yc, radius, angle1, angle2;
+public:
+  negative_arc_storage_t() {}
+  negative_arc_storage_t(double _xc, double _yc, double _radius, double _angle1,
+                         double _angle2)
+      : xc(_xc), yc(_yc), radius(_radius), angle1(_angle1), angle2(_angle2) {}
+
   HASH_OBJECT_MEMBERS(HASH_TYPE_ID_THIS, xc, yc, radius, angle1, angle2)
+
+  double xc = {};
+  double yc = {};
+  double radius = {};
+  double angle1 = {};
+  double angle2 = {};
 };
 } // namespace uxdevice
-STD_HASHABLE(uxdevice::negative_arc_storage_t);
+REGISTER_STD_HASH_SPECIALIZATION(uxdevice::negative_arc_storage_t);
 
 /**
 \internal
@@ -94,12 +124,21 @@ STD_HASHABLE(uxdevice::negative_arc_storage_t);
 
  */
 namespace uxdevice {
-struct rectangle_storage_t {
-  double x, y, width, height;
+class rectangle_storage_t {
+public:
+  rectangle_storage_t() {}
+  rectangle_storage_t(double _x, double _y, double _width, double _height)
+      : x(_x), y(_y), width(_width), height(_height) {}
+
   HASH_OBJECT_MEMBERS(HASH_TYPE_ID_THIS, x, y, width, height)
+
+  double x = {};
+  double y = {};
+  double width = {};
+  double height = {};
 };
 } // namespace uxdevice
-STD_HASHABLE(uxdevice::rectangle_storage_t);
+REGISTER_STD_HASH_SPECIALIZATION(uxdevice::rectangle_storage_t);
 
 /**
 \internal
@@ -111,12 +150,24 @@ STD_HASHABLE(uxdevice::rectangle_storage_t);
 
  */
 namespace uxdevice {
-struct curve_storage_t {
-  double x1, y1, x2, y2, x3, y3;
+class curve_storage_t {
+public:
+  curve_storage_t() {}
+  curve_storage_t(double _x1, double _y1, double _x2, double _y2, double _x3,
+                  double _y3)
+      : x1(_x1), y1(_y1), x2(_x2), y2(_y2), x3(_x3), y3(_y3) {}
+
   HASH_OBJECT_MEMBERS(HASH_TYPE_ID_THIS, x1, y1, x2, y2, x3, y3)
+
+  double x1 = {};
+  double y1 = {};
+  double x2 = {};
+  double y2 = {};
+  double x3 = {};
+  double y3 = {};
 };
 } // namespace uxdevice
-STD_HASHABLE(uxdevice::curve_storage_t);
+REGISTER_STD_HASH_SPECIALIZATION(uxdevice::curve_storage_t);
 
 /**
 \internal
@@ -128,12 +179,18 @@ STD_HASHABLE(uxdevice::curve_storage_t);
 
  */
 namespace uxdevice {
-struct line_storage_t {
-  double x, y;
+class line_storage_t {
+public:
+  line_storage_t() {}
+  line_storage_t(double _x, double _y) : x(_x), y(_y) {}
+
+  double x = {};
+  double y = {};
+
   HASH_OBJECT_MEMBERS(HASH_TYPE_ID_THIS, x, y)
 };
 } // namespace uxdevice
-STD_HASHABLE(uxdevice::line_storage_t);
+REGISTER_STD_HASH_SPECIALIZATION(uxdevice::line_storage_t);
 
 /**
 \internal
@@ -146,14 +203,22 @@ STD_HASHABLE(uxdevice::line_storage_t);
  */
 namespace uxdevice {
 struct stroke_fill_path_storage_t {
-  painter_brush_t fill_brush;
-  painter_brush_t stroke_brush;
+  painter_brush_t fill_brush = {};
+  painter_brush_t stroke_brush = {};
+
+  stroke_fill_path_storage_t() {}
+
+  stroke_fill_path_storage_t(const painter_brush_t &f, const painter_brush_t &s)
+      : fill_brush(f), stroke_brush(s) {}
+
+  void invoke(display_context_t &context);
+  void emit(PangoLayout *layout);
 
   HASH_OBJECT_MEMBERS(HASH_TYPE_ID_THIS, fill_brush.hash_code(),
                       stroke_brush.hash_code())
 };
 } // namespace uxdevice
-STD_HASHABLE(uxdevice::stroke_fill_path_storage_t);
+REGISTER_STD_HASH_SPECIALIZATION(uxdevice::stroke_fill_path_storage_t);
 
 /**
 \internal
@@ -166,40 +231,38 @@ STD_HASHABLE(uxdevice::stroke_fill_path_storage_t);
  */
 
 namespace uxdevice {
-class text_font_data_storage_t {
+class text_font_storage_t {
 public:
-  std::string description;
-  PangoFontDescription *pango_font_ptr;
-
-  // hash function
-  std::size_t hash_code(void) const noexcept {
-    std::size_t value = HASH_TYPE_ID_THIS;
-    hash_combine(value, description);
-    return value;
-  }
-
-  void invoke(display_context_t &context) {
-    if (!pango_font_ptr) {
-      pango_font_ptr = pango_font_description_from_string(description.data());
-      if (!pango_font_ptr) {
-        std::string s = "Font could not be loaded from description. ( ";
-        s += description + ")";
-        context.error_state(__func__, __LINE__, __FILE__, std::string_view(s));
-      }
-    }
-  }
-
-  /*********/
-  void emit(PangoLayout *layout) {}
-  /*********/
-
-  ~text_font_data_storage_t() {
+  // these become public members of the base class.
+  text_font_storage_t() {}
+  text_font_storage_t(const std::string &_description)
+      : description(_description) {}
+  ~text_font_storage_t() {
     if (pango_font_ptr)
       pango_font_description_free(pango_font_ptr);
   }
+
+  text_font_storage_t &operator=(const std::string &_desc) {
+    description = _desc;
+    return *this;
+  }
+
+  /// @brief move assignment
+  text_font_storage_t &operator=(const std::string &&_desc) noexcept {
+    description = _desc;
+    return *this;
+  }
+
+  void invoke(display_context_t &context);
+  void emit(PangoLayout *layout);
+
+  HASH_OBJECT_MEMBERS(HASH_TYPE_ID_THIS, description)
+
+  std::string description = {};
+  PangoFontDescription *pango_font_ptr = {};
 };
 } // namespace uxdevice
-STD_HASHABLE(uxdevice::text_font_data_storage_t);
+REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_font_storage_t);
 
 /**
 
@@ -221,7 +284,7 @@ public:
 };
 } // namespace uxdevice
 
-STD_HASHABLE(uxdevice::line_dash_storage_t);
+REGISTER_STD_HASH_SPECIALIZATION(uxdevice::line_dash_storage_t);
 
 /**
 
@@ -239,6 +302,9 @@ class image_block_storage_t {
 public:
   /// @brief default constructor
   image_block_storage_t() {}
+
+  image_block_storage_t(const std::string &image_description)
+      : description(image_description) {}
 
   /// @brief move assignment
   image_block_storage_t &operator=(image_block_storage_t &&other) noexcept {
@@ -275,15 +341,20 @@ public:
       cairo_surface_destroy(image_block_ptr);
   }
 
-  DECLARE_HASH_MEMBERS_INTERFACE
+  void invoke(display_context_t &context);
+  void is_valid(void);
 
+  HASH_OBJECT_MEMBERS(HASH_TYPE_ID_THIS, description, is_SVG, is_loaded,
+                      coordinates)
+
+  std::string description = {};
   cairo_surface_t *image_block_ptr = {};
   bool is_SVG = {};
   bool is_loaded = {};
-  std::shared_ptr<coordinates_t> coordinates = {};
+  std::shared_ptr<coordinate_t> coordinates = {};
 };
 } // namespace uxdevice
-STD_HASHABLE(uxdevice::image_block_storage_t);
+REGISTER_STD_HASH_SPECIALIZATION(uxdevice::image_block_storage_t);
 
 /**
 
@@ -295,7 +366,7 @@ a std::shared_ptr<std::string>.
 namespace uxdevice {
 class textual_render_storage_t {
 public:
-  typedef std::function<void(cairo_t *cr, coordinates_t &a)>
+  typedef std::function<void(cairo_t *cr, coordinate_t &a)>
       internal_cairo_function_t;
 
   bool set_layout_options(cairo_t *cr);
@@ -314,7 +385,28 @@ public:
   Matrix matrix = {};
 };
 } // namespace uxdevice
-STD_HASHABLE(uxdevice::textual_render_storage_t);
+REGISTER_STD_HASH_SPECIALIZATION(uxdevice::textual_render_storage_t);
+
+/**
+
+\class text_tab_stops_storage_t
+\brief sets the tab stops on the layout
+*/
+
+namespace uxdevice {
+class text_tab_stops_storage_t {
+public:
+  text_tab_stops_storage_t() {}
+  text_tab_stops_storage_t(const std::vector<double> &_value) : value(_value) {}
+
+  void invoke(PangoLayout *ptr);
+
+  HASH_OBJECT_MEMBERS(HASH_TYPE_ID_THIS, HASH_VECTOR_OBJECTS(value))
+
+  std::vector<double> value = {};
+};
+} // namespace uxdevice
+REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_tab_stops_storage_t);
 
 /**
 
@@ -331,19 +423,23 @@ public:
   HASH_OBJECT_MEMBERS(HASH_TYPE_ID_THIS, type, dispatch_event ? 1 : 0)
 };
 } // namespace uxdevice
-STD_HASHABLE(uxdevice::listener_storage_t);
+REGISTER_STD_HASH_SPECIALIZATION(uxdevice::listener_storage_t);
 
+/****************************************************************************/
 // the unit_memory stores items by type id. A boolean with
 // an aliased type can be stored within the list, however it will not
 // be a display unit.
 DECLARE_PAINTER_BRUSH_DISPLAY_UNIT(surface_area_brush_t)
+
+DECLARE_CLASS_STORAGE_EMITTER_DISPLAY_UNIT(
+    text_font_t, text_font_storage_t,
+    using text_font_storage_t::text_font_storage_t;)
+
 DECLARE_STORAGE_EMITTER_DISPLAY_UNIT(surface_area_title_t, std::string)
 
 // text
 DECLARE_MARKER_DISPLAY_UNIT(text_render_fast_t)
 DECLARE_MARKER_DISPLAY_UNIT(text_render_path_t)
-
-DECLARE_STORAGE_EMITTER_DISPLAY_UNIT(text_font_t, text_font_data_storage_t)
 
 DECLARE_PAINTER_BRUSH_DISPLAY_UNIT(text_color_t)
 DECLARE_PAINTER_BRUSH_DISPLAY_UNIT(text_outline_t)
@@ -354,12 +450,14 @@ DECLARE_STORAGE_EMITTER_DISPLAY_UNIT(text_alignment_t, text_alignment_options_t)
 DECLARE_STORAGE_EMITTER_DISPLAY_UNIT(text_indent_t, double)
 DECLARE_STORAGE_EMITTER_DISPLAY_UNIT(text_ellipsize_t, text_ellipsize_options_t)
 DECLARE_STORAGE_EMITTER_DISPLAY_UNIT(text_line_space_t, double)
-DECLARE_STORAGE_EMITTER_DISPLAY_UNIT(text_tab_stops_t, std::vector<double>)
+DECLARE_STORAGE_EMITTER_DISPLAY_UNIT(text_tab_stops_t, text_tab_stops_storage_t)
 DECLARE_STORAGE_EMITTER_DISPLAY_UNIT(text_data_t, std::string)
 
 // image drawing and other block operations
 
-DECLARE_STORAGE_EMITTER_DISPLAY_UNIT(coordinates_t, coordinate_storage_t)
+DECLARE_CLASS_STORAGE_EMITTER_DISPLAY_UNIT(
+    coordinate_t, coordinate_storage_t,
+    using coordinate_storage_t::coordinate_storage_t;)
 
 DECLARE_STORAGE_EMITTER_DISPLAY_UNIT(antialias_t, antialias_options_t)
 DECLARE_STORAGE_EMITTER_DISPLAY_UNIT(line_width_t, double)
@@ -372,33 +470,60 @@ DECLARE_STORAGE_EMITTER_DISPLAY_UNIT(tollerance_t, double)
 DECLARE_STORAGE_EMITTER_DISPLAY_UNIT(graphic_operator_t,
                                      graphic_operator_options_t)
 
-DECLARE_MARKER_DISPLAY_UNIT(relative_coordinates_t)
-DECLARE_MARKER_DISPLAY_UNIT(absolute_coordinates_t)
+DECLARE_MARKER_DISPLAY_UNIT(relative_coordinate_t)
+DECLARE_MARKER_DISPLAY_UNIT(absolute_coordinate_t)
 
 DECLARE_STORAGE_EMITTER_DISPLAY_UNIT(function_object_t, cairo_function_t)
-DECLARE_STORAGE_EMITTER_DISPLAY_UNIT(option_function_object_t, cairo_function_t)
 
-DECLARE_STORAGE_EMITTER_DRAWING_FUNCTION(textual_render_t,
-                                         textual_render_storage_t)
+DECLARE_CLASS_STORAGE_EMITTER_DISPLAY_UNIT(
+    option_function_object_t, cairo_option_function_t,
+    using cairo_option_function_t::cairo_option_function_t;)
 
-DECLARE_STORAGE_EMITTER_DRAWING_FUNCTION(image_block_t, image_block_storage_t)
+DECLARE_CLASS_STORAGE_EMITTER_DRAWING_FUNCTION(
+    textual_render_t, textual_render_storage_t,
+    using textual_render_storage_t::textual_render_storage_t;)
+
+DECLARE_CLASS_STORAGE_EMITTER_DRAWING_FUNCTION(
+    image_block_t, image_block_storage_t,
+    using image_block_storage_t::image_block_storage_t;)
+
 DECLARE_STORAGE_EMITTER_DRAWING_FUNCTION(draw_function_object_t,
                                          cairo_function_t)
 // primitives - drawing functions
-DECLARE_STORAGE_EMITTER_DRAWING_FUNCTION(arc_t, arc_storage_t)
-DECLARE_STORAGE_EMITTER_DRAWING_FUNCTION(negative_arc_t, negative_arc_storage_t)
-DECLARE_STORAGE_EMITTER_DRAWING_FUNCTION(curve_t, curve_storage_t)
-DECLARE_STORAGE_EMITTER_DRAWING_FUNCTION(line_t, line_storage_t)
+DECLARE_CLASS_STORAGE_EMITTER_DRAWING_FUNCTION(
+    arc_t, arc_storage_t, using arc_storage_t::arc_storage_t;)
+
+DECLARE_CLASS_STORAGE_EMITTER_DRAWING_FUNCTION(
+    negative_arc_t, negative_arc_storage_t,
+    using negative_arc_storage_t::negative_arc_storage_t;)
+
+DECLARE_CLASS_STORAGE_EMITTER_DRAWING_FUNCTION(
+    curve_t, curve_storage_t, using curve_storage_t::curve_storage_t;)
+
+DECLARE_CLASS_STORAGE_EMITTER_DRAWING_FUNCTION(
+    line_t, line_storage_t, using line_storage_t::line_storage_t;)
+
 DECLARE_STORAGE_EMITTER_DRAWING_FUNCTION(hline_t, double)
+
 DECLARE_STORAGE_EMITTER_DRAWING_FUNCTION(vline_t, double)
-DECLARE_STORAGE_EMITTER_DRAWING_FUNCTION(rectangle_t, rectangle_storage_t)
 
-DECLARE_STORAGE_EMITTER_DRAWING_FUNCTION(stroke_path_t, painter_brush_t)
-DECLARE_STORAGE_EMITTER_DRAWING_FUNCTION(fill_path_t, painter_brush_t)
+DECLARE_CLASS_STORAGE_EMITTER_DRAWING_FUNCTION(
+    rectangle_t, rectangle_storage_t,
+    using rectangle_storage_t::rectangle_storage_t;)
 
-DECLARE_STORAGE_EMITTER_DRAWING_FUNCTION(stroke_fill_path_t,
-                                         stroke_fill_path_storage_t)
-DECLARE_STORAGE_EMITTER_DRAWING_FUNCTION(mask_t, painter_brush_t)
+DECLARE_CLASS_STORAGE_EMITTER_DRAWING_FUNCTION(
+    stroke_path_t, painter_brush_t, using painter_brush_t::painter_brush_t;)
+
+DECLARE_CLASS_STORAGE_EMITTER_DRAWING_FUNCTION(
+    fill_path_t, painter_brush_t, using painter_brush_t::painter_brush_t;)
+
+DECLARE_CLASS_STORAGE_EMITTER_DRAWING_FUNCTION(
+    stroke_fill_path_t, stroke_fill_path_storage_t,
+    using stroke_fill_path_storage_t::stroke_fill_path_storage_t;)
+
+DECLARE_CLASS_STORAGE_EMITTER_DRAWING_FUNCTION(
+    mask_t, painter_brush_t, using painter_brush_t::painter_brush_t;)
+
 DECLARE_STORAGE_EMITTER_DRAWING_FUNCTION(paint_t, double)
 DECLARE_MARKER_DISPLAY_UNIT(close_path_t)
 

@@ -102,7 +102,7 @@ sending a boolean value of true to the function will clear the status.
     return b;                                                                  \
   }                                                                            \
                                                                                \
-  std::string error_text(bool bclear) {                                        \
+  std::string error_text(bool bclear = false) {                                \
     ERRORS_SPIN;                                                               \
     std::string ret;                                                           \
     for (auto s : _errors)                                                     \
@@ -126,13 +126,13 @@ void hash_combine(std::size_t &seed, const T &v, const Rest &... rest) {
 
 /**
 \internal
-\def STD_HASHABLE(CLASS_NAME)
+\def REGISTER_STD_HASH_SPECIALIZATION(CLASS_NAME)
 \param CLASS_NAME to make std::hash aware.
 \brief creates an operator() that is accessible from std::hash<>
 These objects must expose a method named hash_code() which returns a
 std::size_t.
 */
-#define STD_HASHABLE(CLASS_NAME)                                               \
+#define REGISTER_STD_HASH_SPECIALIZATION(CLASS_NAME)                           \
   template <> struct std::hash<CLASS_NAME> {                                   \
     std::size_t operator()(CLASS_NAME const &o) const noexcept {               \
       return o.hash_code();                                                    \
@@ -178,13 +178,6 @@ logic. Hashes each of the listed values within the macro parameters.
   void state_hash_code(void) { __used_hash_code = hash_code(); }               \
   bool is_different_hash() { return hash_code() != __used_hash_code; }
 
-#define DECLARE_HASH_MEMBERS_IMPLEMENTATION(CLASS_NAME, ...)                   \
-  std::size_t CLASS_NAME## ::hash_code(void) const noexcept {                  \
-    std::size_t __value = {};                                                  \
-    hash_combine(__value, __VA_ARGS__);                                        \
-    return __value;                                                            \
-  }
-
 /**
 \internal
 \def HASH_VECTOR_OBJECTS
@@ -224,6 +217,15 @@ typedef std::unordered_map<std::type_index, unit_memory_storage_object_t>
     FUNCTION_NAME##_storage[ti] =                                              \
         std::make_tuple<unit_memory_storage_object_t>(                         \
             ptr, [&]() { return ptr->hash_code(); });                          \
+  }                                                                            \
+                                                                               \
+  template <typename T>                                                        \
+  void FUNCTION_NAME(const std::shared_ptr<display_unit_t> ptr) {              \
+    auto ti = std::type_index(typeid(T));                                      \
+    FUNCTION_NAME##_storage[ti] =                                              \
+        std::make_tuple<unit_memory_storage_object_t>(                         \
+            std::dynamic_pointer_cast<T>(ptr),                                 \
+            [&]() { return std::dynamic_pointer_cast<T>(ptr)->hash_code(); }); \
   }                                                                            \
                                                                                \
   template <typename T>                                                        \

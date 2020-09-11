@@ -38,34 +38,34 @@ enum class gradientType { none, linear, radial };
 
 class color_stop_t {
 public:
-  color_stop_t(u_int32_t c);
-  color_stop_t(double r, double g, double b);
-  color_stop_t(const std::string &s);
-  color_stop_t(const std::string &s, double a);
+  color_stop_t(u_int32_t _c);
+  color_stop_t(double _r, double _g, double _b);
+  color_stop_t(const std::string &_s);
+  color_stop_t(const std::string &_s, double _a);
 
-  color_stop_t(double o, u_int32_t c);
-  color_stop_t(double o, double r, double g, double b);
-  color_stop_t(double o, double r, double g, double b, double a);
-  color_stop_t(double o, const std::string &s);
-  color_stop_t(double o, const std::string &s, double a);
-  void parse_color(const std::string &s);
+  color_stop_t(double _o, u_int32_t _c);
+  color_stop_t(double _o, double _r, double _g, double _b);
+  color_stop_t(double _o, double _r, double _g, double _b, double _a);
+  color_stop_t(double _o, const std::string &_s);
+  color_stop_t(double _o, const std::string &_s, double _a);
+  void parse_color(const std::string &_s);
 
-  HASH_OBJECT_MEMBERS(std::type_index(typeid(this)), _bAutoOffset, _bRGBA,
-                      _offset, _r, _g, _b, _a)
+  HASH_OBJECT_MEMBERS(std::type_index(typeid(this)), bAutoOffset, bRGBA, offset,
+                      r, g, b, a)
 
-  bool _bAutoOffset = false;
-  bool _bRGBA = false;
-  double _offset = 0;
-  double _r = 0;
-  double _g = 0;
-  double _b = 0;
-  double _a = 1;
+  bool bAutoOffset = false;
+  bool bRGBA = false;
+  double offset = 0;
+  double r = 0;
+  double g = 0;
+  double b = 0;
+  double a = 1;
 };
 typedef std::vector<color_stop_t> color_stops_t;
 typedef std::vector<color_stop_t>::iterator color_stops_iterator_t;
 } // namespace uxdevice
 
-STD_HASHABLE(uxdevice::color_stop_t);
+REGISTER_STD_HASH_SPECIALIZATION(uxdevice::color_stop_t);
 
 /**
  parse web formats
@@ -87,6 +87,7 @@ radial-gradient(ellipsize at center, #1e5799 0%,#2989d8 50%,#207cca
 
 */
 namespace uxdevice {
+class coordinate_t;
 
 class painter_brush_t : public Matrix {
 public:
@@ -108,12 +109,14 @@ public:
 
       return *this;
     }
+    paint_definition_base_t() {}
     paint_definition_base_t(const paint_definition_base_t &other) {}
     paint_definition_base_t(paint_definition_base_t &&other) {}
 
     virtual ~paint_definition_base_t() {}
     virtual void emit(cairo_t *cr) {}
     virtual void emit(cairo_t *cr, double x, double y, double w, double h) {}
+    virtual void emit(cairo_t *cr, const coordinate_t &a) {}
 
     bool is_color_description(void) {
       bool bret = false;
@@ -153,6 +156,7 @@ public:
 
   class descriptive_definition_t : public paint_definition_base_t {
   public:
+    descriptive_definition_t() {}
     descriptive_definition_t(const std::string &_description)
         : paint_definition_base_t(paint_definition_class_t::descriptive,
                                   _description) {}
@@ -171,6 +175,7 @@ public:
 
   class color_definition_t : public paint_definition_base_t {
   public:
+    color_definition_t() {}
     color_definition_t(const std::string &_description, double _r, double _g,
                        double _b, double _a)
         : paint_definition_base_t(paint_definition_class_t::color,
@@ -222,6 +227,7 @@ public:
 
   class linear_gradient_definition_t : public paint_definition_base_t {
   public:
+    linear_gradient_definition_t() {}
     linear_gradient_definition_t(const std::string &_description, double _x0,
                                  double _y0, double _x1, double _y1,
                                  const color_stops_t &_cs,
@@ -274,6 +280,7 @@ public:
 
   class radial_gradient_definition_t : public paint_definition_base_t {
   public:
+    radial_gradient_definition_t() {}
     radial_gradient_definition_t(const std::string &_description, double _cx0,
                                  double _cy0, double _radius0, double _cx1,
                                  double _cy1, double _radius1,
@@ -331,6 +338,7 @@ public:
   class image_block_pattern_source_definition_t
       : public paint_definition_base_t {
   public:
+    image_block_pattern_source_definition_t() {}
     image_block_pattern_source_definition_t(const std::string &_description,
                                             double _width, double _height)
         : paint_definition_base_t(paint_definition_class_t::image_block_pattern,
@@ -388,6 +396,7 @@ public:
     extend_options_t extend = {};
   };
 
+  painter_brush_t() {}
   /**
   \brief color given as a uint32 value
   */
@@ -447,7 +456,7 @@ public:
   }
 
   virtual void emit(cairo_t *cr);
-  virtual void emit(cairo_t *cr, double x, double y, double w, double h);
+  virtual void emit(cairo_t *cr, const coordinate_t &a);
   bool is_valid(void) { return data_storage != nullptr; }
 
 private:
@@ -465,10 +474,14 @@ public:
 
 } // namespace uxdevice
 
-STD_HASHABLE(uxdevice::painter_brush_t::paint_definition_base_t);
-STD_HASHABLE(uxdevice::painter_brush_t::descriptive_definition_t);
-STD_HASHABLE(uxdevice::painter_brush_t::color_definition_t);
-STD_HASHABLE(uxdevice::painter_brush_t::linear_gradient_definition_t);
-STD_HASHABLE(uxdevice::painter_brush_t::radial_gradient_definition_t);
-STD_HASHABLE(
+REGISTER_STD_HASH_SPECIALIZATION(
+    uxdevice::painter_brush_t::paint_definition_base_t);
+REGISTER_STD_HASH_SPECIALIZATION(
+    uxdevice::painter_brush_t::descriptive_definition_t);
+REGISTER_STD_HASH_SPECIALIZATION(uxdevice::painter_brush_t::color_definition_t);
+REGISTER_STD_HASH_SPECIALIZATION(
+    uxdevice::painter_brush_t::linear_gradient_definition_t);
+REGISTER_STD_HASH_SPECIALIZATION(
+    uxdevice::painter_brush_t::radial_gradient_definition_t);
+REGISTER_STD_HASH_SPECIALIZATION(
     uxdevice::painter_brush_t::image_block_pattern_source_definition_t);

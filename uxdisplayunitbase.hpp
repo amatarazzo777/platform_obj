@@ -31,7 +31,8 @@ uses this type. All classes can provide an indirect numerical or string key.
 The [] operator exposes searching for objects.
  */
 namespace uxdevice {
-typedef std::variant<std::string, std::size_t> indirect_index_display_unit_t;
+typedef std::variant<std::monostate, std::string, std::size_t>
+    indirect_index_display_unit_t;
 }
 
 /**
@@ -93,25 +94,9 @@ public:
   // @brief virtual destructor, all objects must have a destructor
   virtual ~index_by_t() {}
 
-  HASH_OBJECT_MEMBERS(HASH_TYPE_ID_THIS, key)
   indirect_index_display_unit_t key = {};
 };
 } // namespace uxdevice
-
-/**
-\internal
-\template specializes the std::hash<uxdevice::index_by_t>
- * std structure for () operator hashing. The object's
- * type id as well as its value is summarized. The object
- * exposes a public function hash_code which is invoked.
- */
-template <> struct std::hash<uxdevice::index_by_t> {
-  std::size_t operator()(uxdevice::index_by_t const &o) const noexcept {
-    size_t value = std::type_index(typeid(o)).hash_code();
-    uxdevice::hash_combine(value, o.hash_code());
-    return value;
-  }
-};
 
 /// \typedef cairo_function_t
 /// @brief holds a call to a cairo function with parameters bound.
@@ -121,6 +106,40 @@ typedef std::function<void(cairo_t *cr)> cairo_function_t;
 using cairo_function_t = cairo_function_t;
 
 } // namespace uxdevice
+template <> struct std::hash<uxdevice::cairo_function_t> {
+  std::size_t operator()(uxdevice::cairo_function_t const &o) const noexcept {
+    return reinterpret_cast<std::size_t>(std::addressof(o));
+  }
+};
+
+namespace uxdevice {
+using cairo_option_function_t = class cairo_option_function_t {
+public:
+  cairo_option_function_t() {}
+  cairo_option_function_t &operator=(const cairo_option_function_t &other) {
+    value = other.value;
+    return *this;
+  }
+  /// @brief move assignment
+  cairo_option_function_t &operator=(cairo_option_function_t &&other) noexcept {
+    value = std::move(other.value);
+    return *this;
+  }
+
+  cairo_option_function_t(cairo_option_function_t &other) noexcept
+      : value(other.value) {}
+
+  cairo_option_function_t(cairo_option_function_t &&other) noexcept
+      : value(std::move(other.value)) {}
+  virtual ~cairo_option_function_t() {}
+  virtual void invoke(display_context_t &context);
+  virtual void emit(cairo_t *cr);
+  DECLARE_HASH_MEMBERS_INTERFACE
+
+  std::list<option_function_object_t> value = {};
+};
+} // namespace uxdevice
+  // namespace uxdevice
 
 /**
 \internal
@@ -134,7 +153,9 @@ for errors after invocation.
 
 */
 namespace uxdevice {
-class display_unit_t : public index_by_t {
+class display_unit_t
+    : public index_by_t,
+      virtual public std::enable_shared_from_this<display_unit_t> {
 public:
   display_unit_t() {}
 
@@ -169,20 +190,25 @@ public:
 
   virtual ~display_unit_t() {}
 
-  virtual void invoke(display_context_t &context) { state_hash_code(); }
+  virtual void invoke(display_context_t &context) {}
+  virtual void emit(cairo_t *cr) {}
+  virtual void emit(cairo_t *cr, const coordinate_t &a) {}
+  virtual void emit(display_context_t &context) {}
+  virtual void emit(cairo_t *cr, double x, double y, double w, double h);
+  virtual void emit(PangoLayout *layout) {}
+
   virtual bool is_output(void) { return false; }
   void error(const char *s) { error_description = s; }
   bool valid(void) { return error_description == nullptr; }
-
-  HASH_OBJECT_MEMBERS(HASH_TYPE_ID_THIS, is_processed, viewport_inked,
-                      error_description)
+  void changed(void) { bchanged = true; }
+  bool has_changed(void) { return bchanged; }
 
   bool is_processed = false;
   bool viewport_inked = false;
+  bool bchanged = false;
   const char *error_description = nullptr;
 };
 } // namespace uxdevice
-STD_HASHABLE(uxdevice::display_unit_t);
 
 /**
 \internal
@@ -237,8 +263,8 @@ public:
     fn_cache_surface = other.fn_cache_surface;
     fn_base_surface = other.fn_base_surface;
 
-    std::copy(other.options.begin(), other.options.end(),
-              std::back_inserter(options));
+    std::copy(other.options.value.begin(), other.options.value.end(),
+              std::back_inserter(options.value));
 
     ink_rectangle = other.ink_rectangle;
     intersection_int = other.intersection_int;
@@ -294,13 +320,6 @@ public:
       LOCK_FUNCTORS_CLEAR;
   }
 
-  HASH_OBJECT_MEMBERS(HASH_TYPE_ID_THIS, has_ink_extents,
-                      last_render_time.time_since_epoch().count(),
-                      fn_cache_surface.target_type().name(),
-                      fn_base_surface.target_type().name(),
-                      fn_draw.target_type().name(),
-                      fn_draw_clipped.target_type().name())
-
   bool has_ink_extents = false;
   cairo_rectangle_int_t c = cairo_rectangle_int_t();
   cairo_region_overlap_t overlap = CAIRO_REGION_OVERLAP_OUT;
@@ -318,12 +337,11 @@ public:
   void evaluate_cache(display_context_t &context);
   bool first_time_rendered = true;
   cairo_option_function_t options = {};
-  cairo_rectangle_t ink_rectangle = cairo_rectangle_t();
+  cairo_rectangle_int_t ink_rectangle = cairo_rectangle_int_t();
   cairo_rectangle_int_t intersection_int = cairo_rectangle_int_t();
   cairo_rectangle_t intersection_double = cairo_rectangle_t();
 };
 } // namespace uxdevice
-STD_HASHABLE(uxdevice::drawing_output_t);
 
 /**
 \internal
@@ -346,12 +364,12 @@ the capability to index in the same expression.
 \internal
 \def DECLARE_PAINTER_BRUSH_DISPLAY_UNIT(CLASS_NAME)
 \brief creates a painter brush object that is also a display unit.
-class inherits publically display_unit_t and painter_brush_t
+class inherits publicly display_unit_t and painter_brush_t
 */
 #define DECLARE_PAINTER_BRUSH_DISPLAY_UNIT(CLASS_NAME)                         \
   namespace uxdevice {                                                         \
   using CLASS_NAME = class CLASS_NAME : public display_unit_t,                 \
-        public painter_brush_t, std::enable_shared_from_this<CLASS_NAME> {     \
+        public painter_brush_t {                                               \
   public:                                                                      \
     using painter_brush_t::painter_brush_t;                                    \
     CLASS_NAME &operator=(const CLASS_NAME &other) {                           \
@@ -363,24 +381,25 @@ class inherits publically display_unit_t and painter_brush_t
         : display_unit_t(other), painter_brush_t(other) {}                     \
     CLASS_NAME(CLASS_NAME &&other)                                             \
         : display_unit_t(other), painter_brush_t(other) {}                     \
-    void invoke(display_context_t &context);                                   \
-    void emit(cairo_t *cr) {                                                   \
+    virtual void invoke(display_context_t &context);                           \
+    virtual void emit(cairo_t *cr) {                                           \
       painter_brush_t::emit(cr);                                               \
       cairo_set_line_width(cr, lineWidth);                                     \
     }                                                                          \
-    void emit(cairo_t *cr, double x, double y, double w, double h) {           \
+                                                                               \
+    virtual void emit(cairo_t *cr, const coordinate_t &a) {                    \
       painter_brush_t::emit(cr);                                               \
       cairo_set_line_width(cr, lineWidth);                                     \
     }                                                                          \
-    HASH_OBJECT_MEMBERS(display_unit_t::hash_code(), HASH_TYPE_ID_THIS,        \
-                        painter_brush_t::hash_code(), lineWidth, radius, x, y) \
+    HASH_OBJECT_MEMBERS(HASH_TYPE_ID_THIS, painter_brush_t::hash_code(),       \
+                        lineWidth, radius, x, y)                               \
     double lineWidth = 1;                                                      \
     unsigned short radius = 3;                                                 \
     double x = 1, y = 1;                                                       \
     TYPED_INDEX_IMPLEMENTATION(CLASS_NAME)                                     \
   };                                                                           \
   }                                                                            \
-  STD_HASHABLE(uxdevice::CLASS_NAME);
+  REGISTER_STD_HASH_SPECIALIZATION(uxdevice::CLASS_NAME);
 
 /**
 \internal
@@ -391,8 +410,7 @@ invoke method is called. class inherits publicly display_unit_t
 */
 #define DECLARE_MARKER_DISPLAY_UNIT(CLASS_NAME)                                \
   namespace uxdevice {                                                         \
-  using CLASS_NAME = class CLASS_NAME : public display_unit_t,                 \
-        std::enable_shared_from_this<CLASS_NAME> {                             \
+  using CLASS_NAME = class CLASS_NAME : public display_unit_t {                \
   public:                                                                      \
     CLASS_NAME() {}                                                            \
                                                                                \
@@ -413,10 +431,10 @@ invoke method is called. class inherits publicly display_unit_t
     virtual void invoke(display_context_t &);                                  \
                                                                                \
     TYPED_INDEX_IMPLEMENTATION(CLASS_NAME)                                     \
-    HASH_OBJECT_MEMBERS(display_unit_t::hash_code(), HASH_TYPE_ID_THIS)        \
+    HASH_OBJECT_MEMBERS(HASH_TYPE_ID_THIS)                                     \
   };                                                                           \
   }                                                                            \
-  STD_HASHABLE(uxdevice::CLASS_NAME);
+  REGISTER_STD_HASH_SPECIALIZATION(uxdevice::CLASS_NAME);
 
 /**
 \internal
@@ -428,10 +446,10 @@ invoke method is called. class inherits publicly display_unit_t
 public method is called. The class has a public member named "value" of the
 given type within the second macro parameter.
 */
+
 #define DECLARE_STORAGE_EMITTER_DISPLAY_UNIT(CLASS_NAME, STORAGE_TYPE)         \
   namespace uxdevice {                                                         \
-  using CLASS_NAME = class CLASS_NAME : public display_unit_t,                 \
-        std::enable_shared_from_this<CLASS_NAME> {                             \
+  using CLASS_NAME = class CLASS_NAME : public display_unit_t {                \
   public:                                                                      \
     CLASS_NAME() : value(STORAGE_TYPE{}) {}                                    \
     CLASS_NAME(const STORAGE_TYPE &o) : value(o) {}                            \
@@ -453,28 +471,122 @@ given type within the second macro parameter.
     void invoke(display_context_t &context);                                   \
                                                                                \
     TYPED_INDEX_IMPLEMENTATION(CLASS_NAME)                                     \
-    HASH_OBJECT_MEMBERS(display_unit_t::hash_code(), HASH_TYPE_ID_THIS, value) \
+    HASH_OBJECT_MEMBERS(HASH_TYPE_ID_THIS, value)                              \
                                                                                \
     STORAGE_TYPE value;                                                        \
   };                                                                           \
   }                                                                            \
-  STD_HASHABLE(uxdevice::CLASS_NAME);
+  REGISTER_STD_HASH_SPECIALIZATION(uxdevice::CLASS_NAME);
 
 /**
 \internal
-\def DECLARE_STORAGE_EMITTER_DISPLAY_UNIT(CLASS_NAME, STORAGE_TYPE)
+\def DECLARE_CLASS_STORAGE_EMITTER_DISPLAY_UNIT(CLASS_NAME, STORAGE_TYPE)
 \param CLASS_NAME - the name the display unit should assume.
 \param STORAGE_TYPE - the storage class or trivial type.
+\param CONSTRUCTOR_INHEIRTANCE - inherits the data class interface as public.
+  Ther constructors are inherited as well as the public methods of the class.
 
 \brief provides the flexibility to store associated data. the invoke
 public method is called. The class has a public member named "value" of the
 given type within the second macro parameter.
+    CLASS_NAME(const STORAGE_TYPE &o) : STORAGE_TYPE(o) {}                     \
+
+*/
+#define DECLARE_CLASS_STORAGE_EMITTER_DISPLAY_UNIT(CLASS_NAME, STORAGE_TYPE,   \
+                                                   CONSTRUCTOR_INHEIRTANCE)    \
+  namespace uxdevice {                                                         \
+  using CLASS_NAME = class CLASS_NAME : public display_unit_t,                 \
+        public STORAGE_TYPE {                                                  \
+  public:                                                                      \
+    CONSTRUCTOR_INHEIRTANCE                                                    \
+    CLASS_NAME() : STORAGE_TYPE() {}                                           \
+    CLASS_NAME &operator=(const CLASS_NAME &other) {                           \
+      display_unit_t::operator=(other);                                        \
+      return *this;                                                            \
+    }                                                                          \
+    CLASS_NAME &operator=(CLASS_NAME &&other) noexcept {                       \
+      index_by_t::operator=(other);                                            \
+      return *this;                                                            \
+    }                                                                          \
+    CLASS_NAME(const CLASS_NAME &other) : display_unit_t(other) {}             \
+    CLASS_NAME(CLASS_NAME &&other) noexcept : display_unit_t(other) {}         \
+                                                                               \
+    virtual ~CLASS_NAME() {}                                                   \
+                                                                               \
+    void invoke(display_context_t &context);                                   \
+                                                                               \
+    TYPED_INDEX_IMPLEMENTATION(CLASS_NAME)                                     \
+  };                                                                           \
+  }                                                                            \
+  REGISTER_STD_HASH_SPECIALIZATION(uxdevice::CLASS_NAME);
+
+/**
+\internal
+\def DECLARE_STORAGE_EMITTER_DRAWING_FUNCTION(CLASS_NAME, STORAGE_TYPE)
+\param CLASS_NAME - the name the display unit should assume.
+\param STORAGE_TYPE - the storage class or trivial type.
+
+\brief provides the flexibility to store associated data from a class. Classes
+should be created for complex items that require a storage_type
+The invoke
+public method is called when on screen. The class has a public member named
+"value" of the given type within the second macro parameter.
+
 */
 #define DECLARE_STORAGE_EMITTER_DRAWING_FUNCTION(CLASS_NAME, STORAGE_TYPE)     \
   namespace uxdevice {                                                         \
-  using CLASS_NAME = class CLASS_NAME : public drawing_output_t,               \
-        std::enable_shared_from_this<CLASS_NAME> {                             \
+  using CLASS_NAME = class CLASS_NAME : public display_unit_t {                \
   public:                                                                      \
+    CLASS_NAME() : value(STORAGE_TYPE{}) {}                                    \
+    CLASS_NAME(const STORAGE_TYPE &o) : value(o) {}                            \
+    CLASS_NAME &operator=(const CLASS_NAME &other) {                           \
+      display_unit_t::operator=(other);                                        \
+      return *this;                                                            \
+    }                                                                          \
+    CLASS_NAME &operator=(CLASS_NAME &&other) noexcept {                       \
+      index_by_t::operator=(other);                                            \
+      return *this;                                                            \
+    }                                                                          \
+    CLASS_NAME(const CLASS_NAME &other)                                        \
+        : display_unit_t(other), value(other.value) {}                         \
+    CLASS_NAME(CLASS_NAME &&other)                                             \
+    noexcept : display_unit_t(other), value(other.value) {}                    \
+                                                                               \
+    virtual ~CLASS_NAME() {}                                                   \
+                                                                               \
+    void invoke(display_context_t &context);                                   \
+                                                                               \
+    TYPED_INDEX_IMPLEMENTATION(CLASS_NAME)                                     \
+    HASH_OBJECT_MEMBERS(HASH_TYPE_ID_THIS, value)                              \
+                                                                               \
+    STORAGE_TYPE value;                                                        \
+  };                                                                           \
+  }                                                                            \
+  REGISTER_STD_HASH_SPECIALIZATION(uxdevice::CLASS_NAME);
+
+/**
+\internal
+\def DECLARE_CLASS_STORAGE_EMITTER_DRAWING_FUNCTION(CLASS_NAME,
+STORAGE_TYPE,CONSTRUCTOR_INHEIRTANCE) \param CLASS_NAME - the name the display
+unit should assume. \param STORAGE_TYPE - the storage class or trivial type.
+\param CONSTRUCTOR_INHEIRTANCE - the data interface is inheirited and exposed as
+well as the constructors.
+
+\brief Provides the ability to store an object accepting a specific parameter
+api. These objects are called to render functions and also have
+a dimension. They occupy a bounds as defined by inkRectangle. They can be
+established as on or off viewport by intersection test with the
+view_port rectangle.
+
+
+*/
+#define DECLARE_CLASS_STORAGE_EMITTER_DRAWING_FUNCTION(                        \
+    CLASS_NAME, STORAGE_TYPE, CONSTRUCTOR_INHEIRTANCE)                         \
+  namespace uxdevice {                                                         \
+  using CLASS_NAME = class CLASS_NAME : public drawing_output_t,               \
+        public STORAGE_TYPE {                                                  \
+  public:                                                                      \
+    CONSTRUCTOR_INHEIRTANCE                                                    \
     CLASS_NAME &operator=(const CLASS_NAME &other) {                           \
       drawing_output_t::operator=(other);                                      \
       return *this;                                                            \
@@ -483,23 +595,17 @@ given type within the second macro parameter.
       index_by_t::operator=(other);                                            \
       return *this;                                                            \
     }                                                                          \
-    CLASS_NAME(const CLASS_NAME &other)                                        \
-        : drawing_output_t(other), value(other.value) {}                       \
-    CLASS_NAME(CLASS_NAME &&other)                                             \
-    noexcept : drawing_output_t(other), value(other.value) {}                  \
+    CLASS_NAME(const CLASS_NAME &other) : drawing_output_t(other) {}           \
+    CLASS_NAME(CLASS_NAME &&other) noexcept : drawing_output_t(other) {}       \
                                                                                \
     virtual ~CLASS_NAME() {}                                                   \
                                                                                \
     void invoke(display_context_t &context);                                   \
                                                                                \
     TYPED_INDEX_IMPLEMENTATION(CLASS_NAME)                                     \
-    HASH_OBJECT_MEMBERS(drawing_output_t::hash_code(), HASH_TYPE_ID_THIS,      \
-                        value)                                                 \
-                                                                               \
-    STORAGE_TYPE &value;                                                       \
   };                                                                           \
   }                                                                            \
-  STD_HASHABLE(uxdevice::CLASS_NAME);
+  REGISTER_STD_HASH_SPECIALIZATION(uxdevice::CLASS_NAME);
 
 /**
 \internal
@@ -510,8 +616,7 @@ the based class.
 */
 #define DECLARE_NAMED_LISTENER_DISPLAY_UNIT(CLASS_NAME)                        \
   namespace uxdevice {                                                         \
-  using CLASS_NAME = class CLASS_NAME : public listener_t,                     \
-        std::enable_shared_from_this<CLASS_NAME> {                             \
+  using CLASS_NAME = class CLASS_NAME : public listener_t {                    \
   public:                                                                      \
     CLASS_NAME(const event_handler_t &_dispatch_event)                         \
         : listener_t(listener_storage_t{std::type_index(typeid(this)),         \
@@ -533,4 +638,4 @@ the based class.
     TYPED_INDEX_IMPLEMENTATION(CLASS_NAME)                                     \
   };                                                                           \
   }                                                                            \
-  STD_HASHABLE(uxdevice::CLASS_NAME);
+  REGISTER_STD_HASH_SPECIALIZATION(uxdevice::CLASS_NAME);

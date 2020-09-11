@@ -43,8 +43,7 @@ options when compiling the text_color_t.
 
 */
 #define DEFAULT_WINDOW_TITLE                                                   \
-  std::string(__FILE__) + std::string(_STDC_VERSION__) + std::string("  ") +   \
-      std::string(__DATE__)
+  std::string(__FILE__) + std::string("  ") + std::string(__DATE__)
 
 /**
 \internal
@@ -53,16 +52,13 @@ options when compiling the text_color_t.
 
 */
 #define SYSTEM_DEFAULTS                                                        \
-  this << text_render_fast_t{} << text_font_t{"Arial 20px"}                    \
-       << text_color_t{"black"},                                               \
-      << surface_area_brush_t{"white"}, << text_indent_t{100.0},               \
-      << text_alignment_t{text_alignment_options_t::left},                     \
-      << text_ellipsize_t{text_ellipsize_options_t::off},                      \
-      << text_line_space_t{1.1},                                               \
-      << text_tab_stops_t{{250, 250, 250, 250, 250, 250, 250, 250}},           \
-      << surface_area_title_t {                                                \
-    DEFAULT_WINDOW_TITLE                                                       \
-  }
+  in(text_render_fast_t{}, text_font_t{"Arial 20px"}, text_color_t{"black"},   \
+     surface_area_brush_t{"white"}, text_indent_t{100.0},                      \
+     text_alignment_t{text_alignment_options_t::left},                         \
+     text_ellipsize_t{text_ellipsize_options_t::off}, text_line_space_t{1.1},  \
+     text_tab_stops_t{                                                         \
+         std::vector<double>{250, 250, 250, 250, 250, 250, 250, 250}},         \
+     surface_area_title_t{DEFAULT_WINDOW_TITLE});
 
 #define USE_STACKBLUR
 
@@ -124,10 +120,11 @@ and hold information is elaborate.
 */
 #define DECLARE_STREAM_INTERFACE(CLASS_NAME)                                   \
 public:                                                                        \
-  surface_area_t &operator<<(const CLASS_NAME &data) {                         \
+  template <> surface_area_t &operator<<(const CLASS_NAME &data) {             \
     stream_input(data);                                                        \
     return *this;                                                              \
   }                                                                            \
+  template <>                                                                  \
   surface_area_t &operator<<(const std::shared_ptr<CLASS_NAME> data) {         \
     stream_input(data);                                                        \
     return *this;                                                              \
@@ -181,6 +178,10 @@ public:
 
   surface_area_t(const event_handler_t &evtDispatcher);
   surface_area_t(const coordinate_list_t &coordinates);
+  surface_area_t(const coordinate_list_t &coordinates,
+                 const std::string &window_title,
+                 const painter_brush_t &surface_background_brush,
+                 const event_handler_t &dispatch_events);
 
   surface_area_t(const coordinate_list_t &coordinates,
                  const std::string &surface_area_title);
@@ -195,10 +196,20 @@ public:
   ~surface_area_t();
 
   template <typename T> surface_area_t &operator<<(const T &data) {
-    std::ostringstream s;
-    s << data;
-    std::string sData = s.str();
-    stream_input(sData);
+    if constexpr (std::is_base_of<display_unit_t, T>::value) {
+      display_list<T>(data);
+    } else {
+      std::ostringstream s;
+      s << data;
+      std::string sData = s.str();
+      stream_input(sData);
+    }
+    return *this;
+  }
+
+  template <typename T>
+  surface_area_t &operator<<(const std::shared_ptr<T> data) {
+    display_list<T>(data);
     return *this;
   }
 
@@ -211,9 +222,10 @@ public:
     const CLASS_NAME _val)
 
   */
+
   DECLARE_STREAM_INTERFACE(std::string)
   DECLARE_STREAM_INTERFACE(std::stringstream)
-  DECLARE_STREAM_INTERFACE(char *)
+  // DECLARE_STREAM_INTERFACE(char *)
 
   /* declares the interface and implementation for these
    objects
@@ -223,86 +235,48 @@ public:
    at invoke() public member. The parameters and options are validated as well.
     */
 
-  DECLARE_STREAM_IMPLEMENTATION(surface_area_brush_t)
-  DECLARE_STREAM_IMPLEMENTATION(coordinates_t)
-
-  DECLARE_STREAM_IMPLEMENTATION(text_render_fast_t)
-  DECLARE_STREAM_IMPLEMENTATION(text_render_path_t)
-
-  DECLARE_STREAM_IMPLEMENTATION(text_font_t)
-  DECLARE_STREAM_IMPLEMENTATION(text_color_t)
-  DECLARE_STREAM_IMPLEMENTATION(text_fill_t)
-  DECLARE_STREAM_IMPLEMENTATION(text_outline_t)
-  DECLARE_STREAM_IMPLEMENTATION(text_shadow_t)
-  DECLARE_STREAM_IMPLEMENTATION(text_alignment_t)
-  DECLARE_STREAM_IMPLEMENTATION(text_alignment_options_t)
-
-  DECLARE_STREAM_IMPLEMENTATION(text_indent_t)
-  DECLARE_STREAM_IMPLEMENTATION(text_ellipsize_t)
-  DECLARE_STREAM_IMPLEMENTATION(text_line_space_t)
-  DECLARE_STREAM_IMPLEMENTATION(text_tab_stops_t)
-
-  /* these are recorded within the current units structure as well.
-   These options persist within the display context and stick.
-   They relate to drawing operations and their options on rendering.
-    */
-
-  DECLARE_STREAM_IMPLEMENTATION(antialias_t)
-  DECLARE_STREAM_IMPLEMENTATION(graphic_operator_t)
-
-  DECLARE_STREAM_IMPLEMENTATION(line_width_t)
-  DECLARE_STREAM_IMPLEMENTATION(line_cap_t)
-  DECLARE_STREAM_IMPLEMENTATION(line_join_t)
-  DECLARE_STREAM_IMPLEMENTATION(line_dashes_t)
-
-  DECLARE_STREAM_IMPLEMENTATION(miter_limit_t)
-  DECLARE_STREAM_IMPLEMENTATION(tollerance_t)
-  DECLARE_STREAM_IMPLEMENTATION(absolute_coordinates_t)
-  DECLARE_STREAM_IMPLEMENTATION(relative_coordinates_t)
-
-  DECLARE_STREAM_IMPLEMENTATION(image_block_t)
-  DECLARE_STREAM_IMPLEMENTATION(stroke_path_t)
-  DECLARE_STREAM_IMPLEMENTATION(fill_path_t)
-  DECLARE_STREAM_IMPLEMENTATION(stroke_fill_path_t)
-  DECLARE_STREAM_IMPLEMENTATION(close_path_t)
-
-  DECLARE_STREAM_IMPLEMENTATION(arc_t)
-  DECLARE_STREAM_IMPLEMENTATION(negative_arc_t)
-  DECLARE_STREAM_IMPLEMENTATION(curve_t)
-  DECLARE_STREAM_IMPLEMENTATION(line_t)
-  DECLARE_STREAM_IMPLEMENTATION(hline_t)
-  DECLARE_STREAM_IMPLEMENTATION(vline_t)
-  DECLARE_STREAM_IMPLEMENTATION(rectangle_t)
-
-  DECLARE_STREAM_IMPLEMENTATION(listener_t)
-  DECLARE_STREAM_IMPLEMENTATION(listen_paint_t)
-  DECLARE_STREAM_IMPLEMENTATION(listen_focus_t)
-  DECLARE_STREAM_IMPLEMENTATION(listen_blur_t)
-  DECLARE_STREAM_IMPLEMENTATION(listen_resize_t)
-  DECLARE_STREAM_IMPLEMENTATION(listen_keydown_t)
-  DECLARE_STREAM_IMPLEMENTATION(listen_keyup_t)
-  DECLARE_STREAM_IMPLEMENTATION(listen_keypress_t)
-  DECLARE_STREAM_IMPLEMENTATION(listen_mouseenter_t)
-  DECLARE_STREAM_IMPLEMENTATION(listen_mousemove_t)
-  DECLARE_STREAM_IMPLEMENTATION(listen_mousedown_t)
-  DECLARE_STREAM_IMPLEMENTATION(listen_mouseup_t)
-  DECLARE_STREAM_IMPLEMENTATION(listen_click_t)
-  DECLARE_STREAM_IMPLEMENTATION(listen_dblclick_t)
-  DECLARE_STREAM_IMPLEMENTATION(listen_contextmenu_t)
-  DECLARE_STREAM_IMPLEMENTATION(listen_wheel_t)
-  DECLARE_STREAM_IMPLEMENTATION(listen_mouseleave_t)
+  /**
+  \fn in
+  \tparam T - object to insert using the stream operator.
+  \tparam Args - list of them, param pack expansion calls recursively to
+  operator.
+  */
+  template <typename T> void in(const T &obj) { operator<<(obj); }
+  template <typename T, typename... Args>
+  void in(const T &obj, const Args &... args) {
+    operator<<(obj);
+    in(args...);
+  }
 
 public:
-  display_unit_t &operator[](const indirect_index_display_unit_t &idx) {
-    auto n = mapped_objects.find(idx);
+  template <typename T> T &operator[](const T &o) {
+    std::shared_ptr<T> ptr = {};
+    auto n = mapped_objects.find(o.key);
+    if (n != mapped_objects.end()) {
+      ptr = std::dynamic_pointer_cast<T>(n->second);
+      ptr->changed();
+    }
+    return *ptr;
+  }
+
+  display_unit_t &operator[](const std::string &_val) noexcept {
+    auto n = mapped_objects.find(indirect_index_display_unit_t{_val});
+    n->second->changed();
     return *n->second;
+  }
+  template <typename T> T &get(const std::string &key) {
+    auto n = mapped_objects.find(indirect_index_display_unit_t{key});
+    n->second->changed();
+    return *std::dynamic_pointer_cast<T>(n->second);
   }
 
   // return display unit associated, update
-  display_unit_t &operator[](const std::shared_ptr<std::string> _val) {
+  std::string &operator[](std::shared_ptr<std::string> _val) noexcept {
     auto n = mapped_objects.find(reinterpret_cast<std::size_t>(_val.get()));
-    return *n->second;
+    n->second->changed();
+    return *_val;
   }
+
   display_unit_t &group(const std::string &sgroupname) {
     auto n = mapped_objects.find(sgroupname);
     return *n->second;
@@ -348,9 +322,14 @@ private:
   void message_loop(void);
   void render_loop(void);
   void dispatch_event(const event_t &e);
+  void open_window(const coordinate_list_t &coord,
+                   const std::string &sWindowTitle,
+                   const painter_brush_t &background,
+                   const event_handler_t &dispatch_events);
   void close_window(void);
-  bool relative_coordinates_t = false;
-  void maintain_index(std::shared_ptr<display_unit_t> obj);
+  void set_surface_defaults(void);
+  bool relative_coordinates = false;
+  void maintain_index(const std::shared_ptr<display_unit_t> obj);
 
 private:
   display_context_t context = display_context_t();
@@ -362,12 +341,12 @@ private:
   display_unit_list_t display_list_storage = {};
   display_unit_list_t::iterator itDL_Processed = display_list_storage.begin();
 
-  /// @brief templated function to insert into the display list
+  /// @brief template function to insert into the display list
   /// and perform initialization based upon the type. The c++ constexpr
   /// conditional compiling functionality is used to trim the run time and
   /// code size.
   template <class T, typename... Args>
-  std::shared_ptr<T> display_list(const T &obj, const Args &... args) {
+  std::shared_ptr<T> display_list(const Args &... args) {
     return display_list<T>(std::make_shared<T>(args...));
   }
 
@@ -384,7 +363,7 @@ private:
     if constexpr (std::is_base_of<drawing_output_t, T>::value)
       context.add_drawable(std::dynamic_pointer_cast<drawing_output_t>(ptr));
 
-    maintain_index(ptr);
+    maintain_index(std::dynamic_pointer_cast<display_unit_t>(ptr));
     DL_CLEAR;
 
     return ptr;

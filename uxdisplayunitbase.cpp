@@ -38,10 +38,9 @@ shading or texturing derive and publish the painter_brush_t class interface.
 #include "uxdevice.hpp"
 
 void uxdevice::drawing_output_t::invoke(cairo_t *cr) {
-  for (auto &fn : options)
-    fn->invoke(cr);
+  for (auto &fn : options.value)
+    fn.invoke(cr);
   is_processed = true;
-  state_hash_code();
 }
 
 void uxdevice::drawing_output_t::intersect(cairo_rectangle_t &r) {
@@ -50,17 +49,18 @@ void uxdevice::drawing_output_t::intersect(cairo_rectangle_t &r) {
   cairo_rectangle_int_t rInt = {(int)r.x, (int)r.y, (int)r.width,
                                 (int)r.height};
   cairo_region_t *rectregion = cairo_region_create_rectangle(&rInt);
-  cairo_rectangle_int_t objrect = {ink_rectangle.x, ink_rectangle.y,
-                                   ink_rectangle.width, ink_rectangle.height};
+  cairo_rectangle_int_t objrect = {(int)ink_rectangle.x, (int)ink_rectangle.y,
+                                   (int)ink_rectangle.width,
+                                   (int)ink_rectangle.height};
 
   overlap = cairo_region_contains_rectangle(rectregion, &objrect);
   if (overlap == CAIRO_REGION_OVERLAP_PART) {
     cairo_region_t *dst = cairo_region_create_rectangle(&objrect);
     cairo_region_intersect(dst, rectregion);
-    cairo_region_get_extents(dst, &intersection);
-    intersection_double = {(double)intersection.x, (double)intersection.y,
-                           (double)intersection.width,
-                           (double)intersection.height};
+    cairo_region_get_extents(dst, &intersection_int);
+    intersection_double = {
+        (double)intersection_int.x, (double)intersection_int.y,
+        (double)intersection_int.width, (double)intersection_int.height};
     cairo_region_destroy(dst);
   }
 
@@ -72,10 +72,10 @@ void uxdevice::drawing_output_t::intersect(context_cairo_region_t &rectregion) {
 
   cairo_region_t *dst = cairo_region_create_rectangle(&ink_rectangle);
   cairo_region_intersect(dst, rectregion._ptr);
-  cairo_region_get_extents(dst, &intersection);
-  intersection_double = {(double)intersection.x, (double)intersection.y,
-                         (double)intersection.width,
-                         (double)intersection.height};
+  cairo_region_get_extents(dst, &intersection_int);
+  intersection_double = {(double)intersection_int.x, (double)intersection_int.y,
+                         (double)intersection_int.width,
+                         (double)intersection_int.height};
   cairo_region_destroy(dst);
 }
 
@@ -83,39 +83,30 @@ void uxdevice::drawing_output_t::evaluate_cache(display_context_t &context) {
   return;
   if (bRenderBufferCached) {
     last_render_time = std::chrono::high_resolution_clock::now();
-    if (oncethread)
-      oncethread.reset();
     return;
   }
 
   // evaluate Rendering from cache
   if (first_time_rendered) {
     first_time_rendered = false;
-
-  } else if (!oncethread) {
-    auto currentPoint = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> diff =
-        currentPoint - last_render_time;
-    // if rendering requests are for more than 2 frames
-    bool useCache = diff.count() < context.cache_threshold;
-    if (useCache) {
-      oncethread = std::make_unique<std::thread>(
-          [=, &context]() { fn_cache_surface(context); });
-      oncethread->detach();
-    }
   }
   last_render_time = std::chrono::high_resolution_clock::now();
 }
 
-void uxdevice::option_function_object_t::invoke(display_context_t &context) {
-  if (std::holds_alternative<cairo_function_t>(_data)) {
-    auto &func = std::get<cairo_function_t>(_data);
+std::size_t uxdevice::cairo_option_function_t::hash_code(void) const noexcept {
+  std::size_t __value = {};
+  hash_combine(__value, HASH_TYPE_ID_THIS, HASH_VECTOR_OBJECTS(value));
+  return __value;
+}
+
+void uxdevice::cairo_option_function_t::invoke(display_context_t &context) {
+#if 0
+    auto &func = value;
     auto optType = func.target_type().hash_code();
-    context.unit_memory.drawing_options_fn.remove_if([=](auto &n) {
-      auto &funcTarget = std::get<cairo_function_t>(n->_data);
+    context.unit_memory<cairo_option_function_t>().remove_if([=](auto &n) {
+      auto &funcTarget = n->value;
       return funcTarget.target_type().hash_code() == optType;
     });
-    context.unit_memory.drawing_options_fn.emplace_back(this);
-  }
-  state_hash_code();
+    context.unit_memory<drawing_options_fn>(shared_from_this());
+#endif // 0
 }

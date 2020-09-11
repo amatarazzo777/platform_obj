@@ -44,7 +44,7 @@ class index_by_t;
 class display_unit_t;
 class drawing_output_t;
 
-class coordinates_t;
+class coordinate_t;
 
 class antialias_t;
 class line_width_t;
@@ -78,7 +78,6 @@ typedef std::list<std::shared_ptr<drawing_output_t>>::iterator
 class display_context_t;
 typedef std::function<void(display_context_t &context)> draw_logic_t;
 
-typedef std::list<option_function_object_t *> cairo_option_function_t;
 typedef struct _draw_buffer_t {
   cairo_t *cr = nullptr;
   cairo_surface_t *rendered = nullptr;
@@ -205,7 +204,7 @@ public:
   unsigned short window_width = 0;
   unsigned short window_height = 0;
   bool window_open = false;
-  std::atomic<bool> relative_coordinates_t = false;
+  std::atomic<bool> relative_coordinate_t = false;
 
   std::atomic_flag lockBrush = ATOMIC_FLAG_INIT;
 #define BRUSH_SPIN while (lockBrush.test_and_set(std::memory_order_acquire))
