@@ -423,6 +423,60 @@ uxdevice::surface_area_t::stream_input(const std::stringstream &_val) {
   auto textrender = display_list<textual_render_t>();
   return *this;
 }
+surface_area_t &uxdevice::surface_area_t::stream_input(
+    const std::shared_ptr<std::stringstream> _val) {
+  auto item = display_list<text_data_t>(_val->str());
+  auto textrender = display_list<textual_render_t>();
+  return *this;
+}
+
+/**
+\internal
+\fn stream input
+\overload
+\param const std::string_view &s
+
+\brief A stream interface routine that is declared using the
+UX_DECLARE_STREAM_INTERFACE macro within the device published development API.
+uxdevice.hpp is where is interface is declared.
+
+The routine is specialized because it creates a textual_rendering_t object
+that accepts the textual data. Textual data is stored in a separate object.
+The textual_rendering_t object encapsulates the pango cairo api functions
+which is also added.
+
+*/
+surface_area_t &
+uxdevice::surface_area_t::stream_input(const std::string_view &s) {
+  auto item = display_list<text_data_t>(std::string(s));
+  auto textrender = display_list<textual_render_t>();
+  return *this;
+}
+
+/**
+\internal
+\fn stream input
+\overload
+
+\param const std::shared_ptr<std::string_view> _val
+
+\brief An overloaded stream interface implemetatione that is declared using
+the UX_DECLARE_STREAM_INTERFACE macro inside the uxdevice::surface_area_t class.
+
+\details The routine is specialized because it creates
+a textual_rendering_t object that accepts the textual data. Textual data is
+stored in a separate object. The textual_rendering_t object encapsulates the
+pango cairo api functions.
+
+*/
+//////////////////////////////////////////logic bugs, where left off
+surface_area_t &uxdevice::surface_area_t::stream_input(
+    const std::shared_ptr<std::string_view> _val) {
+  auto item = display_list<text_data_t>(std::string(*_val));
+  item->key = reinterpret_cast<std::size_t>(_val.get());
+  auto textrender = display_list<textual_render_t>();
+  return *this;
+}
 
 /**
 

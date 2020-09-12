@@ -407,7 +407,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
   // to be crafted easier.
   vis << text_font_t("28px").index("paragraphfont");
   vis << text_shadow_t("green") << coordinate_t{0, 100, 600, 300}
-      << text_color_t("white") << paragraph_text << '\n';
+      << text_color_t("white");
+  vis << paragraph_text << '\n';
 
   vis[paragraph_text] =
       "New text is applied without an indirect index, more simplified syntax. ";

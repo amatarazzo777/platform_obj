@@ -269,6 +269,10 @@ passed. The paint is loaded if need be. File processing or simply parsing
 the color name string.
 
 */
+void uxdevice::painter_brush_t::invoke(display_context_t &context) {
+  emit(context.cr);
+}
+
 void uxdevice::painter_brush_t::emit(cairo_t *cr) {
   if (!data_storage->is_loaded)
     create();

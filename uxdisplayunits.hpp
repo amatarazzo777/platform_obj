@@ -47,8 +47,8 @@ that are display units.
  */
 namespace uxdevice {
 class coordinate_storage_t
-    : public polymorphic_overloads_t,
-      public std::enable_shared_from_this<coordinate_storage_t> {
+    : // public polymorphic_overloads_t,
+      virtual public std::enable_shared_from_this<coordinate_storage_t> {
 public:
   coordinate_storage_t() {}
   coordinate_storage_t(double _x, double _y, double _w, double _h)
@@ -57,7 +57,7 @@ public:
   virtual ~coordinate_storage_t() {}
 
   void invoke(display_context_t &context);
-  void emit(display_context_t &context) { emit(context.cr); }
+  // void emit(display_context_t &context) { emit(context.cr); }
   void emit(cairo_t *cr);
 
   UX_HASH_OBJECT_MEMBERS(UX_HASH_TYPE_ID_THIS, x, y, w, h)
@@ -66,8 +66,6 @@ public:
   double y = {};
   double w = {};
   double h = {};
-
-  friend class coordinate_t;
 };
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::coordinate_storage_t);
@@ -82,8 +80,9 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::coordinate_storage_t);
 
  */
 namespace uxdevice {
-class arc_storage_t : public polymorphic_overloads_t,
-                      public std::enable_shared_from_this<arc_storage_t> {
+class arc_storage_t
+    : public polymorphic_overloads_t,
+      virtual public std::enable_shared_from_this<arc_storage_t> {
 public:
   arc_storage_t() {}
   arc_storage_t(double _xc, double _yc, double _radius, double _angle1,
@@ -100,7 +99,6 @@ public:
   double radius = {};
   double angle1 = {};
   double angle2 = {};
-  friend class arc_t;
 };
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::arc_storage_t);
@@ -115,9 +113,9 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::arc_storage_t);
 
  */
 namespace uxdevice {
-struct negative_arc_storage_t
+class negative_arc_storage_t
     : public polymorphic_overloads_t,
-      public std::enable_shared_from_this<arc_storage_t> {
+      virtual public std::enable_shared_from_this<negative_arc_storage_t> {
 public:
   negative_arc_storage_t() {}
   negative_arc_storage_t(double _xc, double _yc, double _radius, double _angle1,
@@ -134,8 +132,6 @@ public:
   double radius = {};
   double angle1 = {};
   double angle2 = {};
-
-  friend class arc_t;
 };
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::negative_arc_storage_t);
@@ -150,8 +146,9 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::negative_arc_storage_t);
 
  */
 namespace uxdevice {
-class rectangle_storage_t : public polymorphic_overloads_t,
-                            public std::enable_shared_from_this<arc_storage_t> {
+class rectangle_storage_t
+    : public polymorphic_overloads_t,
+      virtual public std::enable_shared_from_this<rectangle_storage_t> {
 public:
   rectangle_storage_t() {}
   rectangle_storage_t(double _x, double _y, double _width, double _height)
@@ -166,7 +163,6 @@ public:
   double y = {};
   double width = {};
   double height = {};
-  friend class rectangle_t;
 };
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::rectangle_storage_t);
@@ -181,8 +177,9 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::rectangle_storage_t);
 
  */
 namespace uxdevice {
-class curve_storage_t : public polymorphic_overloads_t,
-                        public std::enable_shared_from_this<arc_storage_t> {
+class curve_storage_t
+    : public polymorphic_overloads_t,
+      virtual public std::enable_shared_from_this<curve_storage_t> {
 public:
   curve_storage_t() {}
   curve_storage_t(double _x1, double _y1, double _x2, double _y2, double _x3,
@@ -200,7 +197,6 @@ public:
   double y2 = {};
   double x3 = {};
   double y3 = {};
-  friend class curve_t;
 };
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::curve_storage_t);
@@ -215,8 +211,9 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::curve_storage_t);
 
  */
 namespace uxdevice {
-class line_storage_t : public polymorphic_overloads_t,
-                       public std::enable_shared_from_this<arc_storage_t> {
+class line_storage_t
+    : public polymorphic_overloads_t,
+      virtual public std::enable_shared_from_this<line_storage_t> {
 public:
   line_storage_t() {}
   line_storage_t(double _x, double _y) : x(_x), y(_y) {}
@@ -228,7 +225,6 @@ public:
 
   double x = {};
   double y = {};
-  friend class line_t;
 };
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::line_storage_t);
@@ -243,9 +239,10 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::line_storage_t);
 
  */
 namespace uxdevice {
-struct stroke_fill_path_storage_t
+class stroke_fill_path_storage_t
     : public polymorphic_overloads_t,
-      public std::enable_shared_from_this<arc_storage_t> {
+      virtual public std::enable_shared_from_this<stroke_fill_path_storage_t> {
+public:
   painter_brush_t fill_brush = {};
   painter_brush_t stroke_brush = {};
 
@@ -259,7 +256,6 @@ struct stroke_fill_path_storage_t
 
   UX_HASH_OBJECT_MEMBERS(UX_HASH_TYPE_ID_THIS, fill_brush.hash_code(),
                          stroke_brush.hash_code())
-  friend class stroke_fill_path_t;
 };
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::stroke_fill_path_storage_t);
@@ -275,8 +271,9 @@ hashing function.
 
  */
 namespace uxdevice {
-class line_dash_storage_t : public polymorphic_overloads_t,
-                            public std::enable_shared_from_this<arc_storage_t> {
+class line_dash_storage_t
+    : public polymorphic_overloads_t,
+      virtual public std::enable_shared_from_this<line_dash_storage_t> {
 public:
   line_dash_storage_t() {}
   line_dash_storage_t(const std::vector<double> &_value, const double &_offset)
@@ -293,7 +290,6 @@ public:
 
   UX_HASH_OBJECT_MEMBERS(UX_HASH_TYPE_ID_THIS, UX_HASH_VECTOR_OBJECTS(value),
                          offset)
-  friend class line_dash_t;
 };
 } // namespace uxdevice
 
@@ -312,8 +308,8 @@ memory.
  */
 namespace uxdevice {
 class image_block_storage_t
-    : public polymorphic_overloads_t,
-      public std::enable_shared_from_this<arc_storage_t> {
+    : virtual public drawing_output_t,
+      virtual public std::enable_shared_from_this<image_block_storage_t> {
 public:
   /// @brief default constructor
   image_block_storage_t()
@@ -361,7 +357,7 @@ public:
   void emit(display_context_t &context) { emit(context.cr); }
   void emit(cairo_t *cr);
 
-  void is_valid(void);
+  bool is_valid(void) { return image_block_ptr != nullptr; }
 
   UX_HASH_OBJECT_MEMBERS(UX_HASH_TYPE_ID_THIS, description, is_SVG, is_loaded,
                          coordinate)
@@ -371,7 +367,6 @@ public:
   bool is_SVG = {};
   bool is_loaded = {};
   std::shared_ptr<coordinate_t> coordinate = {};
-  friend class image_block_t;
 };
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::image_block_storage_t);
@@ -387,20 +382,29 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::image_block_storage_t);
  */
 
 namespace uxdevice {
-class text_font_storage_t : public polymorphic_overloads_t,
-                            public std::enable_shared_from_this<arc_storage_t> {
+class text_font_storage_t
+    : public polymorphic_overloads_t,
+      virtual public std::enable_shared_from_this<text_font_storage_t> {
 public:
   // these become public members of the base class.
   text_font_storage_t() : description{}, font_ptr(nullptr) {}
   text_font_storage_t(const std::string &_description)
       : description(_description), font_ptr(nullptr) {}
 
+  /// @brief move constructor
+  text_font_storage_t(text_font_storage_t &&other) noexcept
+      : description(other.description), font_ptr(other.font_ptr) {}
+
+  /// @brief copy constructor
+  text_font_storage_t(const image_block_storage_t &other)
+      : description(other.description), font_ptr(nullptr) {}
+
   virtual ~text_font_storage_t() {
     if (font_ptr)
       pango_font_description_free(font_ptr);
   }
 
-  text_font_storage_t &operator=(const text_font_storage_t &&other) {
+  text_font_storage_t &operator=(const text_font_storage_t &&other) noexcept {
     description = other.description;
     return *this;
   }
@@ -427,8 +431,6 @@ public:
 
   std::string description = {};
   PangoFontDescription *font_ptr = {};
-
-  friend class text_font_t;
 };
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_font_storage_t);
@@ -440,12 +442,13 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_font_storage_t);
 object is created as the side effect of inserting text, char *, std string or
 a std::shared_ptr<std::string>.
 */
+class drawing_output_t;
 namespace uxdevice {
 class textual_render_storage_t
-    : public polymorphic_overloads_t,
-      public std::enable_shared_from_this<arc_storage_t> {
+    : virtual public drawing_output_t,
+      virtual public std::enable_shared_from_this<textual_render_storage_t> {
 public:
-  typedef std::function<void(cairo_t *cr, coordinate_t &a)>
+  typedef std::function<void(cairo_t *cr, const coordinate_t &a)>
       internal_cairo_function_t;
   textual_render_storage_t() {}
 
@@ -473,7 +476,6 @@ public:
   PangoRectangle ink_rect = PangoRectangle();
   PangoRectangle logical_rect = PangoRectangle();
   Matrix matrix = {};
-  friend class textual_render_t;
 
 private:
   bool set_layout_options(cairo_t *cr);
@@ -492,7 +494,7 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::textual_render_storage_t);
 namespace uxdevice {
 class text_tab_stops_storage_t
     : public polymorphic_overloads_t,
-      public std::enable_shared_from_this<arc_storage_t> {
+      virtual public std::enable_shared_from_this<text_tab_stops_storage_t> {
 public:
   text_tab_stops_storage_t() {}
   text_tab_stops_storage_t(const std::vector<double> &_value) : value(_value) {}
@@ -504,7 +506,6 @@ public:
   UX_HASH_OBJECT_MEMBERS(UX_HASH_TYPE_ID_THIS, UX_HASH_VECTOR_OBJECTS(value))
 
   std::vector<double> value = {};
-  friend class text_tab_stops_t;
 };
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_tab_stops_storage_t);
@@ -516,8 +517,9 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_tab_stops_storage_t);
 storage. Listeners inherit from listener_t  as a base.
 */
 namespace uxdevice {
-class listener_storage_t : public polymorphic_overloads_t,
-                           public std::enable_shared_from_this<arc_storage_t> {
+class listener_storage_t
+    : public polymorphic_overloads_t,
+      virtual public std::enable_shared_from_this<listener_storage_t> {
 public:
   listener_storage_t() {}
   listener_storage_t(const std::type_index &_ti, const event_handler_t &_evt)
@@ -539,7 +541,6 @@ public:
   void invoke(display_context_t &context);
 
   UX_HASH_OBJECT_MEMBERS(UX_HASH_TYPE_ID_THIS, type, dispatch_event ? 1 : 0)
-  friend class listener_t;
 };
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::listener_storage_t);

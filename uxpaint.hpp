@@ -88,6 +88,7 @@ radial-gradient(ellipsize at center, #1e5799 0%,#2989d8 50%,#207cca
 */
 namespace uxdevice {
 class coordinate_t;
+class display_context_t;
 
 class painter_brush_t : public Matrix {
 public:
@@ -455,7 +456,7 @@ public:
     if (data_storage)
       data_storage.reset();
   }
-
+  virtual void invoke(display_context_t &context);
   virtual void emit(cairo_t *cr);
   virtual void emit(cairo_t *cr, const coordinate_t &a);
   bool is_valid(void) { return data_storage != nullptr; }

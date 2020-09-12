@@ -204,7 +204,7 @@ public:
   unsigned short window_width = 0;
   unsigned short window_height = 0;
   bool window_open = false;
-  std::atomic<bool> relative_coordinate_t = false;
+  std::atomic<bool> relative_coordinate = false;
 
   std::atomic_flag lockBrush = ATOMIC_FLAG_INIT;
 #define BRUSH_SPIN while (lockBrush.test_and_set(std::memory_order_acquire))

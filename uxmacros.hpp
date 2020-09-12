@@ -216,17 +216,16 @@ typedef std::unordered_map<std::type_index, unit_memory_storage_object_t>
   template <typename T> void FUNCTION_NAME(const std::shared_ptr<T> ptr) {     \
     auto ti = std::type_index(typeid(T));                                      \
     FUNCTION_NAME##_storage[ti] =                                              \
-        std::make_tuple<unit_memory_storage_object_t>(                         \
-            ptr, [&]() { return ptr->hash_code(); });                          \
+        std::make_tuple(ptr, [&]() { return ptr->hash_code(); });              \
   }                                                                            \
                                                                                \
   template <typename T>                                                        \
   void FUNCTION_NAME(const std::shared_ptr<display_unit_t> ptr) {              \
     auto ti = std::type_index(typeid(T));                                      \
     FUNCTION_NAME##_storage[ti] =                                              \
-        std::make_tuple<unit_memory_storage_object_t>(                         \
-            std::dynamic_pointer_cast<T>(ptr),                                 \
-            [&]() { return std::dynamic_pointer_cast<T>(ptr)->hash_code(); }); \
+        std::make_tuple(std::dynamic_pointer_cast<T>(ptr), [&]() {             \
+          return std::dynamic_pointer_cast<T>(ptr)->hash_code();               \
+        });                                                                    \
   }                                                                            \
                                                                                \
   template <typename T>                                                        \

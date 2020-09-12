@@ -194,9 +194,10 @@ for errors after invocation.
 
 */
 namespace uxdevice {
-class display_unit_t : public index_by_t,
-                       public polymorphic_overloads_t,
-                       public std::enable_shared_from_this<display_unit_t> {
+class display_unit_t
+    : public index_by_t,
+      public polymorphic_overloads_t,
+      virtual public std::enable_shared_from_this<display_unit_t> {
 public:
   display_unit_t() {}
 
@@ -372,6 +373,7 @@ public:
   bool first_time_rendered = true;
   cairo_option_function_t options = {};
   cairo_rectangle_int_t ink_rectangle = cairo_rectangle_int_t();
+  cairo_rectangle_t ink_rectangle_double = cairo_rectangle_t();
   cairo_rectangle_int_t intersection_int = cairo_rectangle_int_t();
   cairo_rectangle_t intersection_double = cairo_rectangle_t();
 };
@@ -585,10 +587,12 @@ rendering functionality as called by the rendering loop.
     CLASS_NAME(CLASS_NAME &&other) noexcept : display_unit_t(other) {}         \
                                                                                \
     virtual ~CLASS_NAME() {}                                                   \
+    void invoke(display_context_t &context) { STORAGE_TYPE::invoke(context); } \
                                                                                \
     TYPED_INDEX_IMPLEMENTATION(CLASS_NAME)                                     \
     const static display_unit_classification_t classification =                \
         display_unit_classification_t::class_storage_emitter;                  \
+    friend class STORAGE_TYPE;                                                 \
   };                                                                           \
   }                                                                            \
   UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::CLASS_NAME);
@@ -614,7 +618,7 @@ public method is called when on screen. The class has a public member named
 #define UX_DECLARE_STORAGE_DRAWING_FUNCTION(CLASS_NAME, STORAGE_TYPE,          \
                                             PUBLIC_OVERRIDES)                  \
   namespace uxdevice {                                                         \
-  using CLASS_NAME = class CLASS_NAME : public drawing_output_t {              \
+  using CLASS_NAME = class CLASS_NAME : virtual public drawing_output_t {      \
   public:                                                                      \
     CLASS_NAME() : value(STORAGE_TYPE{}) {}                                    \
     CLASS_NAME(const STORAGE_TYPE &o) : value(o) {}                            \
@@ -664,7 +668,7 @@ view_port rectangle.
 #define UX_DECLARE_CLASS_STORAGE_DRAWING_FUNCTION(CLASS_NAME, STORAGE_TYPE,    \
                                                   CONSTRUCTOR_INHEIRTANCE)     \
   namespace uxdevice {                                                         \
-  using CLASS_NAME = class CLASS_NAME : public drawing_output_t,               \
+  using CLASS_NAME = class CLASS_NAME : virtual public drawing_output_t,       \
         public STORAGE_TYPE {                                                  \
   public:                                                                      \
     CONSTRUCTOR_INHEIRTANCE                                                    \
@@ -680,10 +684,12 @@ view_port rectangle.
     CLASS_NAME(CLASS_NAME &&other) noexcept : drawing_output_t(other) {}       \
                                                                                \
     virtual ~CLASS_NAME() {}                                                   \
+    void invoke(display_context_t &context) { STORAGE_TYPE::invoke(context); } \
                                                                                \
     TYPED_INDEX_IMPLEMENTATION(CLASS_NAME)                                     \
     const static display_unit_classification_t classification =                \
         display_unit_classification_t::class_storage_drawing_function;         \
+    friend class STORAGE_TYPE;                                                 \
   };                                                                           \
   }                                                                            \
   UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::CLASS_NAME);
@@ -711,7 +717,9 @@ the based class.
     }                                                                          \
     CLASS_NAME(const CLASS_NAME &other) : listener_t(other) {}                 \
     CLASS_NAME(CLASS_NAME &&other) noexcept : listener_t(other) {}             \
-                                                                               \
+    void invoke(display_context_t &context) {                                  \
+      listener_storage_t::invoke(context);                                     \
+    }                                                                          \
     virtual ~CLASS_NAME() {}                                                   \
                                                                                \
     UX_HASH_OBJECT_MEMBERS(listener_t::hash_code(), UX_HASH_TYPE_ID_THIS)      \

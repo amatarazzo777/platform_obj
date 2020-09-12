@@ -408,9 +408,9 @@ bool uxdevice::textual_render_storage_t::set_layout_options(cairo_t *cr) {
     int tw = std::min((double)logical_rect.width, coordinate->w);
     int th = std::min((double)logical_rect.height, coordinate->h);
     ink_rectangle = {(int)coordinate->x, (int)coordinate->y, tw, th};
-    _ink_rectangle = {(double)ink_rectangle.x, (double)ink_rectangle.y,
-                      (double)ink_rectangle.width,
-                      (double)ink_rectangle.height};
+    ink_rectangle_double = {(double)ink_rectangle.x, (double)ink_rectangle.y,
+                            (double)ink_rectangle.width,
+                            (double)ink_rectangle.height};
 
     has_ink_extents = true;
     ret = true;
@@ -433,7 +433,7 @@ void uxdevice::textual_render_storage_t::create_shadow(void) {
     auto text_shadow = rendering_parameter<text_shadow_t>();
     shadow_image = cairo_image_surface_create(
         CAIRO_FORMAT_ARGB32, ink_rectangle.width + text_shadow->x,
-        _ink_rectangle.height + text_shadow->y);
+        ink_rectangle_double.height + text_shadow->y);
     shadow_cr = cairo_create(shadow_image);
     // offset text by the parameter amounts
     cairo_move_to(shadow_cr, text_shadow->x, text_shadow->y);
@@ -695,7 +695,7 @@ void uxdevice::textual_render_storage_t::invoke(display_context_t &context) {
 
   // cairo_get_matrix(context.cr, &mat._matrix);
 
-  fn = precise_rendering_function();
+  auto fn = precise_rendering_function();
   auto &coordinate = *rendering_parameter<coordinate_t>();
 
   // two function provide mode switching for the rendering.
@@ -736,21 +736,22 @@ void uxdevice::textual_render_storage_t::invoke(display_context_t &context) {
 
     auto drawfn = [=](display_context_t &context) {
       // cairo_set_matrix(context.cr, &mat._matrix);
-      drawing_output_t::invoke(context.cr);
+      drawing_output_t::invoke(context);
 
       cairo_set_source_surface(context.cr, internal_buffer.rendered,
                                coordinate.x, coordinate.y);
       double tw, th;
-      tw = std::min(ink_rectangle.width, coordinate.w);
-      th = std::min(ink_rectangle.height, coordinate.h);
+      tw = std::min(ink_rectangle_double.width, coordinate.w);
+      th = std::min(ink_rectangle_double.height, coordinate.h);
 
-      cairo_rectangle(context.cr, _ink_rectangle.x, ink_rectangle.y, tw, th);
+      cairo_rectangle(context.cr, ink_rectangle_double.x,
+                      ink_rectangle_double.y, tw, th);
       cairo_fill(context.cr);
     };
     auto fnClipping = [=](display_context_t &context) {
       auto &coordinate = *rendering_parameter<coordinate_t>();
       // cairo_set_matrix(context.cr, &mat._matrix);
-      drawing_output_t::invoke(context.cr);
+      drawing_output_t::invoke(context);
       cairo_set_source_surface(context.cr, internal_buffer.rendered,
                                coordinate.x, coordinate.y);
       cairo_rectangle(context.cr, intersection_double.x, intersection_double.y,
@@ -768,16 +769,16 @@ void uxdevice::textual_render_storage_t::invoke(display_context_t &context) {
   // cairo api to the base surface context. One is for clipping and one without.
   auto fnBase = [=](display_context_t &context) {
     auto drawfn = [=](display_context_t &context) {
-      drawing_output_t::invoke(context.cr);
-      fn(context.cr, *coordinate);
+      drawing_output_t::invoke(context);
+      fn(context.cr, coordinate);
       evaluate_cache(context);
     };
     auto fnClipping = [=](display_context_t &context) {
       cairo_rectangle(context.cr, intersection_double.x, intersection_double.y,
                       intersection_double.width, intersection_double.height);
       cairo_clip(context.cr);
-      drawing_output_t::invoke(context.cr);
-      fn(context.cr, *coordinate);
+      drawing_output_t::invoke(context);
+      fn(context.cr, coordinate);
       cairo_reset_clip(context.cr);
       evaluate_cache(context);
     };
@@ -810,9 +811,9 @@ void uxdevice::image_block_storage_t::invoke(display_context_t &context) {
     return;
 
   auto coordinate = context.unit_memory<coordinate_t>();
-  auto options = context.unit_memory<drawing_options_fn_t>();
+  auto options = context.unit_memory<cairo_option_function_t>();
 
-  if (!(coordinate && value.size())) {
+  if (!(coordinate && description.size())) {
     const char *s = "An image_block_t object must include the following "
                     "attributes. coordinate_t and an image_block_t name.";
     UX_ERROR_DESC(s);
@@ -829,20 +830,20 @@ void uxdevice::image_block_storage_t::invoke(display_context_t &context) {
   coordinate_t &a = *coordinate;
 
   auto fnthread = [=, &context, &a]() {
-    image_block_ptr = read_image(value, coordinate->w, coordinate->h);
+    image_block_ptr = read_image(description, coordinate->w, coordinate->h);
 
     if (image_block_ptr) {
 
       ink_rectangle = {(int)a.x, (int)a.y, (int)a.w, (int)a.h};
-      _ink_rectangle = {(double)ink_rectangle.x, (double)ink_rectangle.y,
-                        (double)ink_rectangle.width,
-                        (double)ink_rectangle.height};
+      ink_rectangle_double = {(double)ink_rectangle.x, (double)ink_rectangle.y,
+                              (double)ink_rectangle.width,
+                              (double)ink_rectangle.height};
       has_ink_extents = true;
       is_loaded = true;
     } else {
       const char *s = "The image_block_t could not be processed or loaded. ";
       UX_ERROR_DESC(s);
-      UX_ERROR_DESC(value);
+      UX_ERROR_DESC(description);
     }
   };
 
@@ -853,7 +854,7 @@ void uxdevice::image_block_storage_t::invoke(display_context_t &context) {
     auto fn = [&](display_context_t &context) {
       if (!is_valid())
         return;
-      drawing_output_t::invoke(context.cr);
+      drawing_output_t::invoke(context);
       cairo_set_source_surface(context.cr, image_block_ptr, a.x, a.y);
       cairo_rectangle(context.cr, a.x, a.y, a.w, a.h);
       cairo_fill(context.cr);
@@ -861,7 +862,7 @@ void uxdevice::image_block_storage_t::invoke(display_context_t &context) {
     auto fnClipping = [&](display_context_t &context) {
       if (!is_valid())
         return;
-      drawing_output_t::invoke(context.cr);
+      drawing_output_t::invoke(context);
       cairo_set_source_surface(context.cr, image_block_ptr, a.x, a.y);
       cairo_rectangle(context.cr, intersection_double.x, intersection_double.y,
                       intersection_double.width, intersection_double.height);
@@ -888,28 +889,6 @@ void uxdevice::image_block_storage_t::invoke(display_context_t &context) {
 
 /**
 \internal
-\class image_block_t
-\internal
-\brief
-\details
-
-*/
-void uxdevice::image_block_t::invoke(display_context_t &context) {
-  image_block_storage_t::invoke(context);
-}
-
-/**
-\internal
-\class image_block_t
-\internal
-\brief
-\details
-
-*/
-void uxdevice::image_block_t::emit(display_context_t &context) {}
-
-/**
-\internal
 \class function_object_t
 \internal
 \brief call previously bound function that was supplied parameter
@@ -931,8 +910,8 @@ void uxdevice::function_object_t::invoke(display_context_t &context) {
 
 
  */
-void uxdevice::option_function_object_t::invoke(display_context_t &context) {
-  value(context.cr);
+void uxdevice::cairo_option_function_t::invoke(display_context_t &context) {
+  //  value(context.cr);
 }
 
 /**
@@ -943,33 +922,33 @@ void uxdevice::draw_function_object_t::invoke(display_context_t &context) {
   using namespace std::placeholders;
 
   // get the drawing options for the context.
-  auto options = context.unit_memory<drawing_options_fn>();
+  auto options = context.unit_memory<cairo_option_function_t>();
 
   // the cache functions
   auto fnCache = [=](display_context_t &context) {
     // set directly callable rendering function.
     auto fn = [=](display_context_t &context) {
-      drawing_output_t::invoke(context.cr);
+      drawing_output_t::invoke(context);
       value(context.cr);
-    }
+    };
+
+    auto fnClipping = [=](display_context_t &context) {
+      drawing_output_t::invoke(context);
+
+      cairo_rectangle(context.cr, intersection_double.x, intersection_double.y,
+                      intersection_double.width, intersection_double.height);
+      cairo_clip(context.cr);
+      value(context.cr);
+      cairo_reset_clip(context.cr);
+      evaluate_cache(context);
+    };
+
+    functors_lock(true);
+    fn_draw = std::bind(fn, _1);
+    fn_draw_clipped = std::bind(fnClipping, _1);
+    functors_lock(false);
+    bRenderBufferCached = true;
   };
-
-  auto fnClipping = [=](display_context_t &context) {
-    drawing_output_t::invoke(context.cr);
-
-    cairo_rectangle(context.cr, intersection_double.x, intersection_double.y,
-                    intersection_double.width, intersection_double.height);
-    cairo_clip(context.cr);
-    value(context.cr);
-    cairo_reset_clip(context.cr);
-    evaluate_cache(context);
-  };
-
-  functors_lock(true);
-  fn_draw = std::bind(fn, _1);
-  fn_draw_clipped = std::bind(fnClipping, _1);
-  functors_lock(false);
-  bRenderBufferCached = true;
 
   // two function provide mode switching for the rendering.
   // a cache surface is a new xcb surface that can be threaded in creation
@@ -1031,7 +1010,7 @@ void uxdevice::line_cap_t::invoke(display_context_t &context) {
   context.unit_memory<line_cap_t>(shared_from_this());
 }
 void uxdevice::line_cap_t::emit(cairo_t *cr) {
-  cairo_set_line_cap_t(cr, static_cast<cairo_line_cap_options_t>(value));
+  cairo_set_line_cap(cr, static_cast<cairo_line_cap_t>(value));
 }
 
 /**
@@ -1047,7 +1026,7 @@ void uxdevice::line_join_t::invoke(display_context_t &context) {
   context.unit_memory<line_join_t>(shared_from_this());
 }
 void uxdevice::line_join_t::emit(cairo_t *cr) {
-  cairo_set_line_join_t(cr, static_cast<cairo_line_join_options_t>(value));
+  cairo_set_line_join(cr, static_cast<cairo_line_join_t>(value));
 }
 /**
 
@@ -1062,7 +1041,7 @@ void uxdevice::miter_limit_t::invoke(display_context_t &context) {
   context.unit_memory<miter_limit_t>(shared_from_this());
 }
 void uxdevice::miter_limit_t::emit(cairo_t *cr) {
-  cairo_set_miter_limit_t(cr, value);
+  cairo_set_miter_limit(cr, value);
 }
 /**
 
@@ -1076,7 +1055,7 @@ void uxdevice::miter_limit_t::emit(cairo_t *cr) {
 void uxdevice::line_dash_storage_t::invoke(display_context_t &context) {
   context.unit_memory<line_dash_storage_t>(shared_from_this());
 }
-void uxdevice::line_dashes_t::emit(cairo_t *cr) {
+void uxdevice::line_dash_storage_t::emit(cairo_t *cr) {
   cairo_set_dash(cr, value.data(), value.size(), offset);
 }
 
@@ -1108,8 +1087,8 @@ void uxdevice::tollerance_t::emit(cairo_t *cr) {
 void uxdevice::graphic_operator_t::invoke(display_context_t &context) {
   context.unit_memory<graphic_operator_t>(shared_from_this());
 }
-void uxdevice::graphic_operator_t::emit(display_context_t &context) {
-  cairo_set_operator(context.cr, static_cast<cairo_operator_t>(value));
+void uxdevice::graphic_operator_t::emit(cairo_t *cr) {
+  cairo_set_operator(cr, static_cast<cairo_operator_t>(value));
 }
 
 /**
@@ -1134,7 +1113,7 @@ void uxdevice::arc_storage_t::invoke(display_context_t &context) {
 
 
  */
-void uxdevice::negative_arc_t::invoke(display_context_t &context) {
+void uxdevice::negative_arc_storage_t::invoke(display_context_t &context) {
   cairo_arc_negative(context.cr, xc, yc, radius, angle1, angle2);
 }
 
@@ -1147,11 +1126,11 @@ void uxdevice::negative_arc_t::invoke(display_context_t &context) {
 
 
  */
-void uxdevice::curve_t::invoke(display_context_t &context) {
+void uxdevice::curve_storage_t::invoke(display_context_t &context) {
   if (context.relative_coordinate)
-    cairo_rel_curve_t_to(context.cr, x1, y1, x2, y3, x3, y3);
+    cairo_rel_curve_to(context.cr, x1, y1, x2, y3, x3, y3);
   else
-    cairo_curve_t_to(context.cr, x1, y1, x2, y2, x3, y3);
+    cairo_curve_to(context.cr, x1, y1, x2, y2, x3, y3);
 }
 
 /**
@@ -1163,7 +1142,7 @@ void uxdevice::curve_t::invoke(display_context_t &context) {
 
 
  */
-void uxdevice::line_t::invoke(display_context_t &context) {
+void uxdevice::line_storage_t::invoke(display_context_t &context) {
   if (context.relative_coordinate)
     cairo_rel_line_to(context.cr, x, y);
   else
@@ -1221,7 +1200,7 @@ void uxdevice::vline_t::invoke(display_context_t &context) {
 
 
  */
-void uxdevice::rectangle_t::invoke(display_context_t &context) {
+void uxdevice::rectangle_storage_t::invoke(display_context_t &context) {
   cairo_rectangle(context.cr, x, y, width, height);
 }
 
@@ -1235,7 +1214,7 @@ void uxdevice::rectangle_t::invoke(display_context_t &context) {
 
  */
 void uxdevice::close_path_t::invoke(display_context_t &context) {
-  cairo_close_path_t(context.cr);
+  cairo_close_path(context.cr);
 }
 
 /**
@@ -1248,7 +1227,7 @@ void uxdevice::close_path_t::invoke(display_context_t &context) {
 
 */
 void uxdevice::stroke_path_t::invoke(display_context_t &context) {
-  value.emit(context.cr);
+  painter_brush_t::invoke(context.cr);
   cairo_stroke(context.cr);
 }
 
@@ -1276,9 +1255,9 @@ void uxdevice::fill_path_t::invoke(display_context_t &context) {
 
  */
 void uxdevice::stroke_fill_path_storage_t::invoke(display_context_t &context) {
-  stroke_fill_path_storage_t value.stroke_brush.emit(context.cr);
+  stroke_brush.emit(context.cr);
   cairo_stroke_preserve(context.cr);
-  value.fill_brush.emit(context.cr);
+  fill_brush.emit(context.cr);
   cairo_fill(context.cr);
 }
 

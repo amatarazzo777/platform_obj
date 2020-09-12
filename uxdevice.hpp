@@ -118,13 +118,14 @@ information. Yet within the c++ implementation, the data structures that report
 and hold information is elaborate.
 
 */
+
 #define UX_DECLARE_STREAM_INTERFACE(CLASS_NAME)                                \
 public:                                                                        \
-  template <> surface_area_t &operator<<(const CLASS_NAME &data) {             \
+  template <typename T> surface_area_t &operator<<(const CLASS_NAME &data) {   \
     stream_input(data);                                                        \
     return *this;                                                              \
   }                                                                            \
-  template <>                                                                  \
+  template <typename T>                                                        \
   surface_area_t &operator<<(const std::shared_ptr<CLASS_NAME> data) {         \
     stream_input(data);                                                        \
     return *this;                                                              \
@@ -133,27 +134,6 @@ public:                                                                        \
 private:                                                                       \
   surface_area_t &stream_input(const CLASS_NAME &_val);                        \
   surface_area_t &stream_input(const std::shared_ptr<CLASS_NAME> _val);
-
-/**
-\internal
-
-\def UX_DECLARE_STREAM_IMPLEMENTATION
-
-\brief The macro provides a creation of necessary input stream routines that
-maintains the display lists. These routines are private within the class
-and are activated by the << operator. These are the underlying operations.
-
-*/
-#define UX_DECLARE_STREAM_IMPLEMENTATION(CLASS_NAME)                           \
-public:                                                                        \
-  surface_area_t &operator<<(const CLASS_NAME &data) {                         \
-    display_list<CLASS_NAME>(data);                                            \
-    return *this;                                                              \
-  }                                                                            \
-  surface_area_t &operator<<(const std::shared_ptr<CLASS_NAME> data) {         \
-    display_list<CLASS_NAME>(data);                                            \
-    return *this;                                                              \
-  }
 
 /**
 \typedef coordinate_list_t
@@ -195,6 +175,7 @@ public:
                  const painter_brush_t &background);
   ~surface_area_t();
 
+  // template << operator.
   template <typename T> surface_area_t &operator<<(const T &data) {
     if constexpr (std::is_base_of<display_unit_t, T>::value) {
       display_list<T>(data);
@@ -209,7 +190,15 @@ public:
 
   template <typename T>
   surface_area_t &operator<<(const std::shared_ptr<T> data) {
-    display_list<T>(data);
+    if constexpr (std::is_base_of<display_unit_t, T>::value) {
+      display_list<T>(data);
+    } else {
+      std::ostringstream s;
+      s << data;
+      std::string sData = s.str();
+      stream_input(sData);
+    }
+
     return *this;
   }
 
@@ -225,7 +214,7 @@ public:
 
   UX_DECLARE_STREAM_INTERFACE(std::string)
   UX_DECLARE_STREAM_INTERFACE(std::stringstream)
-  // UX_DECLARE_STREAM_INTERFACE(char *)
+  UX_DECLARE_STREAM_INTERFACE(std::string_view)
 
   /* declares the interface and implementation for these
    objects
