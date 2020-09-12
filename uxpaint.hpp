@@ -50,8 +50,8 @@ public:
   color_stop_t(double _o, const std::string &_s, double _a);
   void parse_color(const std::string &_s);
 
-  HASH_OBJECT_MEMBERS(std::type_index(typeid(this)), bAutoOffset, bRGBA, offset,
-                      r, g, b, a)
+  UX_HASH_OBJECT_MEMBERS(std::type_index(typeid(this)), bAutoOffset, bRGBA,
+                         offset, r, g, b, a)
 
   bool bAutoOffset = false;
   bool bRGBA = false;
@@ -65,7 +65,7 @@ typedef std::vector<color_stop_t> color_stops_t;
 typedef std::vector<color_stop_t>::iterator color_stops_iterator_t;
 } // namespace uxdevice
 
-REGISTER_STD_HASH_SPECIALIZATION(uxdevice::color_stop_t);
+UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::color_stop_t);
 
 /**
  parse web formats
@@ -142,9 +142,9 @@ public:
 
     bool is_patch_description(void) { return false; }
 
-    HASH_OBJECT_MEMBERS(std::type_index(typeid(this)), class_type, description,
-                        pango_color.red, pango_color.green, pango_color.blue,
-                        is_loaded)
+    UX_HASH_OBJECT_MEMBERS(std::type_index(typeid(this)), class_type,
+                           description, pango_color.red, pango_color.green,
+                           pango_color.blue, is_loaded)
 
     paint_definition_class_t class_type = paint_definition_class_t::none;
     std::string description = {};
@@ -170,7 +170,8 @@ public:
         : paint_definition_base_t(other) {}
     virtual ~descriptive_definition_t() {}
 
-    HASH_OBJECT_MEMBERS(paint_definition_base_t::hash_code(), HASH_TYPE_ID_THIS)
+    UX_HASH_OBJECT_MEMBERS(paint_definition_base_t::hash_code(),
+                           UX_HASH_TYPE_ID_THIS)
   };
 
   class color_definition_t : public paint_definition_base_t {
@@ -216,8 +217,8 @@ public:
       cairo_set_source_rgba(cr, r, g, b, a);
     }
 
-    HASH_OBJECT_MEMBERS(paint_definition_base_t::hash_code(),
-                        std::type_index(typeid(this)), r, g, b, a)
+    UX_HASH_OBJECT_MEMBERS(paint_definition_base_t::hash_code(),
+                           std::type_index(typeid(this)), r, g, b, a)
 
     double r = {};
     double g = {};
@@ -263,10 +264,10 @@ public:
       cairo_set_source(cr, pattern);
     }
 
-    HASH_OBJECT_MEMBERS(HASH_VECTOR_OBJECTS(color_stops),
-                        paint_definition_base_t::hash_code(),
-                        std::type_index(typeid(this)), x0, y0, x1, y1, filter,
-                        extend, pattern)
+    UX_HASH_OBJECT_MEMBERS(UX_HASH_VECTOR_OBJECTS(color_stops),
+                           paint_definition_base_t::hash_code(),
+                           std::type_index(typeid(this)), x0, y0, x1, y1,
+                           filter, extend, pattern)
 
     double x0 = {};
     double y0 = {};
@@ -318,10 +319,10 @@ public:
       cairo_set_source(cr, pattern);
     }
 
-    HASH_OBJECT_MEMBERS(HASH_VECTOR_OBJECTS(color_stops),
-                        paint_definition_base_t::hash_code(), HASH_TYPE_ID_THIS,
-                        cx0, cy0, radius0, cx1, cy1, radius1, filter, extend,
-                        pattern)
+    UX_HASH_OBJECT_MEMBERS(UX_HASH_VECTOR_OBJECTS(color_stops),
+                           paint_definition_base_t::hash_code(),
+                           UX_HASH_TYPE_ID_THIS, cx0, cy0, radius0, cx1, cy1,
+                           radius1, filter, extend, pattern)
 
     double cx0 = {};
     double cy0 = {};
@@ -384,9 +385,9 @@ public:
       cairo_set_source(cr, pattern);
     }
 
-    HASH_OBJECT_MEMBERS(paint_definition_base_t::hash_code(),
-                        std::type_index(typeid(this)), width, height,
-                        image_block, pattern, filter, extend)
+    UX_HASH_OBJECT_MEMBERS(paint_definition_base_t::hash_code(),
+                           std::type_index(typeid(this)), width, height,
+                           image_block, pattern, filter, extend)
 
     double width = {};
     double height = {};
@@ -467,21 +468,22 @@ private:
   bool patch(const std::string &s);
 
 public:
-  HASH_OBJECT_MEMBERS(std::type_index(typeid(this)), data_storage)
+  UX_HASH_OBJECT_MEMBERS(std::type_index(typeid(this)), data_storage)
 
   data_storage_t data_storage = {};
 };
 
 } // namespace uxdevice
 
-REGISTER_STD_HASH_SPECIALIZATION(
+UX_REGISTER_STD_HASH_SPECIALIZATION(
     uxdevice::painter_brush_t::paint_definition_base_t);
-REGISTER_STD_HASH_SPECIALIZATION(
+UX_REGISTER_STD_HASH_SPECIALIZATION(
     uxdevice::painter_brush_t::descriptive_definition_t);
-REGISTER_STD_HASH_SPECIALIZATION(uxdevice::painter_brush_t::color_definition_t);
-REGISTER_STD_HASH_SPECIALIZATION(
+UX_REGISTER_STD_HASH_SPECIALIZATION(
+    uxdevice::painter_brush_t::color_definition_t);
+UX_REGISTER_STD_HASH_SPECIALIZATION(
     uxdevice::painter_brush_t::linear_gradient_definition_t);
-REGISTER_STD_HASH_SPECIALIZATION(
+UX_REGISTER_STD_HASH_SPECIALIZATION(
     uxdevice::painter_brush_t::radial_gradient_definition_t);
-REGISTER_STD_HASH_SPECIALIZATION(
+UX_REGISTER_STD_HASH_SPECIALIZATION(
     uxdevice::painter_brush_t::image_block_pattern_source_definition_t);

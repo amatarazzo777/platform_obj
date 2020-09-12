@@ -13,7 +13,7 @@
 				<Option compiler="clang" />
 				<Compiler>
 					<Add option="-g" />
-					<Add option="-ferror-limit=100" />
+					<Add option="-fmax-errors=0" />
 				</Compiler>
 			</Target>
 			<Target title="Release">

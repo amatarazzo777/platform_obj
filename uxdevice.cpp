@@ -201,7 +201,7 @@ uxdevice::surface_area_t::surface_area_t(
 /**
 \overload
 \fn surface_area_t() default window constructor.
-\param const coordinate_list_t &coordinate_t - coordinates and
+\param const coordinate_list_t &coordinate_t - coordinate and
    dimensions of the window.
 
 \brief Opens a default window approximately 60% of window view area
@@ -209,8 +209,8 @@ with the title given. Default background, without an external window
 event handler.
 
 */
-uxdevice::surface_area_t::surface_area_t(const coordinate_list_t &coordinates) {
-  open_window(coordinates, DEFAULT_WINDOW_TITLE, painter_brush_t{},
+uxdevice::surface_area_t::surface_area_t(const coordinate_list_t &coordinate) {
+  open_window(coordinate, DEFAULT_WINDOW_TITLE, painter_brush_t{},
               event_handler_t{});
 }
 /**
@@ -240,9 +240,9 @@ event handler.
 
 */
 uxdevice::surface_area_t::surface_area_t(
-    const coordinate_list_t &coordinates,
+    const coordinate_list_t &coordinate,
     const std::string &surface_area_title) {
-  open_window(coordinates, surface_area_title, painter_brush_t{},
+  open_window(coordinate, surface_area_title, painter_brush_t{},
               event_handler_t{});
 }
 
@@ -250,7 +250,7 @@ uxdevice::surface_area_t::surface_area_t(
 \overload
 \fn surface_area_t() default window constructor.
 
-\param const coordinate_list_t &coordinates
+\param const coordinate_list_t &coordinate
 \param const std::string &window_title
 \param const painter_brush_t &background
 
@@ -260,9 +260,9 @@ event handler.
 
 */
 uxdevice::surface_area_t::surface_area_t(
-    const coordinate_list_t &coordinates, const std::string &surface_area_title,
+    const coordinate_list_t &coordinate, const std::string &surface_area_title,
     const painter_brush_t &surface_background_brush) {
-  open_window(coordinates, surface_area_title, surface_background_brush,
+  open_window(coordinate, surface_area_title, surface_background_brush,
               event_handler_t{});
 }
 
@@ -270,12 +270,12 @@ uxdevice::surface_area_t::surface_area_t(
 \overload
 \fn surface_area_t() default window constructor.
 
-\param const coordinate_list_t &coordinates
+\param const coordinate_list_t &coordinate
 \param const std::string &window_title
 \param const event_handler_t &dispatch_events
 \param const painter_brush_t &surface_background_brush
 
-\brief Opens a window the size and position of the coordinates provided.
+\brief Opens a window the size and position of the coordinate provided.
 The given title is used as the window title.  The background parameter serves
 as the background surface brush, When the window is cleared, this is the
 texture,color or gradient used. The window events such as focus, mouse,
@@ -284,10 +284,10 @@ resize and paint events may be listened to by the event dispatcher. The
 
 */
 uxdevice::surface_area_t::surface_area_t(
-    const coordinate_list_t &coordinates, const std::string &window_title,
+    const coordinate_list_t &coordinate, const std::string &window_title,
     const painter_brush_t &surface_background_brush,
     const event_handler_t &dispatch_events) {
-  open_window(coordinates, window_title, surface_background_brush,
+  open_window(coordinate, window_title, surface_background_brush,
               dispatch_events);
 }
 
@@ -359,7 +359,7 @@ void uxdevice::surface_area_t::maintain_index(
 \param const std::string &s
 
 \brief A stream interface routine that is declared using the
-DECLARE_STREAM_INTERFACE macro within the device published development API.
+UX_DECLARE_STREAM_INTERFACE macro within the device published development API.
 uxdevice.hpp is where is interface is declared.
 
 The routine is specialized because it creates a textual_rendering_t object
@@ -382,7 +382,7 @@ surface_area_t &uxdevice::surface_area_t::stream_input(const std::string &s) {
 \param const std::shared_ptr<std::string> _val
 
 \brief An overloaded stream interface implemetatione that is declared using
-the DECLARE_STREAM_INTERFACE macro inside the uxdevice::surface_area_t class.
+the UX_DECLARE_STREAM_INTERFACE macro inside the uxdevice::surface_area_t class.
 
 \details The routine is specialized because it creates
 a textual_rendering_t object that accepts the textual data. Textual data is
@@ -407,7 +407,7 @@ surface_area_t &uxdevice::surface_area_t::stream_input(
 \param const std::stringstream &_val
 
 \brief An overloaded stream interface implemetatione that is declared using
-the DECLARE_STREAM_INTERFACE macro inside the uxdevice::surface_area_t class.
+the UX_DECLARE_STREAM_INTERFACE macro inside the uxdevice::surface_area_t class.
 The macro only declares the interface prototypes. The implementation for the
 specific type is below.
 

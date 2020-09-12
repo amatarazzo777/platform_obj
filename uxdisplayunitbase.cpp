@@ -37,11 +37,13 @@ shading or texturing derive and publish the painter_brush_t class interface.
 
 #include "uxdevice.hpp"
 
+#if 0
 void uxdevice::drawing_output_t::invoke(cairo_t *cr) {
   for (auto &fn : options.value)
     fn.invoke(cr);
   is_processed = true;
 }
+#endif
 
 void uxdevice::drawing_output_t::intersect(cairo_rectangle_t &r) {
   if (!has_ink_extents)
@@ -95,7 +97,7 @@ void uxdevice::drawing_output_t::evaluate_cache(display_context_t &context) {
 
 std::size_t uxdevice::cairo_option_function_t::hash_code(void) const noexcept {
   std::size_t __value = {};
-  hash_combine(__value, HASH_TYPE_ID_THIS, HASH_VECTOR_OBJECTS(value));
+  hash_combine(__value, UX_HASH_TYPE_ID_THIS, UX_HASH_VECTOR_OBJECTS(value));
   return __value;
 }
 

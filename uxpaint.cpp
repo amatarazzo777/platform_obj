@@ -278,8 +278,7 @@ void uxdevice::painter_brush_t::emit(cairo_t *cr) {
   }
 }
 
-void uxdevice::painter_brush_t::emit(cairo_t *cr, double x, double y, double w,
-                                     double h) {
+void uxdevice::painter_brush_t::emit(cairo_t *cr, const coordinate_t &a) {
   if (!data_storage->is_loaded) {
     create();
 
@@ -288,10 +287,10 @@ void uxdevice::painter_brush_t::emit(cairo_t *cr, double x, double y, double w,
         data_storage->class_type == paint_definition_class_t::radial_gradient ||
         data_storage->class_type ==
             paint_definition_class_t::image_block_pattern)
-      translate(-x, -y);
+      translate(-a.x, -a.y);
   }
 
   if (data_storage->is_loaded) {
-    data_storage->emit(cr, x, y, w, h);
+    data_storage->emit(cr, a.x, a.y, a.w, a.h);
   }
 }

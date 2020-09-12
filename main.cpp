@@ -373,8 +373,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 #define _C color(gen)
 #define _A opac(gen)
 
-  surface_area_t vis =
-      surface_area_t({500, 500}, "Information Title", window_background);
+  surface_area_t vis = surface_area_t({500, 500}, "Information Title",
+                                      painter_brush_t("darkorange"));
 
   vis << listen_keypress_t([&vis](auto &evt) {
     string s = " ";
@@ -406,19 +406,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
   // creating shared objects allows for some interface architectures
   // to be crafted easier.
   vis << text_font_t("28px").index("paragraphfont");
-  vis << text_shadow_t("green") << coordinates_t{0, 100, 600, 300}
+  vis << text_shadow_t("green") << coordinate_t{0, 100, 600, 300}
       << text_color_t("white") << paragraph_text << '\n';
 
   vis[paragraph_text] =
       "New text is applied without an indirect index, more simplified syntax. ";
-  vis["paragraphfont"] = "40px";
+  vis.get<text_font_t>("paragraphfont").description = "40px";
 
   for (int i = 0; i < 5; i++) {
-    vis << coordinates_t{i * 130.0, 200, 150, 240} << image_block_t{sSVG_BUTTON}
+    vis << coordinate_t{i * 130.0, 200, 150, 240} << image_block_t{sSVG_BUTTON}
         << text_shadow_t("black")
         << text_fill_t(0, 0, 5, 30, {{"orange"}, {"yellow"}})
         << text_outline_t(stripes) << text_font_t("16px") << line_width_t(5)
-        << coordinates_t{20.0 + i * 130.0, 210, 150, 240} << button_caption;
+        << coordinate_t{20.0 + i * 130.0, 210, 150, 240} << button_caption;
   }
 
   vis.notify_complete();
@@ -426,7 +426,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
     std::this_thread::sleep_for(std::chrono::milliseconds(DRAW_SLEEP));
 
     // show_time(vis, 0, 0);
-    *paragraph_text = generate_text();
+    vis[paragraph_text] = generate_text();
 
     // window_background.value
 
@@ -441,8 +441,8 @@ void show_time(surface_area_t &vis, double x, double y) {
   char mbstr[100];
   std::strftime(mbstr, sizeof(mbstr), "%A %c", std::localtime(&t));
 
-  vis << text_fill_off_t() << text_outline_off_t() << text_font_t("28px")
-      << text_shadow_t("darkgrey") << coordinates_t{x, y, 600, 300}
+  vis << text_render_fast_t{} << text_font_t("28px")
+      << text_shadow_t("darkgrey") << coordinate_t{x, y, 600, 300}
       << text_color_t(0, 0, 10, 10, {{"white"}, {"grey"}}) << mbstr << "  "
       << '\n';
 }
@@ -465,9 +465,9 @@ std::shared_ptr<std::string> insert_text(surface_area_t &vis, bool bfast,
   std::uniform_int_distribution<> fill(1, 2);
 
   if (bfast) {
-    vis << text_fill_off_t{} << text_outline_off_t{} << text_shadow_off_t{}
-        << text_alignment_options_t::left << coordinates_t{10, 10, 300, 300}
-        << ps;
+    vis << text_render_fast_t{}
+        << text_alignment_t{text_alignment_options_t::left}
+        << coordinate_t{10, 10, 300, 300} << ps;
 
   } else {
 
@@ -486,8 +486,8 @@ std::shared_ptr<std::string> insert_text(surface_area_t &vis, bool bfast,
                            {_C, _C, _C, _C, _A},
                            {_C, _C, _C, _C, _A}}}
         << text_shadow_t{"green"} << line_width_t{lw(gen)}
-        << text_alignment_options_t::left << coordinates_t{10, 10, 300, 300}
-        << ps;
+        << text_alignment_t{text_alignment_options_t::left}
+        << coordinate_t{10, 10, 300, 300} << ps;
   }
   return ps;
 }
@@ -542,7 +542,7 @@ void draw_lines(surface_area_t &vis) {
   std::uniform_real_distribution<> coord(55.0, 100.0);
   std::uniform_int_distribution<> shape(1, 3);
 
-  vis << coordinates_t(scrn(gen), scrn(gen));
+  vis << coordinate_t(scrn(gen), scrn(gen));
 
   for (int c = 0; c < NUM_SEGMENTS; c++) {
 
@@ -570,5 +570,5 @@ void draw_lines(surface_area_t &vis) {
       coord(gen), coord(gen), coord(gen), coord(gen),
       {{_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}, {_C, _C, _C, _C, 1}});
 
-  vis << stroke_fill_path(ps, pf);
+  vis << stroke_fill_path_t(ps, pf);
 }

@@ -26,11 +26,11 @@
 #include "uxdevice.hpp"
 
 // error macro for this source
-#ifdef ERROR_CHECK
-#undef ERROR_CHECK
-#endif // ERROR_CHECK
+#ifdef UX_ERROR_CHECK
+#undef UX_ERROR_CHECK
+#endif // UX_ERROR_CHECK
 
-#define ERROR_CHECK(obj)                                                       \
+#define UX_ERROR_CHECK(obj)                                                    \
   {                                                                            \
     cairo_status_t stat = error_check(obj);                                    \
     if (stat)                                                                  \
@@ -81,7 +81,7 @@ void uxdevice::display_context_t::flush() {
   XCB_SPIN;
   if (xcbSurface) {
     cairo_surface_flush(xcbSurface);
-    ERROR_CHECK(xcbSurface);
+    UX_ERROR_CHECK(xcbSurface);
   }
   XCB_CLEAR;
 
@@ -139,7 +139,7 @@ void uxdevice::display_context_t::apply_surface_requests(void) {
     XCB_SPIN;
     cairo_surface_flush(xcbSurface);
     cairo_xcb_surface_set_size(xcbSurface, flat.w, flat.h);
-    ERROR_CHECK(xcbSurface);
+    UX_ERROR_CHECK(xcbSurface);
     XCB_CLEAR;
 
     window_width = flat.w;
@@ -189,13 +189,13 @@ void uxdevice::display_context_t::render(void) {
     BRUSH_SPIN;
     brush.emit(cr);
     BRUSH_CLEAR;
-    ERROR_CHECK(cr);
+    UX_ERROR_CHECK(cr);
     XCB_CLEAR;
 
     XCB_SPIN;
     cairo_rectangle(cr, r.rect.x, r.rect.y, r.rect.width, r.rect.height);
     cairo_fill(cr);
-    ERROR_CHECK(cr);
+    UX_ERROR_CHECK(cr);
     XCB_CLEAR;
 
     plot(r);
@@ -203,7 +203,7 @@ void uxdevice::display_context_t::render(void) {
     XCB_SPIN;
     cairo_pop_group_to_source(cr);
     cairo_paint(cr);
-    ERROR_CHECK(cr);
+    UX_ERROR_CHECK(cr);
     XCB_CLEAR;
 
     flush();
@@ -237,10 +237,10 @@ uxdevice::display_context_t::allocate_buffer(int width, int height) {
 
   cairo_surface_t *rendered =
       cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
-  ERROR_CHECK(rendered);
+  UX_ERROR_CHECK(rendered);
 
   cairo_t *cr = cairo_create(rendered);
-  ERROR_CHECK(cr);
+  UX_ERROR_CHECK(cr);
 
   return draw_buffer_t{cr, rendered};
 }
@@ -489,7 +489,7 @@ void uxdevice::display_context_t::plot(context_cairo_region_t &plotArea) {
       n->fn_draw(*this);
       XCB_CLEAR;
       n->functors_lock(false);
-      ERROR_CHECK(cr);
+      UX_ERROR_CHECK(cr);
     } break;
     case CAIRO_REGION_OVERLAP_PART: {
       n->functors_lock(true);
@@ -497,7 +497,7 @@ void uxdevice::display_context_t::plot(context_cairo_region_t &plotArea) {
       n->fn_draw_clipped(*this);
       XCB_CLEAR;
       n->functors_lock(false);
-      ERROR_CHECK(cr);
+      UX_ERROR_CHECK(cr);
     } break;
     }
     if (clearing_frame)

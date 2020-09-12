@@ -107,7 +107,7 @@ public:
 
 \internal
 
-\def DECLARE_STREAM_INTERFACE
+\def UX_DECLARE_STREAM_INTERFACE
 
 \brief the macro creates the stream interface for both constant references
 and shared pointers as well as establishes the prototype for the insertion
@@ -118,7 +118,7 @@ information. Yet within the c++ implementation, the data structures that report
 and hold information is elaborate.
 
 */
-#define DECLARE_STREAM_INTERFACE(CLASS_NAME)                                   \
+#define UX_DECLARE_STREAM_INTERFACE(CLASS_NAME)                                \
 public:                                                                        \
   template <> surface_area_t &operator<<(const CLASS_NAME &data) {             \
     stream_input(data);                                                        \
@@ -137,14 +137,14 @@ private:                                                                       \
 /**
 \internal
 
-\def DECLARE_STREAM_IMPLEMENTATION
+\def UX_DECLARE_STREAM_IMPLEMENTATION
 
 \brief The macro provides a creation of necessary input stream routines that
 maintains the display lists. These routines are private within the class
 and are activated by the << operator. These are the underlying operations.
 
 */
-#define DECLARE_STREAM_IMPLEMENTATION(CLASS_NAME)                              \
+#define UX_DECLARE_STREAM_IMPLEMENTATION(CLASS_NAME)                           \
 public:                                                                        \
   surface_area_t &operator<<(const CLASS_NAME &data) {                         \
     display_list<CLASS_NAME>(data);                                            \
@@ -157,7 +157,7 @@ public:                                                                        \
 
 /**
 \typedef coordinate_list_t
-\brief An std::list used to communicate coordinates for the window.
+\brief An std::list used to communicate coordinate for the window.
 varying pairs may be given. two or four.
 
 
@@ -177,19 +177,19 @@ public:
   surface_area_t(const std::string &surface_area_title);
 
   surface_area_t(const event_handler_t &evtDispatcher);
-  surface_area_t(const coordinate_list_t &coordinates);
-  surface_area_t(const coordinate_list_t &coordinates,
+  surface_area_t(const coordinate_list_t &coordinate);
+  surface_area_t(const coordinate_list_t &coordinate,
                  const std::string &window_title,
                  const painter_brush_t &surface_background_brush,
                  const event_handler_t &dispatch_events);
 
-  surface_area_t(const coordinate_list_t &coordinates,
+  surface_area_t(const coordinate_list_t &coordinate,
                  const std::string &surface_area_title);
-  surface_area_t(const coordinate_list_t &coordinates,
+  surface_area_t(const coordinate_list_t &coordinate,
                  const std::string &surface_area_title,
                  const painter_brush_t &background);
 
-  surface_area_t(const coordinate_list_t &coordinates,
+  surface_area_t(const coordinate_list_t &coordinate,
                  const std::string &surface_area_title,
                  const event_handler_t &evtDispatcher,
                  const painter_brush_t &background);
@@ -223,9 +223,9 @@ public:
 
   */
 
-  DECLARE_STREAM_INTERFACE(std::string)
-  DECLARE_STREAM_INTERFACE(std::stringstream)
-  // DECLARE_STREAM_INTERFACE(char *)
+  UX_DECLARE_STREAM_INTERFACE(std::string)
+  UX_DECLARE_STREAM_INTERFACE(std::stringstream)
+  // UX_DECLARE_STREAM_INTERFACE(char *)
 
   /* declares the interface and implementation for these
    objects
@@ -328,7 +328,7 @@ private:
                    const event_handler_t &dispatch_events);
   void close_window(void);
   void set_surface_defaults(void);
-  bool relative_coordinates = false;
+  bool relative_coordinate = false;
   void maintain_index(const std::shared_ptr<display_unit_t> obj);
 
 private:
@@ -350,13 +350,17 @@ private:
     return display_list<T>(std::make_shared<T>(args...));
   }
 
-#define DL_SPIN while (DL_readwrite.test_and_set(std::memory_order_acquire))
-#define DL_CLEAR DL_readwrite.clear(std::memory_order_release)
+  // interface between client and api rendering threads.
+  std::atomic_flag DL_readwrite = ATOMIC_FLAG_INIT;
+
+#define UX_DISPLAY_LIST_SPIN                                                   \
+  while (DL_readwrite.test_and_set(std::memory_order_acquire))
+#define UX_DISPLAY_LIST_CLEAR DL_readwrite.clear(std::memory_order_release)
 
   template <class T, typename... Args>
   std::shared_ptr<T> display_list(const std::shared_ptr<T> ptr,
                                   const Args &... args) {
-    DL_SPIN;
+    UX_DISPLAY_LIST_SPIN;
 
     ptr->invoke(context);
 
@@ -364,25 +368,21 @@ private:
       context.add_drawable(std::dynamic_pointer_cast<drawing_output_t>(ptr));
 
     maintain_index(std::dynamic_pointer_cast<display_unit_t>(ptr));
-    DL_CLEAR;
+
+    UX_DISPLAY_LIST_CLEAR;
 
     return ptr;
   }
 
   void display_list_clear(void) {
-    DL_SPIN;
+    UX_DISPLAY_LIST_SPIN;
     display_list_storage.clear();
-    DL_CLEAR;
+    UX_DISPLAY_LIST_CLEAR;
   }
 
   std::unordered_map<indirect_index_display_unit_t,
                      std::shared_ptr<display_unit_t>>
       mapped_objects = {};
-
-  std::atomic_flag DL_readwrite = ATOMIC_FLAG_INIT;
-
-#define DL_SPIN while (DL_readwrite.test_and_set(std::memory_order_acquire))
-#define DL_CLEAR DL_readwrite.clear(std::memory_order_release)
 
   std::list<event_handler_t> onfocus = {};
   std::list<event_handler_t> onblur = {};

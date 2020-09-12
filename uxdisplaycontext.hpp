@@ -190,13 +190,13 @@ public:
   static void destroy_buffer(draw_buffer_t &_buffer);
   void clear(void);
 
-  DECLARE_ERROR_HANDLING
+  UX_DECLARE_ERROR_HANDLING
 
-  DECLARE_TYPE_INDEX_MEMORY(unit_memory)
+  UX_DECLARE_TYPE_INDEX_MEMORY(unit_memory)
 
-  HASH_OBJECT_MEMBERS(unit_memory_hash_code_all(), HASH_TYPE_ID_THIS, window_x,
-                      window_y, window_width, window_height, window_open,
-                      brush.hash_code())
+  UX_HASH_OBJECT_MEMBERS(unit_memory_hash_code_all(), UX_HASH_TYPE_ID_THIS,
+                         window_x, window_y, window_width, window_height,
+                         window_open, brush.hash_code())
 
 public:
   short window_x = 0;
