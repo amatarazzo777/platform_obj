@@ -52,7 +52,7 @@ options when compiling the text_color_t.
 
 */
 #define SYSTEM_DEFAULTS                                                        \
-  in(text_render_fast_t{}, text_font_t{"Arial 20px"}, text_color_t{"black"},   \
+  in(text_render_normal_t{}, text_font_t{"Arial 20px"}, text_color_t{"black"}, \
      surface_area_brush_t{"white"}, text_indent_t{100.0},                      \
      text_alignment_t{text_alignment_options_t::left},                         \
      text_ellipsize_t{text_ellipsize_options_t::off}, text_line_space_t{1.1},  \
@@ -188,10 +188,38 @@ public:
     return *this;
   }
 
+  /**
+  \fn operator<<
+  \brief
+
+  */
   template <typename T>
   surface_area_t &operator<<(const std::shared_ptr<T> data) {
-    if constexpr (std::is_base_of<display_unit_t, T>::value) {
+
+    if constexpr (std::is_base_of<listener_t<T>, T>::value) {
+
+    } else if constexpr (std::is_base_of<display_unit_t, T>::value) {
       display_list<T>(data);
+
+      if constexpr (std::is_base_of<display_context_memory_storage_t, T>::value)
+        context.unit_memory<T>(data);
+
+      if constexpr (std::is_base_of<emit_display_context_abstract_t, T>::value)
+        T::emit(context);
+    } else if constexpr (std::is_base_of<emit_cairo_abstract_t, T>::value) {
+      T::emit(context.cr);
+    } else if constexpr (std::is_base_of<
+                             emit_cairo_relative_coordinate_abstract_t,
+                             T>::value) {
+      if (context.relative_coordinate)
+        T::emit_relative(context.cr);
+      else
+        T::emit_relative(context.cr);
+    } else if constexpr (std::is_base_of<emit_cairo_coordinate_abstract_t,
+                                         T>::value) {
+      // virtual void emit(cairo_t *cr) = 0;
+      // virtual void emit(cairo_t *cr, const coordinate_t &a) = 0;
+    } else if constexpr (std::is_base_of<emit_pango_abstract_t, T>::value) {
     } else {
       std::ostringstream s;
       s << data;
@@ -221,7 +249,8 @@ public:
    when these are invoked, the unit_memory class is also updated.
    When rendering objects are created, text, image or other, these
    these shared pointers are used as a reference local member initialized
-   at invoke() public member. The parameters and options are validated as well.
+   at invoke() public member. The parameters and options are validated as
+   well.
     */
 
   /**
@@ -390,6 +419,6 @@ private:
   std::list<event_handler_t> onwheel = {};
 
   std::list<event_handler_t> &get_event_vector(std::type_index evt_type);
-};
+}; // namespace uxdevice
 
 } // namespace uxdevice

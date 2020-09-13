@@ -37,8 +37,8 @@ shading or texturing derive and publish the painter_brush_t class interface.
 
 #include "uxdevice.hpp"
 
-void uxdevice::text_render_fast_t::invoke(display_context_t &context) {
-  context.unit_memory<text_render_fast_t>();
+void uxdevice::text_render_normal_t::invoke(display_context_t &context) {
+  context.unit_memory<text_render_normal_t>();
 }
 
 void uxdevice::text_render_path_t::invoke(display_context_t &context) {
@@ -100,7 +100,9 @@ used.
 void uxdevice::text_color_t::invoke(display_context_t &context) {
   context.unit_memory<text_color_t>(shared_from_this());
 }
-
+void uxdevice::text_color_t::emit(cairo_t *cr) {
+  context.unit_memory<text_color_t>(shared_from_this());
+}
 /**
 
 \class text_outline_t
@@ -800,11 +802,13 @@ void uxdevice::textual_render_storage_t::invoke(display_context_t &context) {
   is_processed = true;
 }
 
+void uxdevice::textual_render_t::invoke(display_context_t &context) {}
+
 /**
 \internal
 \brief
 */
-void uxdevice::image_block_storage_t::invoke(display_context_t &context) {
+void uxdevice::image_block_t::invoke(display_context_t &context) {
   using namespace std::placeholders;
 
   if (is_loaded)
@@ -971,10 +975,6 @@ void uxdevice::draw_function_object_t::invoke(display_context_t &context) {
 
 
 */
-void uxdevice::antialias_t::invoke(display_context_t &context) {
-  context.unit_memory<antialias_t>(shared_from_this());
-}
-
 void uxdevice::antialias_t::emit(cairo_t *cr) {
   cairo_set_antialias(cr, static_cast<cairo_antialias_t>(value));
 }
@@ -989,10 +989,6 @@ This includes text and line drawing.
 
 
  */
-void uxdevice::line_width_t::invoke(display_context_t &context) {
-  context.unit_memory<line_width_t>(shared_from_this());
-}
-
 void uxdevice::line_width_t::emit(cairo_t *cr) {
   cairo_set_line_width(cr, value);
 }
@@ -1006,9 +1002,6 @@ void uxdevice::line_width_t::emit(cairo_t *cr) {
 
 
 */
-void uxdevice::line_cap_t::invoke(display_context_t &context) {
-  context.unit_memory<line_cap_t>(shared_from_this());
-}
 void uxdevice::line_cap_t::emit(cairo_t *cr) {
   cairo_set_line_cap(cr, static_cast<cairo_line_cap_t>(value));
 }
@@ -1022,9 +1015,6 @@ void uxdevice::line_cap_t::emit(cairo_t *cr) {
 
 
 */
-void uxdevice::line_join_t::invoke(display_context_t &context) {
-  context.unit_memory<line_join_t>(shared_from_this());
-}
 void uxdevice::line_join_t::emit(cairo_t *cr) {
   cairo_set_line_join(cr, static_cast<cairo_line_join_t>(value));
 }
@@ -1037,9 +1027,6 @@ void uxdevice::line_join_t::emit(cairo_t *cr) {
 
 
  */
-void uxdevice::miter_limit_t::invoke(display_context_t &context) {
-  context.unit_memory<miter_limit_t>(shared_from_this());
-}
 void uxdevice::miter_limit_t::emit(cairo_t *cr) {
   cairo_set_miter_limit(cr, value);
 }
@@ -1052,10 +1039,7 @@ void uxdevice::miter_limit_t::emit(cairo_t *cr) {
 
 
  */
-void uxdevice::line_dash_storage_t::invoke(display_context_t &context) {
-  context.unit_memory<line_dash_storage_t>(shared_from_this());
-}
-void uxdevice::line_dash_storage_t::emit(cairo_t *cr) {
+void uxdevice::line_dash_t::emit(cairo_t *cr) {
   cairo_set_dash(cr, value.data(), value.size(), offset);
 }
 
@@ -1068,9 +1052,6 @@ void uxdevice::line_dash_storage_t::emit(cairo_t *cr) {
 
 
  */
-void uxdevice::tollerance_t::invoke(display_context_t &context) {
-  context.unit_memory<tollerance_t>(shared_from_this());
-}
 void uxdevice::tollerance_t::emit(cairo_t *cr) {
   cairo_set_tolerance(cr, value);
 }
@@ -1084,9 +1065,6 @@ void uxdevice::tollerance_t::emit(cairo_t *cr) {
 
 
 */
-void uxdevice::graphic_operator_t::invoke(display_context_t &context) {
-  context.unit_memory<graphic_operator_t>(shared_from_this());
-}
 void uxdevice::graphic_operator_t::emit(cairo_t *cr) {
   cairo_set_operator(cr, static_cast<cairo_operator_t>(value));
 }
@@ -1100,8 +1078,8 @@ void uxdevice::graphic_operator_t::emit(cairo_t *cr) {
 
 
 */
-void uxdevice::arc_storage_t::invoke(display_context_t &context) {
-  cairo_arc(context.cr, xc, yc, radius, angle1, angle2);
+void uxdevice::arc_t::emit(cairo_t *cr) {
+  cairo_arc(cr, xc, yc, radius, angle1, angle2);
 }
 
 /**
@@ -1113,8 +1091,8 @@ void uxdevice::arc_storage_t::invoke(display_context_t &context) {
 
 
  */
-void uxdevice::negative_arc_storage_t::invoke(display_context_t &context) {
-  cairo_arc_negative(context.cr, xc, yc, radius, angle1, angle2);
+void uxdevice::negative_arc_t::emit(cairo_t *cr) {
+  cairo_arc_negative(cr, xc, yc, radius, angle1, angle2);
 }
 
 /**
@@ -1126,11 +1104,12 @@ void uxdevice::negative_arc_storage_t::invoke(display_context_t &context) {
 
 
  */
-void uxdevice::curve_storage_t::invoke(display_context_t &context) {
-  if (context.relative_coordinate)
-    cairo_rel_curve_to(context.cr, x1, y1, x2, y3, x3, y3);
-  else
-    cairo_curve_to(context.cr, x1, y1, x2, y2, x3, y3);
+void uxdevice::curve_t::emit_relative(cairo_t *cr) {
+  cairo_rel_curve_to(context.cr, x1, y1, x2, y3, x3, y3);
+}
+
+void uxdevice::curve_t::emit_absolute(cairo_t *cr) {
+  cairo_curve_to(context.cr, x1, y1, x2, y2, x3, y3);
 }
 
 /**
@@ -1142,11 +1121,12 @@ void uxdevice::curve_storage_t::invoke(display_context_t &context) {
 
 
  */
-void uxdevice::line_storage_t::invoke(display_context_t &context) {
-  if (context.relative_coordinate)
-    cairo_rel_line_to(context.cr, x, y);
-  else
-    cairo_line_to(context.cr, x, y);
+void uxdevice::line_t::emit_relative(cairo_t *cr) {
+  cairo_rel_line_to(context.cr, x, y);
+}
+
+void uxdevice::line_t::emit_absolute(cairo_t *cr) {
+  cairo_line_to(context.cr, x, y);
 }
 
 /**
@@ -1158,18 +1138,23 @@ void uxdevice::line_storage_t::invoke(display_context_t &context) {
 
 
  */
-void uxdevice::hline_t::invoke(display_context_t &context) {
+
+void uxdevice::hline_t::emit_relative(cairo_t *cr) {
   if (cairo_has_current_point(context.cr)) {
     double curx = 0.0, cury = 0.0;
     cairo_get_current_point(context.cr, &curx, &cury);
-
-    if (context.relative_coordinate)
-      cairo_rel_line_to(context.cr, value, 0);
-    else
-      cairo_line_to(context.cr, value, cury);
+    cairo_rel_line_to(context.cr, value, 0);
   }
 }
 
+void uxdevice::hline_t::emit_absolute(cairo_t *cr) {
+
+  if (cairo_has_current_point(context.cr)) {
+    double curx = 0.0, cury = 0.0;
+    cairo_get_current_point(context.cr, &curx, &cury);
+    cairo_line_to(context.cr, value, cury);
+  }
+}
 /**
 
 \class vline_t
@@ -1179,18 +1164,23 @@ void uxdevice::hline_t::invoke(display_context_t &context) {
 
 
  */
-void uxdevice::vline_t::invoke(display_context_t &context) {
+
+void uxdevice::vline_t::emit_relative(cairo_t *cr) {
   if (cairo_has_current_point(context.cr)) {
     double curx = 0.0, cury = 0.0;
     cairo_get_current_point(context.cr, &curx, &cury);
-
-    if (context.relative_coordinate)
-      cairo_rel_line_to(context.cr, 0, value);
-    else
-      cairo_line_to(context.cr, curx, value);
+    cairo_rel_line_to(context.cr, 0, value);
   }
 }
 
+void uxdevice::vline_t::emit_absolute(cairo_t *cr) {
+
+  if (cairo_has_current_point(context.cr)) {
+    double curx = 0.0, cury = 0.0;
+    cairo_get_current_point(context.cr, &curx, &cury);
+    cairo_line_to(context.cr, curx, value);
+  }
+}
 /**
 
 \class rectangle_t
@@ -1200,10 +1190,21 @@ void uxdevice::vline_t::invoke(display_context_t &context) {
 
 
  */
-void uxdevice::rectangle_storage_t::invoke(display_context_t &context) {
+void uxdevice::rectangle_t::invoke(display_context_t &context) {
   cairo_rectangle(context.cr, x, y, width, height);
 }
 
+void uxdevice::rectangle_t::emit_relative(cairo_t *cr) {
+  if (cairo_has_current_point(context.cr)) {
+    double curx = 0.0, cury = 0.0;
+    cairo_get_current_point(context.cr, &curx, &cury);
+    cairo_rectangle(context.cr, x, y, width, height);
+  }
+}
+
+void uxdevice::rectangle_t::emit_absolute(cairo_t *cr) {
+  cairo_rectangle(context.cr, x, y, width, height);
+}
 /**
 
 \class close_path_t
@@ -1213,9 +1214,7 @@ void uxdevice::rectangle_storage_t::invoke(display_context_t &context) {
 
 
  */
-void uxdevice::close_path_t::invoke(display_context_t &context) {
-  cairo_close_path(context.cr);
-}
+void uxdevice::close_path_t::emit(cairo_t *cr) { cairo_close_path(cr); }
 
 /**
 
@@ -1226,9 +1225,9 @@ void uxdevice::close_path_t::invoke(display_context_t &context) {
 
 
 */
-void uxdevice::stroke_path_t::invoke(display_context_t &context) {
-  painter_brush_t::invoke(context.cr);
-  cairo_stroke(context.cr);
+void uxdevice::stroke_path_t::emit(cairo_t *cr) {
+  value.emit(cr);
+  cairo_stroke(cr);
 }
 
 /**
@@ -1240,8 +1239,8 @@ void uxdevice::stroke_path_t::invoke(display_context_t &context) {
 
 
  */
-void uxdevice::fill_path_t::invoke(display_context_t &context) {
-  painter_brush_t::invoke(context.cr);
+void uxdevice::fill_path_t::emit(cairo_t *cr) {
+  value.emit(context.cr);
   cairo_fill(context.cr);
 }
 
@@ -1254,11 +1253,11 @@ void uxdevice::fill_path_t::invoke(display_context_t &context) {
 
 
  */
-void uxdevice::stroke_fill_path_storage_t::invoke(display_context_t &context) {
-  stroke_brush.emit(context.cr);
-  cairo_stroke_preserve(context.cr);
-  fill_brush.emit(context.cr);
-  cairo_fill(context.cr);
+void uxdevice::stroke_fill_path_storage_t::emit(cairo_t *cr) {
+  stroke_brush.emit(cr);
+  cairo_stroke_preserve(cr);
+  fill_brush.emit(cr);
+  cairo_fill(cr);
 }
 
 /**
@@ -1270,7 +1269,7 @@ void uxdevice::stroke_fill_path_storage_t::invoke(display_context_t &context) {
 
 
  */
-void uxdevice::mask_t::invoke(display_context_t &context) {}
+void uxdevice::mask_t::emit(cairo_t *cr) {}
 
 /**
 
@@ -1281,11 +1280,11 @@ void uxdevice::mask_t::invoke(display_context_t &context) {}
 
 
  */
-void uxdevice::paint_t::invoke(display_context_t &context) {
+void uxdevice::paint_t::emit(cairo_t *cr) {
   if (value == 1.0) {
-    cairo_paint(context.cr);
+    cairo_paint(cr);
   } else {
-    cairo_paint_with_alpha(context.cr, value);
+    cairo_paint_with_alpha(cr, value);
   }
 }
 /**

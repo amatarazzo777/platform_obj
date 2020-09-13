@@ -68,6 +68,7 @@ void uxdevice::drawing_output_t::intersect(cairo_rectangle_t &r) {
 
   cairo_region_destroy(rectregion);
 }
+
 void uxdevice::drawing_output_t::intersect(context_cairo_region_t &rectregion) {
   if (!has_ink_extents)
     return;

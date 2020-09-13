@@ -34,7 +34,7 @@
 #pragma once
 
 namespace uxdevice {
-using Matrix = class Matrix {
+using Matrix = class Matrix : public hash_members_t {
 public:
   Matrix() { cairo_matrix_init_identity(&_matrix); }
   virtual ~Matrix() {}
@@ -72,10 +72,10 @@ public:
     y = _y;
   }
   std::size_t hash_code(void) const noexcept {
-    std::size_t value = {};
-    hash_combine(value, _matrix.xx, _matrix.yx, _matrix.xy, _matrix.yy,
+    std::size_t __value = {};
+    hash_combine(__value, _matrix.xx, _matrix.yx, _matrix.xy, _matrix.yy,
                  _matrix.x0, _matrix.y0);
-    return value;
+    return __value;
   }
 
   cairo_matrix_t _matrix = {0, 0, 0, 0, 0, 0};

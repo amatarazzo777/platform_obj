@@ -442,7 +442,7 @@ void show_time(surface_area_t &vis, double x, double y) {
   char mbstr[100];
   std::strftime(mbstr, sizeof(mbstr), "%A %c", std::localtime(&t));
 
-  vis << text_render_fast_t{} << text_font_t("28px")
+  vis << text_render_normal_t{} << text_font_t("28px")
       << text_shadow_t("darkgrey") << coordinate_t{x, y, 600, 300}
       << text_color_t(0, 0, 10, 10, {{"white"}, {"grey"}}) << mbstr << "  "
       << '\n';
@@ -466,7 +466,7 @@ std::shared_ptr<std::string> insert_text(surface_area_t &vis, bool bfast,
   std::uniform_int_distribution<> fill(1, 2);
 
   if (bfast) {
-    vis << text_render_fast_t{}
+    vis << text_render_normal_t{}
         << text_alignment_t{text_alignment_options_t::left}
         << coordinate_t{10, 10, 300, 300} << ps;
 

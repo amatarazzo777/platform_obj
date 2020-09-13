@@ -36,7 +36,7 @@ namespace uxdevice {
 enum class paintType { none, color, pattern, image_block };
 enum class gradientType { none, linear, radial };
 
-class color_stop_t {
+class color_stop_t : public hash_members_t {
 public:
   color_stop_t(u_int32_t _c);
   color_stop_t(double _r, double _g, double _b);
@@ -50,8 +50,13 @@ public:
   color_stop_t(double _o, const std::string &_s, double _a);
   void parse_color(const std::string &_s);
 
-  UX_HASH_OBJECT_MEMBERS(std::type_index(typeid(this)), bAutoOffset, bRGBA,
-                         offset, r, g, b, a)
+  std::size_t hash_code(void) const noexcept {
+    std::size_t __value = {};
+    hash_combine(__value, std::type_index(typeid(color_stop_t)), bAutoOffset,
+                 bRGBA, offset, r, g, b, a);
+
+    return __value;
+  }
 
   bool bAutoOffset = false;
   bool bRGBA = false;
@@ -88,7 +93,6 @@ radial-gradient(ellipsize at center, #1e5799 0%,#2989d8 50%,#207cca
 */
 namespace uxdevice {
 class coordinate_t;
-class display_context_t;
 
 class painter_brush_t : public Matrix {
 public:
@@ -101,7 +105,7 @@ public:
     image_block_pattern
   };
 
-  class paint_definition_base_t {
+  class paint_definition_base_t : public hash_members_t {
   public:
     paint_definition_base_t(paint_definition_class_t _ct,
                             const std::string &_description)
@@ -143,9 +147,14 @@ public:
 
     bool is_patch_description(void) { return false; }
 
-    UX_HASH_OBJECT_MEMBERS(std::type_index(typeid(this)), class_type,
-                           description, pango_color.red, pango_color.green,
-                           pango_color.blue, is_loaded)
+    std::size_t hash_code(void) const noexcept {
+      std::size_t __value = {};
+      hash_combine(__value, std::type_index(typeid(painter_brush_t)),
+                   class_type, description, pango_color.red, pango_color.green,
+                   pango_color.blue, is_loaded);
+
+      return __value;
+    }
 
     paint_definition_class_t class_type = paint_definition_class_t::none;
     std::string description = {};
@@ -153,6 +162,7 @@ public:
     PangoColor pango_color = {0, 0, 0};
     bool is_loaded = false;
   };
+
   typedef std::shared_ptr<paint_definition_base_t> data_storage_t;
 
   class descriptive_definition_t : public paint_definition_base_t {
@@ -171,8 +181,13 @@ public:
         : paint_definition_base_t(other) {}
     virtual ~descriptive_definition_t() {}
 
-    UX_HASH_OBJECT_MEMBERS(paint_definition_base_t::hash_code(),
-                           UX_HASH_TYPE_ID_THIS)
+    std::size_t hash_code(void) const noexcept {
+      std::size_t __value = {};
+      hash_combine(__value, std::type_index(typeid(painter_brush_t)),
+                   paint_definition_base_t::hash_code());
+
+      return __value;
+    }
   };
 
   class color_definition_t : public paint_definition_base_t {
@@ -217,9 +232,13 @@ public:
     virtual void emit(cairo_t *cr, double x, double y, double w, double h) {
       cairo_set_source_rgba(cr, r, g, b, a);
     }
+    std::size_t hash_code(void) const noexcept {
+      std::size_t __value = {};
+      hash_combine(__value, paint_definition_base_t::hash_code(),
+                   std::type_index(typeid(this)).hash_code(), r, g, b, a);
 
-    UX_HASH_OBJECT_MEMBERS(paint_definition_base_t::hash_code(),
-                           std::type_index(typeid(this)), r, g, b, a)
+      return __value;
+    }
 
     double r = {};
     double g = {};
@@ -265,10 +284,17 @@ public:
       cairo_set_source(cr, pattern);
     }
 
-    UX_HASH_OBJECT_MEMBERS(UX_HASH_VECTOR_OBJECTS(color_stops),
-                           paint_definition_base_t::hash_code(),
-                           std::type_index(typeid(this)), x0, y0, x1, y1,
-                           filter, extend, pattern)
+    std::size_t hash_code(void) const noexcept {
+      std::size_t __value = {};
+      for (auto n : color_stops)
+        hash_combine(__value, n.hash_code());
+
+      hash_combine(__value, paint_definition_base_t::hash_code(),
+                   std::type_index(typeid(this)).hash_code(), x0, y0, x1, y1,
+                   filter, extend, pattern);
+
+      return __value;
+    }
 
     double x0 = {};
     double y0 = {};
@@ -320,10 +346,17 @@ public:
       cairo_set_source(cr, pattern);
     }
 
-    UX_HASH_OBJECT_MEMBERS(UX_HASH_VECTOR_OBJECTS(color_stops),
-                           paint_definition_base_t::hash_code(),
-                           UX_HASH_TYPE_ID_THIS, cx0, cy0, radius0, cx1, cy1,
-                           radius1, filter, extend, pattern)
+    std::size_t hash_code(void) const noexcept {
+      std::size_t __value = {};
+      for (auto n : color_stops)
+        hash_combine(__value, n.hash_code());
+
+      hash_combine(__value, paint_definition_base_t::hash_code(),
+                   std::type_index(typeid(this)).hash_code(), cx0, cy0, radius0,
+                   cx1, cy1, radius1, filter, extend, pattern);
+
+      return __value;
+    }
 
     double cx0 = {};
     double cy0 = {};
@@ -386,10 +419,15 @@ public:
       cairo_set_source(cr, pattern);
     }
 
-    UX_HASH_OBJECT_MEMBERS(paint_definition_base_t::hash_code(),
-                           std::type_index(typeid(this)), width, height,
-                           image_block, pattern, filter, extend)
+    std::size_t hash_code(void) const noexcept {
+      std::size_t __value = {};
 
+      hash_combine(__value, paint_definition_base_t::hash_code(),
+                   std::type_index(typeid(this)), width, height, image_block,
+                   pattern, filter, extend);
+
+      return __value;
+    }
     double width = {};
     double height = {};
     cairo_surface_t *image_block = {};
@@ -456,7 +494,6 @@ public:
     if (data_storage)
       data_storage.reset();
   }
-  virtual void invoke(display_context_t &context);
   virtual void emit(cairo_t *cr);
   virtual void emit(cairo_t *cr, const coordinate_t &a);
   bool is_valid(void) { return data_storage != nullptr; }
@@ -469,8 +506,13 @@ private:
   bool patch(const std::string &s);
 
 public:
-  UX_HASH_OBJECT_MEMBERS(std::type_index(typeid(this)), data_storage)
+  std::size_t hash_code(void) const noexcept {
+    std::size_t __value = {};
+    hash_combine(__value, std::type_index(typeid(this)),
+                 data_storage->hash_code());
 
+    return __value;
+  }
   data_storage_t data_storage = {};
 };
 
@@ -478,13 +520,20 @@ public:
 
 UX_REGISTER_STD_HASH_SPECIALIZATION(
     uxdevice::painter_brush_t::paint_definition_base_t);
+
 UX_REGISTER_STD_HASH_SPECIALIZATION(
     uxdevice::painter_brush_t::descriptive_definition_t);
+
 UX_REGISTER_STD_HASH_SPECIALIZATION(
     uxdevice::painter_brush_t::color_definition_t);
+
 UX_REGISTER_STD_HASH_SPECIALIZATION(
     uxdevice::painter_brush_t::linear_gradient_definition_t);
+
 UX_REGISTER_STD_HASH_SPECIALIZATION(
     uxdevice::painter_brush_t::radial_gradient_definition_t);
+
 UX_REGISTER_STD_HASH_SPECIALIZATION(
     uxdevice::painter_brush_t::image_block_pattern_source_definition_t);
+
+UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::painter_brush_t);

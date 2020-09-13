@@ -92,3 +92,32 @@
 
 #include "uxenums.hpp"
 #include "uxmacros.hpp"
+
+/**
+\internal
+\def hash_members_t
+\param ... - variadic parameter expanding to hash combine each listed.
+\brief Creates interface routines for the hashing system and change detection
+logic. Hashes each of the listed values within the macro parameters.
+*/
+
+namespace uxdevice {
+class hash_members_t {
+public:
+  hash_members_t() {}
+  virtual ~hash_members_t() {}
+  virtual std::size_t hash_code(void) const noexcept = 0;
+  std::size_t __used_hash_code = {};
+  void state_hash_code(void) { __used_hash_code = hash_code(); }
+  bool is_different_hash() { return hash_code() != __used_hash_code; }
+};
+
+// from -
+// https://stackoverflow.com/questions/2590677/how-do-i-combine-hash-values-in-c0x
+template <typename T, typename... Rest>
+void hash_combine(std::size_t &seed, const T &v, const Rest &... rest) {
+  seed ^= std::hash<T>{}(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+  (hash_combine(seed, rest), ...);
+}
+
+} // namespace uxdevice

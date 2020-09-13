@@ -83,7 +83,7 @@ typedef struct _draw_buffer_t {
   cairo_surface_t *rendered = nullptr;
 } draw_buffer_t;
 
-class display_context_t {
+class display_context_t : public hash_members_t {
 public:
   class context_cairo_region_t {
   public:
@@ -190,13 +190,81 @@ public:
   static void destroy_buffer(draw_buffer_t &_buffer);
   void clear(void);
 
-  UX_DECLARE_ERROR_HANDLING
+#define UX_ERROR_CHECK(obj)                                                    \
+  {                                                                            \
+    cairo_status_t stat = context.error_check(obj);                            \
+    if (stat)                                                                  \
+      context.error_state(__func__, __LINE__, __FILE__, stat);                 \
+  }
+
+#define UX_ERROR_DESC(s)                                                       \
+  context.error_state(__func__, __LINE__, __FILE__, std::string_view(s));
+
+#define UX_ERRORS_SPIN                                                         \
+  while (lockErrors.test_and_set(std::memory_order_acquire))
+
+#define UX_ERRORS_CLEAR lockErrors.clear(std::memory_order_release);
+
+#define UX_DECLARE_ERROR_HANDLING
+  std::atomic_flag lockErrors = ATOMIC_FLAG_INIT;
+  std::list<std::string> _errors = {};
+
+  cairo_status_t error_check(cairo_surface_t *sur) {
+    return cairo_surface_status(sur);
+  }
+  cairo_status_t error_check(cairo_t *cr) { return cairo_status(cr); }
+
+  void error_state(const std::string_view &sfunc, const std::size_t linenum,
+                   const std::string_view &sfile, const cairo_status_t stat) {
+    error_state(sfunc, linenum, sfile,
+                std::string_view(cairo_status_to_string(stat)));
+  }
+
+  void error_state(const std::string_view &sfunc, const std::size_t linenum,
+                   const std::string_view &sfile, const std::string &desc) {
+    error_state(sfunc, linenum, sfile, std::string_view(desc));
+  }
+
+  void error_state(const std::string_view &sfunc, const std::size_t linenum,
+                   const std::string_view &sfile,
+                   const std::string_view &desc) {
+    UX_ERRORS_SPIN;
+    std::stringstream ss;
+    ss << sfile << "n" << sfunc << "(" << linenum << ") -  " << desc << "n";
+    _errors.emplace_back(ss.str());
+
+    UX_ERRORS_CLEAR;
+  }
+
+  bool error_state(void) {
+    UX_ERRORS_SPIN;
+    bool b = !_errors.empty();
+    UX_ERRORS_CLEAR;
+    return b;
+  }
+
+  std::string error_text(bool bclear = false) {
+    UX_ERRORS_SPIN;
+    std::string ret;
+    for (auto s : _errors)
+      ret += s;
+    if (bclear)
+      _errors.clear();
+
+    UX_ERRORS_CLEAR;
+    return ret;
+  }
 
   UX_DECLARE_TYPE_INDEX_MEMORY(unit_memory)
 
-  UX_HASH_OBJECT_MEMBERS(unit_memory_hash_code_all(), UX_HASH_TYPE_ID_THIS,
-                         window_x, window_y, window_width, window_height,
-                         window_open, brush.hash_code())
+  std::size_t hash_code(void) const noexcept {
+    std::size_t __value = {};
+    hash_combine(__value, std::type_index(typeid(this)),
+                 unit_memory_hash_code_all(), window_x, window_y, window_width,
+                 window_height, window_open, brush.hash_code());
+
+    return __value;
+  }
 
 public:
   short window_x = 0;
