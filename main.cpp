@@ -418,7 +418,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
     vis << coordinate_t{i * 130.0, 200, 150, 240} << image_block_t{sSVG_BUTTON}
         << text_shadow_t("black")
         << text_fill_t(0, 0, 5, 30, {{"orange"}, {"yellow"}})
-        << text_outline_t(stripes) << text_font_t("16px") << line_width_t(5)
+        << text_outline_t(stripes) << text_font_t("16px") << line_width_t(5.0)
         << coordinate_t{20.0 + i * 130.0, 210, 150, 240} << button_caption;
   }
 

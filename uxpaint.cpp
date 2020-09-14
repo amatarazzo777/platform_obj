@@ -269,9 +269,6 @@ passed. The paint is loaded if need be. File processing or simply parsing
 the color name string.
 
 */
-void uxdevice::painter_brush_t::invoke(display_context_t &context) {
-  emit(context.cr);
-}
 
 void uxdevice::painter_brush_t::emit(cairo_t *cr) {
   if (!data_storage->is_loaded)
@@ -282,7 +279,7 @@ void uxdevice::painter_brush_t::emit(cairo_t *cr) {
   }
 }
 
-void uxdevice::painter_brush_t::emit(cairo_t *cr, const coordinate_t &a) {
+void uxdevice::painter_brush_t::emit(cairo_t *cr, coordinate_t &a) {
   if (!data_storage->is_loaded) {
     create();
 
@@ -295,6 +292,6 @@ void uxdevice::painter_brush_t::emit(cairo_t *cr, const coordinate_t &a) {
   }
 
   if (data_storage->is_loaded) {
-    data_storage->emit(cr, a.x, a.y, a.w, a.h);
+    data_storage->emit(cr, a);
   }
 }

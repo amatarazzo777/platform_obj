@@ -44,6 +44,11 @@ void uxdevice::drawing_output_t::invoke(cairo_t *cr) {
   is_processed = true;
 }
 #endif
+void uxdevice::drawing_output_t::emit(display_context_t &context) {
+  for (auto &fn : options.value)
+    fn(context.cr);
+  is_processed = true;
+}
 
 void uxdevice::drawing_output_t::intersect(cairo_rectangle_t &r) {
   if (!has_ink_extents)
@@ -98,7 +103,9 @@ void uxdevice::drawing_output_t::evaluate_cache(display_context_t &context) {
 
 std::size_t uxdevice::cairo_option_function_t::hash_code(void) const noexcept {
   std::size_t __value = {};
-  hash_combine(__value, UX_HASH_TYPE_ID_THIS, UX_HASH_VECTOR_OBJECTS(value));
+  for(auto n : value)
+     hash_combine(__value, n.target_type().hash_code());
+  hash_combine(__value, std::type_index(typeid(cairo_option_function_t)), value.size());
   return __value;
 }
 

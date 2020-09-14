@@ -37,34 +37,36 @@ shading or texturing derive and publish the painter_brush_t class interface.
 
 #include "uxdevice.hpp"
 
-void uxdevice::text_render_normal_t::invoke(display_context_t &context) {
-  context.unit_memory<text_render_normal_t>();
-}
+/**
 
-void uxdevice::text_render_path_t::invoke(display_context_t &context) {
-  context.unit_memory<text_render_path_t>();
+\fn text_render_normal_t::emit
+
+\param display_context_t &context
+
+\brief
+
+\details
+
+ */
+void uxdevice::text_render_normal_t::emit(display_context_t &context) {
+  context.text_path_rendering=false;
 }
 
 /**
 
-\fn surface_area_t &
-uxdevice::surface_area_brush_t::invoke(display_context_t &context)
+\fn text_render_normal_t::emit
 
 \param display_context_t &context
 
-\brief  sets hthe background brush of the window.
+\brief
 
-\details The display object implementation that gives purpose to the name. The
-name may be a noun or perhaps a property. The declaration for this object is
-within the uxdisplayunits.hpp file. implementation of the interface dec
+\details
 
  */
-
-void uxdevice::surface_area_brush_t::invoke(display_context_t &context) {
-  context.unit_memory<surface_area_brush_t>(
-      std::dynamic_pointer_cast<surface_area_brush_t>(shared_from_this()));
-  context.surface_brush(*this);
+void uxdevice::text_render_path_t::emit(display_context_t &context) {
+  context.text_path_rendering=true;
 }
+
 
 /**
 
@@ -79,86 +81,15 @@ The painter_brush_t object interface is used.
 
 
  */
-void uxdevice::surface_area_title_t::invoke(display_context_t &context) {
-  context.unit_memory<surface_area_title_t>(shared_from_this());
+void uxdevice::surface_area_title_t::emit(display_context_t &context) {
   // set window title
   xcb_change_property(context.connection, XCB_PROP_MODE_REPLACE, context.window,
                       XCB_ATOM_WM_NAME, XCB_ATOM_STRING, 8, value.size(),
                       value.data());
 }
 
-/**
-
-\class text_color_t
-\brief controls the color of text
-
-\details The text_outline_t and text_fill_t when present take precedent over
-this class. The text_fill_off_t,text_outline_off_t,text_shadow_off_t can be
-used.
-
-*/
-void uxdevice::text_color_t::invoke(display_context_t &context) {
-  context.unit_memory<text_color_t>(shared_from_this());
-}
-void uxdevice::text_color_t::emit(cairo_t *cr) {
-  context.unit_memory<text_color_t>(shared_from_this());
-}
-/**
-
-\class text_outline_t
-\brief Controls the outline of the text character stroke, fill pattern. useful
-gradients can show simulations of artistic lighting effects.
-
-\details When this item is set, text is drawn onto the
-surface using the pango vector based api. The api from cairo calls the stroke,
-fill and preserve function when appropriate. This shows the text in an outline
-fashion. You can control the line color using the painter_brush_t object api as
-this class is a descendant through inheirtance. This object publishes all of the
-interfaces for controlling the object and its parameters. When items are
-changes, the hashing function internally automatically senses the change and
-manufactures allocations, changes or updates to the cairo api. This means that
-this text rendering capability is not as fast as using the text_color_t class.
-
-
- */
-
-void uxdevice::text_outline_t::invoke(display_context_t &context) {
-  context.unit_memory<text_outline_t>(shared_from_this());
-}
-
-/**
-
-\class text_fill_t
-\brief controls the color of the text character interior, fill pattern. Crafted
-gradients can simulate artistic lighting effects.
-
-
-\details When this item is set, text is drawn onto the
-surface using the pango vector based api. The api from cairo calls the stroke,
-fill and preserve function when appropriate. This shows the text in a filled
-manner. You can control the fill color using the painter_brush_t object api as
-this class is a descendant through inheritance. This object publishes all of the
-interfaces for controlling the object and its parameters. When items are
-changes, the hashing function internally automatically senses the change and
-manufactures allocations, changes or updates to the cairo api. This means that
-this text rendering capability is not as fast as using the text_color_t class.
-
- */
-void uxdevice::text_fill_t::invoke(display_context_t &context) {
-  context.unit_memory<text_fill_t>(shared_from_this());
-}
-
-/**
-
-\class text_shadow_t
-\brief controls the shadow, reflect the pattern source given.
-
-\details
-
-
- */
-void uxdevice::text_shadow_t::invoke(display_context_t &context) {
-  context.unit_memory<text_shadow_t>(shared_from_this());
+void uxdevice::surface_area_brush_t::emit(display_context_t &context) {
+  context.surface_brush(*this);
 }
 
 /**
@@ -171,11 +102,7 @@ justified.
 
 
  */
-void uxdevice::text_alignment_t::invoke(display_context_t &context) {
-  context.unit_memory<text_alignment_t>(shared_from_this());
-}
-
-void uxdevice::text_alignment_t::emit(PangoLayout *layout) {
+void uxdevice::text_alignment_t::emit( PangoLayout *layout) {
   PangoAlignment correlated_value = static_cast<PangoAlignment>(value);
   if (value == text_alignment_options_t::justified &&
       !pango_layout_get_justify(layout)) {
@@ -194,10 +121,7 @@ void uxdevice::text_alignment_t::emit(PangoLayout *layout) {
 \details
 
  */
-void uxdevice::coordinate_storage_t::invoke(display_context_t &context) {
-  context.unit_memory<coordinate_storage_t>(shared_from_this());
-}
-void uxdevice::coordinate_storage_t::emit(cairo_t *cr) {
+void uxdevice::coordinate_t::emit(cairo_t *cr) {
   cairo_move_to(cr, x, y);
 }
 
@@ -210,9 +134,6 @@ void uxdevice::coordinate_storage_t::emit(cairo_t *cr) {
 
 
  */
-void uxdevice::text_indent_t::invoke(display_context_t &context) {
-  context.unit_memory<text_indent_t>(shared_from_this());
-}
 void uxdevice::text_indent_t::emit(PangoLayout *layout) {
   int pangoUnits = value * PANGO_SCALE;
   pango_layout_set_indent(layout, pangoUnits);
@@ -227,9 +148,6 @@ void uxdevice::text_indent_t::emit(PangoLayout *layout) {
 
 
  */
-void uxdevice::text_ellipsize_t::invoke(display_context_t &context) {
-  context.unit_memory<text_ellipsize_t>(shared_from_this());
-}
 void uxdevice::text_ellipsize_t::emit(PangoLayout *layout) {
   pango_layout_set_ellipsize(layout, static_cast<PangoEllipsizeMode>(value));
 }
@@ -243,84 +161,10 @@ void uxdevice::text_ellipsize_t::emit(PangoLayout *layout) {
 
 
  */
-void uxdevice::text_line_space_t::invoke(display_context_t &context) {
-  context.unit_memory<text_line_space_t>(shared_from_this());
-}
 void uxdevice::text_line_space_t::emit(PangoLayout *layout) {
   pango_layout_set_line_spacing(layout, static_cast<float>(value));
 }
 
-/**
-
-\class text_tab_stops_t
-\brief
-
-\details
-
-
-*/
-
-void uxdevice::text_tab_stops_storage_t::invoke(display_context_t &context) {
-  context.unit_memory<text_tab_stops_storage_t>(shared_from_this());
-}
-
-void uxdevice::text_tab_stops_storage_t::emit(PangoLayout *layout) {
-  PangoTabArray *tabs = pango_tab_array_new(value.size(), true);
-
-  int idx = 0;
-  for (auto &tabdef : value) {
-    int loc = static_cast<int>(tabdef);
-    pango_tab_array_set_tab(tabs, idx, PANGO_TAB_LEFT, loc);
-  }
-  pango_layout_set_tabs(layout, tabs);
-  pango_tab_array_free(tabs);
-}
-
-/**
-
-\class text_font_storage_t::invoke
-\brief
-
-\details
-
-
- */
-void uxdevice::text_font_storage_t::invoke(display_context_t &context) {
-  if (!font_ptr) {
-    font_ptr = pango_font_description_from_string(description.data());
-    if (!font_ptr) {
-      std::string s = "Font could not be loaded from description. ( ";
-      s += description + ")";
-      context.error_state(__func__, __LINE__, __FILE__, std::string_view(s));
-    }
-  }
-}
-
-/**
-
-\class text_font_storage_t::emit
-\brief
-
-\details
-
-
- */
-void uxdevice::text_font_storage_t::emit(PangoLayout *layout) {
-  pango_layout_set_font_description(layout, font_ptr);
-}
-
-/**
-\internal
-\class text_data_t
-\brief class holds the data to the information to display.
-
-\details
-
-
- */
-void uxdevice::text_data_t::invoke(display_context_t &context) {
-  context.unit_memory<text_data_t>(shared_from_this());
-}
 
 /**
 
@@ -335,7 +179,7 @@ void uxdevice::text_data_t::invoke(display_context_t &context) {
  */
 std::size_t uxdevice::textual_render_storage_t::hash_code(void) const noexcept {
   std::size_t __value = {};
-  hash_combine(__value, UX_HASH_TYPE_ID_THIS, pango_layout_get_serial(layout),
+  hash_combine(__value, std::type_index(typeid(textual_render_storage_t)).hash_code(), pango_layout_get_serial(layout),
                ink_rect.x, ink_rect.y, ink_rect.width, ink_rect.height,
                matrix.hash_code(),
                rendering_parameter<text_color_t>()->hash_code(),
@@ -360,6 +204,52 @@ std::size_t uxdevice::textual_render_storage_t::hash_code(void) const noexcept {
                rendering_parameter<graphic_operator_t>()->hash_code());
   return __value;
 }
+
+/**
+
+\class text_tab_stops_t
+\brief
+
+\details
+
+
+*/
+void uxdevice::text_tab_stops_t::emit( PangoLayout *layout) {
+  PangoTabArray *tabs = pango_tab_array_new(value.size(), true);
+
+  int idx = 0;
+  for (auto &tabdef : value) {
+    int loc = static_cast<int>(tabdef);
+    pango_tab_array_set_tab(tabs, idx, PANGO_TAB_LEFT, loc);
+  }
+  pango_layout_set_tabs(layout, tabs);
+  pango_tab_array_free(tabs);
+}
+
+
+/**
+
+\class text_font_t::emit
+\brief
+
+\details
+
+
+ */
+void uxdevice::text_font_t::emit(PangoLayout *layout) {
+  if (!font_ptr) {
+    font_ptr = pango_font_description_from_string(description.data());
+    if (!font_ptr) {
+      std::string s = "Font could not be loaded from description. ( ";
+      s += description + ")";
+//      context.error_state(__func__, __LINE__, __FILE__, std::string_view(s));
+    }
+  }
+  if (font_ptr)
+    pango_layout_set_font_description(layout, font_ptr);
+}
+
+
 
 /**
 \internal
@@ -667,7 +557,7 @@ uxdevice::textual_render_storage_t::precise_rendering_function(void) {
 
 
  */
-void uxdevice::textual_render_storage_t::invoke(display_context_t &context) {
+void uxdevice::textual_render_t::emit(display_context_t &context) {
   using namespace std::placeholders;
 
   // create a linkage snapshot to the shared pointer
@@ -738,7 +628,7 @@ void uxdevice::textual_render_storage_t::invoke(display_context_t &context) {
 
     auto drawfn = [=](display_context_t &context) {
       // cairo_set_matrix(context.cr, &mat._matrix);
-      drawing_output_t::invoke(context);
+      drawing_output_t::emit(context);
 
       cairo_set_source_surface(context.cr, internal_buffer.rendered,
                                coordinate.x, coordinate.y);
@@ -753,7 +643,7 @@ void uxdevice::textual_render_storage_t::invoke(display_context_t &context) {
     auto fnClipping = [=](display_context_t &context) {
       auto &coordinate = *rendering_parameter<coordinate_t>();
       // cairo_set_matrix(context.cr, &mat._matrix);
-      drawing_output_t::invoke(context);
+       drawing_output_t::emit(context);
       cairo_set_source_surface(context.cr, internal_buffer.rendered,
                                coordinate.x, coordinate.y);
       cairo_rectangle(context.cr, intersection_double.x, intersection_double.y,
@@ -771,7 +661,7 @@ void uxdevice::textual_render_storage_t::invoke(display_context_t &context) {
   // cairo api to the base surface context. One is for clipping and one without.
   auto fnBase = [=](display_context_t &context) {
     auto drawfn = [=](display_context_t &context) {
-      drawing_output_t::invoke(context);
+       drawing_output_t::emit(context);
       fn(context.cr, coordinate);
       evaluate_cache(context);
     };
@@ -779,7 +669,7 @@ void uxdevice::textual_render_storage_t::invoke(display_context_t &context) {
       cairo_rectangle(context.cr, intersection_double.x, intersection_double.y,
                       intersection_double.width, intersection_double.height);
       cairo_clip(context.cr);
-      drawing_output_t::invoke(context);
+       drawing_output_t::emit(context);
       fn(context.cr, coordinate);
       cairo_reset_clip(context.cr);
       evaluate_cache(context);
@@ -802,13 +692,11 @@ void uxdevice::textual_render_storage_t::invoke(display_context_t &context) {
   is_processed = true;
 }
 
-void uxdevice::textual_render_t::invoke(display_context_t &context) {}
-
 /**
 \internal
 \brief
 */
-void uxdevice::image_block_t::invoke(display_context_t &context) {
+void uxdevice::image_block_t::emit(display_context_t &context) {
   using namespace std::placeholders;
 
   if (is_loaded)
@@ -858,7 +746,7 @@ void uxdevice::image_block_t::invoke(display_context_t &context) {
     auto fn = [&](display_context_t &context) {
       if (!is_valid())
         return;
-      drawing_output_t::invoke(context);
+       drawing_output_t::emit(context);
       cairo_set_source_surface(context.cr, image_block_ptr, a.x, a.y);
       cairo_rectangle(context.cr, a.x, a.y, a.w, a.h);
       cairo_fill(context.cr);
@@ -866,7 +754,7 @@ void uxdevice::image_block_t::invoke(display_context_t &context) {
     auto fnClipping = [&](display_context_t &context) {
       if (!is_valid())
         return;
-      drawing_output_t::invoke(context);
+       drawing_output_t::emit(context);
       cairo_set_source_surface(context.cr, image_block_ptr, a.x, a.y);
       cairo_rectangle(context.cr, intersection_double.x, intersection_double.y,
                       intersection_double.width, intersection_double.height);
@@ -901,8 +789,8 @@ void uxdevice::image_block_t::invoke(display_context_t &context) {
 \details
 
 */
-void uxdevice::function_object_t::invoke(display_context_t &context) {
-  value(context.cr);
+void uxdevice::function_object_t::emit(cairo_t *cr) {
+  value(cr);
 }
 
 /**
@@ -922,7 +810,7 @@ void uxdevice::cairo_option_function_t::invoke(display_context_t &context) {
 \internal
 \brief
 */
-void uxdevice::draw_function_object_t::invoke(display_context_t &context) {
+void uxdevice::draw_function_object_t::emit(display_context_t &context) {
   using namespace std::placeholders;
 
   // get the drawing options for the context.
@@ -932,12 +820,12 @@ void uxdevice::draw_function_object_t::invoke(display_context_t &context) {
   auto fnCache = [=](display_context_t &context) {
     // set directly callable rendering function.
     auto fn = [=](display_context_t &context) {
-      drawing_output_t::invoke(context);
+       drawing_output_t::emit(context);
       value(context.cr);
     };
 
     auto fnClipping = [=](display_context_t &context) {
-      drawing_output_t::invoke(context);
+       drawing_output_t::emit(context);
 
       cairo_rectangle(context.cr, intersection_double.x, intersection_double.y,
                       intersection_double.width, intersection_double.height);
@@ -1039,7 +927,7 @@ void uxdevice::miter_limit_t::emit(cairo_t *cr) {
 
 
  */
-void uxdevice::line_dash_t::emit(cairo_t *cr) {
+void uxdevice::line_dashes_t::emit(cairo_t *cr) {
   cairo_set_dash(cr, value.data(), value.size(), offset);
 }
 
@@ -1105,11 +993,11 @@ void uxdevice::negative_arc_t::emit(cairo_t *cr) {
 
  */
 void uxdevice::curve_t::emit_relative(cairo_t *cr) {
-  cairo_rel_curve_to(context.cr, x1, y1, x2, y3, x3, y3);
+  cairo_rel_curve_to(cr, x1, y1, x2, y3, x3, y3);
 }
 
 void uxdevice::curve_t::emit_absolute(cairo_t *cr) {
-  cairo_curve_to(context.cr, x1, y1, x2, y2, x3, y3);
+  cairo_curve_to(cr, x1, y1, x2, y2, x3, y3);
 }
 
 /**
@@ -1122,11 +1010,11 @@ void uxdevice::curve_t::emit_absolute(cairo_t *cr) {
 
  */
 void uxdevice::line_t::emit_relative(cairo_t *cr) {
-  cairo_rel_line_to(context.cr, x, y);
+  cairo_rel_line_to(cr, x, y);
 }
 
 void uxdevice::line_t::emit_absolute(cairo_t *cr) {
-  cairo_line_to(context.cr, x, y);
+  cairo_line_to(cr, x, y);
 }
 
 /**
@@ -1140,19 +1028,19 @@ void uxdevice::line_t::emit_absolute(cairo_t *cr) {
  */
 
 void uxdevice::hline_t::emit_relative(cairo_t *cr) {
-  if (cairo_has_current_point(context.cr)) {
+  if (cairo_has_current_point(cr)) {
     double curx = 0.0, cury = 0.0;
-    cairo_get_current_point(context.cr, &curx, &cury);
-    cairo_rel_line_to(context.cr, value, 0);
+    cairo_get_current_point(cr, &curx, &cury);
+    cairo_rel_line_to(cr, value, 0);
   }
 }
 
 void uxdevice::hline_t::emit_absolute(cairo_t *cr) {
 
-  if (cairo_has_current_point(context.cr)) {
+  if (cairo_has_current_point(cr)) {
     double curx = 0.0, cury = 0.0;
-    cairo_get_current_point(context.cr, &curx, &cury);
-    cairo_line_to(context.cr, value, cury);
+    cairo_get_current_point(cr, &curx, &cury);
+    cairo_line_to(cr, value, cury);
   }
 }
 /**
@@ -1166,19 +1054,19 @@ void uxdevice::hline_t::emit_absolute(cairo_t *cr) {
  */
 
 void uxdevice::vline_t::emit_relative(cairo_t *cr) {
-  if (cairo_has_current_point(context.cr)) {
+  if (cairo_has_current_point(cr)) {
     double curx = 0.0, cury = 0.0;
-    cairo_get_current_point(context.cr, &curx, &cury);
-    cairo_rel_line_to(context.cr, 0, value);
+    cairo_get_current_point(cr, &curx, &cury);
+    cairo_rel_line_to(cr, 0, value);
   }
 }
 
 void uxdevice::vline_t::emit_absolute(cairo_t *cr) {
 
-  if (cairo_has_current_point(context.cr)) {
+  if (cairo_has_current_point(cr)) {
     double curx = 0.0, cury = 0.0;
-    cairo_get_current_point(context.cr, &curx, &cury);
-    cairo_line_to(context.cr, curx, value);
+    cairo_get_current_point(cr, &curx, &cury);
+    cairo_line_to(cr, curx, value);
   }
 }
 /**
@@ -1190,20 +1078,8 @@ void uxdevice::vline_t::emit_absolute(cairo_t *cr) {
 
 
  */
-void uxdevice::rectangle_t::invoke(display_context_t &context) {
-  cairo_rectangle(context.cr, x, y, width, height);
-}
-
-void uxdevice::rectangle_t::emit_relative(cairo_t *cr) {
-  if (cairo_has_current_point(context.cr)) {
-    double curx = 0.0, cury = 0.0;
-    cairo_get_current_point(context.cr, &curx, &cury);
-    cairo_rectangle(context.cr, x, y, width, height);
-  }
-}
-
-void uxdevice::rectangle_t::emit_absolute(cairo_t *cr) {
-  cairo_rectangle(context.cr, x, y, width, height);
+void uxdevice::rectangle_t::emit(cairo_t *cr) {
+  cairo_rectangle(cr, x, y, width, height);
 }
 /**
 
@@ -1226,7 +1102,7 @@ void uxdevice::close_path_t::emit(cairo_t *cr) { cairo_close_path(cr); }
 
 */
 void uxdevice::stroke_path_t::emit(cairo_t *cr) {
-  value.emit(cr);
+  painter_brush_t::emit(cr);
   cairo_stroke(cr);
 }
 
@@ -1240,8 +1116,8 @@ void uxdevice::stroke_path_t::emit(cairo_t *cr) {
 
  */
 void uxdevice::fill_path_t::emit(cairo_t *cr) {
-  value.emit(context.cr);
-  cairo_fill(context.cr);
+  painter_brush_t::emit(cr);
+  cairo_fill(cr);
 }
 
 /**
@@ -1253,7 +1129,7 @@ void uxdevice::fill_path_t::emit(cairo_t *cr) {
 
 
  */
-void uxdevice::stroke_fill_path_storage_t::emit(cairo_t *cr) {
+void uxdevice::stroke_fill_path_t::emit(cairo_t *cr) {
   stroke_brush.emit(cr);
   cairo_stroke_preserve(cr);
   fill_brush.emit(cr);
@@ -1296,7 +1172,7 @@ void uxdevice::paint_t::emit(cairo_t *cr) {
 
 
  */
-void uxdevice::relative_coordinate_t::invoke(display_context_t &context) {
+void uxdevice::relative_coordinate_t::emit(display_context_t &context) {
   context.relative_coordinate = true;
 }
 
@@ -1309,160 +1185,9 @@ void uxdevice::relative_coordinate_t::invoke(display_context_t &context) {
 
 
  */
-void uxdevice::absolute_coordinate_t::invoke(display_context_t &context) {
+void uxdevice::absolute_coordinate_t::emit(display_context_t &context) {
   context.relative_coordinate = false;
 }
 
-/**
 
-\class listener_t
-\brief
 
-\details
-
- */
-void uxdevice::listener_storage_t::invoke(display_context_t &context) {}
-
-/**
-
-\class listen_paint_t
-\brief
-
-\details
-
- */
-
-/**
-
-\class listen_focus_t
-\brief
-
-\details
-
- */
-
-/**
-
-\class listen_blur_t
-\brief
-
-\details
-
- */
-
-/**
-
-\class listen_resize_t
-\brief
-
-\details
-
- */
-
-/**
-
-\class listen_keydown_t
-\brief
-
-\details
-
- */
-
-/**
-
-\class listen_keyup_t
-\brief
-
-\details
-
- */
-
-/**
-
-\class listen_keypress_t
-\brief
-
-\details
-
- */
-
-/**
-
-\class listen_mouseenter_t
-\brief
-
-\details
-
- */
-
-/**
-
-\class listen_mousemove_t
-\brief
-
-\details
-
- */
-
-/**
-
-\class listen_mousedown_t
-\brief
-
-\details
-
- */
-
-/**
-
-\class listen_mouseup_t
-\brief
-
-\details
-
- */
-
-/**
-
-\class listen_click_t
-\brief
-
-\details
-
- */
-
-/**
-
-\class listen_dblclick_t
-\brief
-
-\details
-
- */
-
-/**
-
-\class listen_contextmenu_t
-\brief
-
-\details
-
- */
-
-/**
-
-\class listen_wheel_t
-\brief
-
-\details
-
- */
-
-/**
-
-\class listen_mouseleave_t
-\brief
-
-\details
-
- */

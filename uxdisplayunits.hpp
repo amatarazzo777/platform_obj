@@ -46,7 +46,7 @@ that are display units.
 
  */
 namespace uxdevice {
-class coordinate_storage_t : public hash_members_t {
+class coordinate_storage_t : virtual public hash_members_t {
 public:
   coordinate_storage_t() {}
   coordinate_storage_t(double _x, double _y, double _w, double _h)
@@ -78,7 +78,7 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::coordinate_storage_t);
 
  */
 namespace uxdevice {
-class arc_storage_t : public hash_members_t {
+class arc_storage_t : virtual public hash_members_t {
 public:
   arc_storage_t() {}
   arc_storage_t(double _xc, double _yc, double _radius, double _angle1,
@@ -112,7 +112,7 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::arc_storage_t);
 
  */
 namespace uxdevice {
-class negative_arc_storage_t : public hash_members_t {
+class negative_arc_storage_t : virtual public hash_members_t {
 public:
   negative_arc_storage_t() {}
   negative_arc_storage_t(double _xc, double _yc, double _radius, double _angle1,
@@ -147,7 +147,7 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::negative_arc_storage_t);
 
  */
 namespace uxdevice {
-class rectangle_storage_t : public hash_members_t {
+class rectangle_storage_t : virtual public hash_members_t {
 public:
   rectangle_storage_t() {}
   rectangle_storage_t(double _x, double _y, double _width, double _height)
@@ -179,7 +179,7 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::rectangle_storage_t);
 
  */
 namespace uxdevice {
-class curve_storage_t : public hash_members_t {
+class curve_storage_t : virtual public hash_members_t {
 public:
   curve_storage_t() {}
   curve_storage_t(double _x1, double _y1, double _x2, double _y2, double _x3,
@@ -214,7 +214,7 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::curve_storage_t);
 
  */
 namespace uxdevice {
-class line_storage_t : public hash_members_t {
+class line_storage_t : virtual public hash_members_t {
 public:
   line_storage_t() {}
   line_storage_t(double _x, double _y) : x(_x), y(_y) {}
@@ -242,7 +242,7 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::line_storage_t);
 
  */
 namespace uxdevice {
-class stroke_fill_path_storage_t : public hash_members_t {
+class stroke_fill_path_storage_t : virtual public hash_members_t {
 public:
   painter_brush_t fill_brush = {};
   painter_brush_t stroke_brush = {};
@@ -274,7 +274,7 @@ hashing function.
 
  */
 namespace uxdevice {
-class line_dash_storage_t : public hash_members_t {
+class line_dash_storage_t : virtual public hash_members_t {
 public:
   line_dash_storage_t() {}
   line_dash_storage_t(const std::vector<double> &_value, const double &_offset)
@@ -311,7 +311,7 @@ memory.
 
  */
 namespace uxdevice {
-class image_block_storage_t : public hash_members_t {
+class image_block_storage_t : virtual public hash_members_t {
 public:
   /// @brief default constructor
   image_block_storage_t()
@@ -385,7 +385,7 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::image_block_storage_t);
  */
 
 namespace uxdevice {
-class text_font_storage_t : public hash_members_t {
+class text_font_storage_t : virtual public hash_members_t {
 public:
   // these become public members of the base class.
   text_font_storage_t() : description{}, font_ptr(nullptr) {}
@@ -397,7 +397,7 @@ public:
       : description(other.description), font_ptr(other.font_ptr) {}
 
   /// @brief copy constructor
-  text_font_storage_t(const image_block_storage_t &other)
+  text_font_storage_t(const text_font_storage_t &other)
       : description(other.description), font_ptr(nullptr) {}
 
   virtual ~text_font_storage_t() {
@@ -441,13 +441,13 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_font_storage_t);
 
 /**
 
-\class textual_render_storage_t
+\class `
 \brief class used to store parameters and options for a textual render. The
 object is created as the side effect of inserting text, char *, std string or
 a std::shared_ptr<std::string>.
 */
 namespace uxdevice {
-class textual_render_storage_t : virtual public drawing_output_t {
+class textual_render_storage_t : virtual public drawing_output_t, virtual public hash_members_t {
 public:
   typedef std::function<void(cairo_t *cr, const coordinate_t &a)>
       internal_cairo_function_t;
@@ -463,6 +463,41 @@ public:
     if (layout)
       g_object_unref(layout);
   }
+  /// @brief move constructor
+  textual_render_storage_t(textual_render_storage_t &&other) noexcept
+      : shadow_image(other.shadow_image), shadow_cr(other.shadow_cr),
+        layout(other.layout), ink_rect(other.ink_rect),
+        logical_rect(other.logical_rect), matrix(other.matrix) {}
+
+  /// @brief copy constructor
+  textual_render_storage_t(const textual_render_storage_t &other)
+      : shadow_image(cairo_surface_reference(other.shadow_image)),
+        shadow_cr(cairo_reference(other.shadow_cr)),
+        layout(pango_layout_copy(other.layout)), ink_rect(other.ink_rect),
+        logical_rect(other.logical_rect), matrix(other.matrix) {}
+
+  textual_render_storage_t &operator=(const textual_render_storage_t &other) {
+    shadow_image = cairo_surface_reference(other.shadow_image);
+    shadow_cr = cairo_reference(other.shadow_cr);
+    layout = pango_layout_copy(other.layout);
+    ink_rect = other.ink_rect;
+    logical_rect = other.logical_rect;
+    matrix = other.matrix;
+    return *this;
+  }
+
+  textual_render_storage_t &
+  operator=(const textual_render_storage_t &&other) noexcept {
+    shadow_image = other.shadow_image;
+    shadow_cr = other.shadow_cr;
+    layout = other.layout;
+    ink_rect = other.ink_rect;
+    logical_rect = other.logical_rect;
+    matrix = other.matrix;
+    return *this;
+  }
+  UX_DECLARE_TYPE_INDEX_MEMORY(rendering_parameter)
+  std::size_t hash_code(void) const noexcept;
 
   cairo_surface_t *shadow_image = nullptr;
   cairo_t *shadow_cr = nullptr;
@@ -471,7 +506,6 @@ public:
   PangoRectangle logical_rect = PangoRectangle();
   Matrix matrix = {};
 
-private:
   bool set_layout_options(cairo_t *cr);
   void create_shadow(void);
   internal_cairo_function_t precise_rendering_function(void);
@@ -486,7 +520,7 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::textual_render_storage_t);
 */
 
 namespace uxdevice {
-class text_tab_stops_storage_t : public hash_members_t {
+class text_tab_stops_storage_t : virtual public hash_members_t {
 public:
   text_tab_stops_storage_t() {}
   text_tab_stops_storage_t(const std::vector<double> &_value) : value(_value) {}
@@ -532,10 +566,11 @@ class_storage_drawing_function_t
 namespace uxdevice {
 using surface_area_brush_t = class surface_area_brush_t
     : public painter_brush_emitter_t<surface_area_brush_t,
-                                     display_context_memory_storage_t,
-                                     emit_cairo_abstract_t> {
+                                     emit_display_context_abstract_t> {
 public:
-  void emit(cairo_t *cr);
+  using painter_brush_emitter_t::painter_brush_emitter_t;
+
+  void emit(display_context_t &context);
 };
 } // namespace uxdevice
 
@@ -551,6 +586,7 @@ using text_font_t = class text_font_t
                                      display_context_memory_storage_t,
                                      emit_pango_abstract_t> {
 public:
+  using class_storage_emitter_t::class_storage_emitter_t;
   void emit(PangoLayout *layout);
 };
 } // namespace uxdevice
@@ -562,10 +598,13 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_font_t);
 */
 namespace uxdevice {
 using surface_area_title_t = class surface_area_title_t
-    : public storage_emitter_t<std::string, display_context_memory_storage_t,
-                               emit_cairo_abstract_t> {
+    : public storage_emitter_t<surface_area_title_t, std::string,
+                               display_context_memory_storage_t,
+                               emit_display_context_abstract_t> {
 public:
-  void emit(cairo_t *cr);
+  using storage_emitter_t::storage_emitter_t;
+
+  void emit(display_context_t &context);
 };
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::surface_area_title_t);
@@ -579,6 +618,7 @@ using text_render_normal_t = class text_render_normal_t
     : public marker_emitter_t<text_render_normal_t,
                               emit_display_context_abstract_t> {
 public:
+  using marker_emitter_t::marker_emitter_t;
   void emit(display_context_t &context);
 };
 } // namespace uxdevice
@@ -593,6 +633,8 @@ using text_render_path_t = class text_render_path_t
     : public marker_emitter_t<text_render_path_t,
                               emit_display_context_abstract_t> {
 public:
+  using marker_emitter_t::marker_emitter_t;
+
   void emit(display_context_t &context);
 };
 } // namespace uxdevice
@@ -605,10 +647,15 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_render_path_t);
 namespace uxdevice {
 using text_color_t = class text_color_t
     : public painter_brush_emitter_t<text_color_t,
-                                     display_context_memory_storage_t,
-                                     emit_cairo_abstract_t> {
+                                     display_context_memory_storage_t, emit_cairo_coordinate_abstract_t> {
 public:
-  void emit(cairo_t *cr);
+  using painter_brush_emitter_t::painter_brush_emitter_t;
+  void emit(cairo_t *cr) {
+    painter_brush_emitter_t::emit(cr);
+   }
+  void emit(cairo_t *cr,coordinate_t &coord) {
+    painter_brush_emitter_t::emit(cr,coord);
+  }
 };
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_color_t);
@@ -620,10 +667,9 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_color_t);
 namespace uxdevice {
 using text_outline_t = class text_outline_t
     : public painter_brush_emitter_t<text_outline_t,
-                                     display_context_memory_storage_t,
-                                     emit_cairo_abstract_t> {
+                                     display_context_memory_storage_t> {
 public:
-  void emit(cairo_t *cr);
+  using painter_brush_emitter_t::painter_brush_emitter_t;
 };
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_outline_t);
@@ -635,10 +681,9 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_outline_t);
 namespace uxdevice {
 using text_fill_t = class text_fill_t
     : public painter_brush_emitter_t<text_fill_t,
-                                     display_context_memory_storage_t,
-                                     emit_cairo_abstract_t> {
+                                     display_context_memory_storage_t> {
 public:
-  void emit(cairo_t *cr);
+  using painter_brush_emitter_t::painter_brush_emitter_t;
 };
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_fill_t);
@@ -650,10 +695,9 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_fill_t);
 namespace uxdevice {
 using text_shadow_t = class text_shadow_t
     : public painter_brush_emitter_t<text_shadow_t,
-                                     display_context_memory_storage_t,
-                                     emit_cairo_abstract_t> {
+                                     display_context_memory_storage_t> {
 public:
-  void emit(cairo_t *cr);
+  using painter_brush_emitter_t::painter_brush_emitter_t;
 };
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_shadow_t);
@@ -668,6 +712,8 @@ using text_alignment_t = class text_alignment_t
                                display_context_memory_storage_t,
                                emit_pango_abstract_t> {
 public:
+  using storage_emitter_t::storage_emitter_t;
+
   void emit(PangoLayout *layout);
 };
 } // namespace uxdevice
@@ -683,6 +729,8 @@ using text_indent_t = class text_indent_t
                                display_context_memory_storage_t,
                                emit_pango_abstract_t> {
 public:
+  using storage_emitter_t::storage_emitter_t;
+
   void emit(PangoLayout *layout);
 };
 } // namespace uxdevice
@@ -694,10 +742,12 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_indent_t);
 */
 namespace uxdevice {
 using text_ellipsize_t = class text_ellipsize_t
-    : public storage_emitter_t<text_ellipsize_t, double,
+    : public storage_emitter_t<text_ellipsize_t, text_ellipsize_options_t,
                                display_context_memory_storage_t,
                                emit_pango_abstract_t> {
 public:
+  using storage_emitter_t::storage_emitter_t;
+
   void emit(PangoLayout *layout);
 };
 } // namespace uxdevice
@@ -713,6 +763,8 @@ using text_line_space_t = class text_line_space_t
                                display_context_memory_storage_t,
                                emit_pango_abstract_t> {
 public:
+  using storage_emitter_t::storage_emitter_t;
+
   void emit(PangoLayout *layout);
 };
 } // namespace uxdevice
@@ -728,6 +780,8 @@ using text_tab_stops_t = class text_tab_stops_t
                                      display_context_memory_storage_t,
                                      emit_pango_abstract_t> {
 public:
+  using class_storage_emitter_t::class_storage_emitter_t;
+
   void emit(PangoLayout *layout);
 };
 } // namespace uxdevice
@@ -740,7 +794,10 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_tab_stops_t);
 namespace uxdevice {
 using text_data_t = class text_data_t
     : public storage_emitter_t<text_data_t, std::string,
-                               display_context_memory_storage_t> {};
+                               display_context_memory_storage_t> {
+public:
+  using storage_emitter_t::storage_emitter_t;
+};
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_data_t);
 
@@ -755,6 +812,8 @@ using coordinate_t = class coordinate_t
                                      display_context_memory_storage_t,
                                      emit_cairo_abstract_t> {
 public:
+  using class_storage_emitter_t::class_storage_emitter_t;
+
   void emit(cairo_t *cr);
 };
 } // namespace uxdevice
@@ -770,6 +829,7 @@ using antialias_t = class antialias_t
                                display_context_memory_storage_t,
                                emit_cairo_abstract_t> {
 public:
+  using storage_emitter_t::storage_emitter_t;
   void emit(cairo_t *cr);
 };
 } // namespace uxdevice
@@ -785,6 +845,8 @@ using line_width_t = class line_width_t
                                display_context_memory_storage_t,
                                emit_cairo_abstract_t> {
 public:
+  using storage_emitter_t::storage_emitter_t;
+
   void emit(cairo_t *cr);
 };
 } // namespace uxdevice
@@ -800,6 +862,8 @@ using line_cap_t = class line_cap_t
                                display_context_memory_storage_t,
                                emit_cairo_abstract_t> {
 public:
+  using storage_emitter_t::storage_emitter_t;
+
   void emit(cairo_t *cr);
 };
 } // namespace uxdevice
@@ -815,6 +879,8 @@ using line_join_t = class line_join_t
                                display_context_memory_storage_t,
                                emit_cairo_abstract_t> {
 public:
+  using storage_emitter_t::storage_emitter_t;
+
   void emit(cairo_t *cr);
 };
 } // namespace uxdevice
@@ -830,6 +896,8 @@ using miter_limit_t = class miter_limit_t
                                display_context_memory_storage_t,
                                emit_cairo_abstract_t> {
 public:
+  using storage_emitter_t::storage_emitter_t;
+
   void emit(cairo_t *cr);
 };
 } // namespace uxdevice
@@ -845,6 +913,8 @@ using line_dashes_t = class line_dashes_t
                                      display_context_memory_storage_t,
                                      emit_cairo_abstract_t> {
 public:
+  using class_storage_emitter_t::class_storage_emitter_t;
+
   void emit(cairo_t *cr);
 };
 } // namespace uxdevice
@@ -860,6 +930,8 @@ using tollerance_t = class tollerance_t
                                display_context_memory_storage_t,
                                emit_cairo_abstract_t> {
 public:
+  using storage_emitter_t::storage_emitter_t;
+
   void emit(cairo_t *cr);
 };
 } // namespace uxdevice
@@ -875,6 +947,8 @@ using graphic_operator_t = class graphic_operator_t
                                display_context_memory_storage_t,
                                emit_cairo_abstract_t> {
 public:
+  using storage_emitter_t::storage_emitter_t;
+
   void emit(cairo_t *cr);
 };
 } // namespace uxdevice
@@ -889,6 +963,8 @@ using relative_coordinate_t = class relative_coordinate_t
     : public marker_emitter_t<relative_coordinate_t,
                               emit_display_context_abstract_t> {
 public:
+  using marker_emitter_t::marker_emitter_t;
+
   void emit(display_context_t &context);
 };
 } // namespace uxdevice
@@ -903,6 +979,8 @@ using absolute_coordinate_t = class absolute_coordinate_t
     : public marker_emitter_t<absolute_coordinate_t,
                               emit_display_context_abstract_t> {
 public:
+  using marker_emitter_t::marker_emitter_t;
+
   void emit(display_context_t &context);
 };
 } // namespace uxdevice
@@ -917,6 +995,8 @@ using function_object_t = class function_object_t
     : public storage_emitter_t<function_object_t, cairo_function_t,
                                emit_cairo_abstract_t> {
 public:
+  using storage_emitter_t::storage_emitter_t;
+
   void emit(cairo_t *cr);
 };
 } // namespace uxdevice
@@ -927,10 +1007,27 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::function_object_t);
 \brief
 */
 namespace uxdevice {
+using draw_function_object_t = class draw_function_object_t
+    : public storage_drawing_function_t<draw_function_object_t, cairo_function_t,
+                               emit_display_context_abstract_t> {
+public:
+  using storage_drawing_function_t::storage_drawing_function_t;
+
+  void emit(display_context_t &context);
+};
+} // namespace uxdevice
+UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::draw_function_object_t);
+/**
+\class
+\brief
+*/
+namespace uxdevice {
 using option_function_object_t = class option_function_object_t
-    : public storage_emitter_t<option_function_object_t,
+    : public class_storage_emitter_t<option_function_object_t,
                                cairo_option_function_t, emit_cairo_abstract_t> {
 public:
+  using class_storage_emitter_t::class_storage_emitter_t;
+
   void emit(cairo_t *cr);
 };
 } // namespace uxdevice
@@ -943,9 +1040,11 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::option_function_object_t);
 namespace uxdevice {
 using textual_render_t = class textual_render_t
     : public class_storage_drawing_function_t<
-          textual_render_t, textual_render_storage_t, emit_cairo_abstract_t> {
+          textual_render_t, textual_render_storage_t, emit_display_context_abstract_t> {
 public:
-  void emit(cairo_t *cr);
+  using class_storage_drawing_function_t::class_storage_drawing_function_t;
+
+  void emit(display_context_t &context);
 };
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::textual_render_t);
@@ -957,9 +1056,11 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::textual_render_t);
 namespace uxdevice {
 using image_block_t = class image_block_t
     : public class_storage_drawing_function_t<
-          image_block_t, image_block_storage_t, emit_cairo_abstract_t> {
+          image_block_t, image_block_storage_t, emit_display_context_abstract_t> {
 public:
-  void emit(cairo_t *cr);
+  using class_storage_drawing_function_t::class_storage_drawing_function_t;
+
+  void emit(display_context_t &context);
 };
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::image_block_t);
@@ -974,6 +1075,8 @@ using arc_t = class arc_t
     : public class_storage_drawing_function_t<arc_t, arc_storage_t,
                                               emit_cairo_abstract_t> {
 public:
+  using class_storage_drawing_function_t::class_storage_drawing_function_t;
+
   void emit(cairo_t *cr);
 };
 } // namespace uxdevice
@@ -988,6 +1091,8 @@ using negative_arc_t = class negative_arc_t
     : public class_storage_drawing_function_t<
           negative_arc_t, negative_arc_storage_t, emit_cairo_abstract_t> {
 public:
+  using class_storage_drawing_function_t::class_storage_drawing_function_t;
+
   void emit(cairo_t *cr);
 };
 } // namespace uxdevice
@@ -1002,6 +1107,8 @@ using curve_t = class curve_t
     : public class_storage_drawing_function_t<
           curve_t, curve_storage_t, emit_cairo_relative_coordinate_abstract_t> {
 public:
+  using class_storage_drawing_function_t::class_storage_drawing_function_t;
+
   void emit_relative(cairo_t *cr);
   void emit_absolute(cairo_t *cr);
 };
@@ -1017,6 +1124,8 @@ using line_t = class line_t
     : public class_storage_drawing_function_t<
           line_t, line_storage_t, emit_cairo_relative_coordinate_abstract_t> {
 public:
+  using class_storage_drawing_function_t::class_storage_drawing_function_t;
+
   void emit_relative(cairo_t *cr);
   void emit_absolute(cairo_t *cr);
 };
@@ -1028,13 +1137,48 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::line_t);
 \brief
 */
 namespace uxdevice {
+using vline_t = class vline_t
+    : public storage_drawing_function_t<vline_t,
+          double,  emit_cairo_relative_coordinate_abstract_t> {
+public:
+  using storage_drawing_function_t::storage_drawing_function_t;
+
+  void emit_relative(cairo_t *cr);
+  void emit_absolute(cairo_t *cr);
+};
+} // namespace uxdevice
+UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::vline_t);
+
+/**
+\class
+\brief
+*/
+namespace uxdevice {
+using hline_t = class hline_t
+    : public storage_drawing_function_t<hline_t,
+          double, emit_cairo_relative_coordinate_abstract_t> {
+public:
+  using storage_drawing_function_t::storage_drawing_function_t;
+
+  void emit_relative(cairo_t *cr);
+  void emit_absolute(cairo_t *cr);
+};
+} // namespace uxdevice
+UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::hline_t);
+
+/**
+\class
+\brief
+*/
+namespace uxdevice {
 using rectangle_t =
     class rectangle_t : public class_storage_drawing_function_t<
                             rectangle_t, rectangle_storage_t,
-                            emit_cairo_relative_coordinate_abstract_t> {
+                            emit_cairo_abstract_t> {
 public:
-  void emit_relative(cairo_t *cr);
-  void emit_absolute(cairo_t *cr);
+  using class_storage_drawing_function_t::class_storage_drawing_function_t;
+
+  void emit(cairo_t *cr);
 };
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::rectangle_t);
@@ -1048,6 +1192,8 @@ using stroke_path_t = class stroke_path_t
     : public class_storage_drawing_function_t<stroke_path_t, painter_brush_t,
                                               emit_cairo_abstract_t> {
 public:
+  using class_storage_drawing_function_t::class_storage_drawing_function_t;
+
   void emit(cairo_t *cr);
 };
 } // namespace uxdevice
@@ -1062,6 +1208,8 @@ using fill_path_t = class fill_path_t
     : public class_storage_drawing_function_t<fill_path_t, painter_brush_t,
                                               emit_cairo_abstract_t> {
 public:
+  using class_storage_drawing_function_t::class_storage_drawing_function_t;
+
   void emit(cairo_t *cr);
 };
 } // namespace uxdevice
@@ -1077,6 +1225,8 @@ using stroke_fill_path_t = class stroke_fill_path_t
                                               stroke_fill_path_storage_t,
                                               emit_cairo_abstract_t> {
 public:
+  using class_storage_drawing_function_t::class_storage_drawing_function_t;
+
   void emit(cairo_t *cr);
 };
 } // namespace uxdevice
@@ -1091,6 +1241,8 @@ using mask_t = class mask_t
     : public class_storage_drawing_function_t<mask_t, painter_brush_t,
                                               emit_cairo_abstract_t> {
 public:
+  using class_storage_drawing_function_t::class_storage_drawing_function_t;
+
   void emit(cairo_t *cr);
 };
 } // namespace uxdevice
@@ -1105,6 +1257,8 @@ using paint_t =
     class paint_t : public storage_drawing_function_t<paint_t, double,
                                                       emit_cairo_abstract_t> {
 public:
+  using storage_drawing_function_t::storage_drawing_function_t;
+
   void emit(cairo_t *cr);
 };
 } // namespace uxdevice
@@ -1118,6 +1272,8 @@ namespace uxdevice {
 using close_path_t = class close_path_t
     : public marker_emitter_t<close_path_t, emit_cairo_abstract_t> {
 public:
+  using marker_emitter_t::marker_emitter_t;
+
   void emit(cairo_t *cr);
 };
 } // namespace uxdevice
@@ -1180,7 +1336,10 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::listen_keydown_t);
 */
 namespace uxdevice {
 using listen_keyup_t =
-    class listen_keyup_t : public listener_t<listen_keyup_t> {};
+    class listen_keyup_t : public listener_t<listen_keyup_t> {
+public:
+  using listener_t::listener_t;
+};
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::listen_keyup_t);
 
@@ -1190,7 +1349,10 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::listen_keyup_t);
 */
 namespace uxdevice {
 using listen_keypress_t =
-    class listen_keypress_t : public listener_t<listen_keypress_t> {};
+    class listen_keypress_t : public listener_t<listen_keypress_t> {
+public:
+  using listener_t::listener_t;
+};
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::listen_keypress_t);
 
@@ -1200,7 +1362,10 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::listen_keypress_t);
 */
 namespace uxdevice {
 using listen_mouseenter_t =
-    class listen_mouseenter_t : public listener_t<listen_mouseenter_t> {};
+    class listen_mouseenter_t : public listener_t<listen_mouseenter_t> {
+public:
+  using listener_t::listener_t;
+};
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::listen_mouseenter_t);
 
@@ -1210,7 +1375,10 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::listen_mouseenter_t);
 */
 namespace uxdevice {
 using listen_mousemove_t =
-    class listen_mousemove_t : public listener_t<listen_mousemove_t> {};
+    class listen_mousemove_t : public listener_t<listen_mousemove_t> {
+public:
+  using listener_t::listener_t;
+};
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::listen_mousemove_t);
 
@@ -1220,7 +1388,10 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::listen_mousemove_t);
 */
 namespace uxdevice {
 using listen_mousedown_t =
-    class listen_mousedown_t : public listener_t<listen_mousedown_t> {};
+    class listen_mousedown_t : public listener_t<listen_mousedown_t> {
+public:
+  using listener_t::listener_t;
+};
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::listen_mousedown_t);
 
@@ -1230,7 +1401,10 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::listen_mousedown_t);
 */
 namespace uxdevice {
 using listen_mouseup_t =
-    class listen_mouseup_t : public listener_t<listen_mouseup_t> {};
+    class listen_mouseup_t : public listener_t<listen_mouseup_t> {
+public:
+  using listener_t::listener_t;
+};
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::listen_mouseup_t);
 
@@ -1240,7 +1414,10 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::listen_mouseup_t);
 */
 namespace uxdevice {
 using listen_click_t =
-    class listen_click_t : public listener_t<listen_click_t> {};
+    class listen_click_t : public listener_t<listen_click_t> {
+public:
+  using listener_t::listener_t;
+};
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::listen_click_t);
 
@@ -1250,7 +1427,10 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::listen_click_t);
 */
 namespace uxdevice {
 using listen_dblclick_t =
-    class listen_dblclick_t : public listener_t<listen_dblclick_t> {};
+    class listen_dblclick_t : public listener_t<listen_dblclick_t> {
+public:
+  using listener_t::listener_t;
+};
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::listen_dblclick_t);
 
@@ -1260,7 +1440,10 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::listen_dblclick_t);
 */
 namespace uxdevice {
 using listen_contextmenu_t =
-    class listen_contextmenu_t : public listener_t<listen_contextmenu_t> {};
+    class listen_contextmenu_t : public listener_t<listen_contextmenu_t> {
+public:
+  using listener_t::listener_t;
+};
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::listen_contextmenu_t);
 
@@ -1270,7 +1453,10 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::listen_contextmenu_t);
 */
 namespace uxdevice {
 using listen_wheel_t =
-    class listen_wheel_t : public listener_t<listen_wheel_t> {};
+    class listen_wheel_t : public listener_t<listen_wheel_t> {
+public:
+  using listener_t::listener_t;
+};
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::listen_wheel_t);
 
@@ -1280,6 +1466,9 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::listen_wheel_t);
 */
 namespace uxdevice {
 using listen_mouseleave_t =
-    class listen_mouseleave_t : public listener_t<listen_mouseleave_t> {};
+    class listen_mouseleave_t : public listener_t<listen_mouseleave_t> {
+public:
+  using listener_t::listener_t;
+};
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::listen_mouseleave_t);

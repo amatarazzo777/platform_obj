@@ -83,7 +83,7 @@ typedef struct _draw_buffer_t {
   cairo_surface_t *rendered = nullptr;
 } draw_buffer_t;
 
-class display_context_t : public hash_members_t {
+class display_context_t : virtual public hash_members_t {
 public:
   class context_cairo_region_t {
   public:
@@ -273,6 +273,7 @@ public:
   unsigned short window_height = 0;
   bool window_open = false;
   std::atomic<bool> relative_coordinate = false;
+  std::atomic<bool> text_path_rendering = false;
 
   std::atomic_flag lockBrush = ATOMIC_FLAG_INIT;
 #define BRUSH_SPIN while (lockBrush.test_and_set(std::memory_order_acquire))

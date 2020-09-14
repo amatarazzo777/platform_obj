@@ -341,14 +341,16 @@ void uxdevice::surface_area_t::notify_complete(void) {
 }
 
 /**
-\brief called by each of thedisplay unit objects to index the item if a key
+\brief called by each of the display unit objects to index the item if a key
 exists. A key can be given as a text_data_t or an integer. The [] operator is
 used to access the data.
 */
 void uxdevice::surface_area_t::maintain_index(
     const std::shared_ptr<display_unit_t> obj) {
-  if (!std::holds_alternative<std::monostate>(obj->key))
-    mapped_objects[obj->key] = obj;
+  std::shared_ptr<key_storage_t> key_store = std::dynamic_pointer_cast<key_storage_t>(obj);
+
+  if (!std::holds_alternative<std::monostate>(key_store->key))
+    mapped_objects[key_store->key] = obj;
   return;
 }
 

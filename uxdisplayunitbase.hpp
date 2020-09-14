@@ -71,6 +71,8 @@ namespace uxdevice {
 using cairo_option_function_t = class cairo_option_function_t {
 public:
   cairo_option_function_t() {}
+  cairo_option_function_t(const cairo_function_t &val)  {value.push_back(val);}
+
   cairo_option_function_t &operator=(const cairo_option_function_t &other) {
     value = other.value;
     return *this;
@@ -92,7 +94,8 @@ public:
 
   std::size_t hash_code(void) const noexcept;
 
-  std::list<option_function_object_t> value = {};
+  std::list<cairo_function_t> value = {};
+
 };
 } // namespace uxdevice
   // namespace uxdevice
@@ -115,43 +118,51 @@ public:
 namespace uxdevice {
 class emit_display_context_abstract_t {
 public:
-  virtual ~emit_display_context_abstract_t() = 0;
-  virtual void emit(display_context_t &context) = 0;
+  virtual ~emit_display_context_abstract_t()=0;
+  virtual void emit( display_context_t &context) = 0;
 };
+emit_display_context_abstract_t::~emit_display_context_abstract_t() {}
 } // namespace uxdevice
 
 namespace uxdevice {
 class emit_cairo_abstract_t {
 public:
-  virtual ~emit_cairo_abstract_t() = 0;
-  virtual void emit(cairo_t *cr) = 0;
+  virtual ~emit_cairo_abstract_t()=0;
+  virtual void emit( cairo_t *cr) = 0;
 };
+emit_cairo_abstract_t::~emit_cairo_abstract_t() {}
 } // namespace uxdevice
 
 namespace uxdevice {
 class emit_cairo_relative_coordinate_abstract_t {
 public:
-  virtual ~emit_cairo_relative_coordinate_abstract_t() = 0;
-  virtual void emit_relative(cairo_t *cr) = 0;
-  virtual void emit_absolute(cairo_t *cr) = 0;
+  virtual ~emit_cairo_relative_coordinate_abstract_t()=0;
+  virtual void emit_relative( cairo_t *cr) = 0;
+  virtual void emit_absolute( cairo_t *cr) = 0;
 };
+emit_cairo_relative_coordinate_abstract_t::~emit_cairo_relative_coordinate_abstract_t() {}
+
 } // namespace uxdevice
 
 namespace uxdevice {
 class emit_cairo_coordinate_abstract_t {
 public:
-  virtual ~emit_cairo_coordinate_abstract_t() = 0;
+  virtual ~emit_cairo_coordinate_abstract_t()=0;
   virtual void emit(cairo_t *cr) = 0;
-  virtual void emit(cairo_t *cr, const coordinate_t &a) = 0;
+  virtual void emit(cairo_t *cr, coordinate_t &a) = 0;
 };
+emit_cairo_coordinate_abstract_t::~emit_cairo_coordinate_abstract_t() {}
+
 } // namespace uxdevice
 
 namespace uxdevice {
 class emit_pango_abstract_t {
 public:
-  virtual ~emit_pango_abstract_t() = 0;
+  virtual ~emit_pango_abstract_t()=0;
   virtual void emit(PangoLayout *layout) = 0;
 };
+emit_pango_abstract_t::~emit_pango_abstract_t() {}
+
 } // namespace uxdevice
 
 namespace uxdevice {
@@ -171,7 +182,7 @@ for errors after invocation.
 
 */
 namespace uxdevice {
-class display_unit_t : public hash_members_t {
+class display_unit_t : virtual public hash_members_t {
 public:
   display_unit_t() {}
 
@@ -310,7 +321,7 @@ public:
   virtual ~drawing_output_t() {
     display_context_t::destroy_buffer(internal_buffer);
   }
-
+  void emit(display_context_t &context);
   void intersect(cairo_rectangle_t &r);
   void intersect(context_cairo_region_t &r);
 
@@ -378,34 +389,59 @@ function.
 */
 
 namespace uxdevice {
-template <typename T> class typed_index_t : public hash_members_t {
+class key_storage_t {
 public:
-  /// @brief default constructor
-  typed_index_t() : key{} {}
-
+  key_storage_t() {}
+  key_storage_t(const indirect_index_display_unit_t &_key) : key(_key) { }
   /// @brief copy assignment operator
-  typed_index_t &operator=(const typed_index_t &other) {
+  key_storage_t &operator=(const key_storage_t &other) {
     key = other.key;
     return *this;
   }
   /// @brief move assignment
-  typed_index_t &operator=(typed_index_t &&other) noexcept {
+  key_storage_t &operator=(key_storage_t &&other) noexcept {
     key = std::move(other.key);
     return *this;
   }
   /// @brief move constructor
-  typed_index_t(typed_index_t &&other) noexcept { key = std::move(other.key); }
+  key_storage_t(key_storage_t &&other) noexcept { key = std::move(other.key); }
 
   /// @brief copy constructor
-  typed_index_t(const typed_index_t &other) { *this = other; }
+  key_storage_t(const key_storage_t &other) { *this = other; }
 
-  T &index(const std::string &_k) {
-    key = _k;
+
+  indirect_index_display_unit_t key = {};
+};
+
+template <typename T> class typed_index_t : public key_storage_t, virtual public hash_members_t {
+public:
+  /// @brief default constructor
+  typed_index_t() : key_storage_t{} {}
+
+  /// @brief copy assignment operator
+  typed_index_t &operator=(const typed_index_t &other) {
+    key_storage_t::operator=(other);
     return *this;
   }
-  T &index(const std::size_t &_k) {
-    key = _k;
+  /// @brief move assignment
+  typed_index_t &operator=(typed_index_t &&other) noexcept {
+    key_storage_t::operator=(other);
     return *this;
+  }
+  /// @brief move constructor
+  typed_index_t(typed_index_t &&other) noexcept:key_storage_t(other) {
+ }
+
+  /// @brief copy constructor
+  typed_index_t(const typed_index_t &other) :  key_storage_t(other) {  }
+
+  T &index(const std::string &_k) {
+    key_storage_t::operator=(indirect_index_display_unit_t(_k));
+    return *static_cast<T*>(this);
+  }
+  T &index(const std::size_t &_k) {
+    key_storage_t::operator=(indirect_index_display_unit_t(_k));
+    return *static_cast<T*>(this);
   }
   std::size_t hash_code(void) const noexcept {
     std::size_t __value = {};
@@ -414,7 +450,6 @@ public:
   }
   virtual ~typed_index_t() {}
 
-  indirect_index_display_unit_t key = {};
 };
 } // namespace uxdevice
 
@@ -431,7 +466,7 @@ public:
 namespace uxdevice {
 template <typename T>
 class listener_t : public typed_index_t<T>,
-                   public hash_members_t,
+                   virtual public hash_members_t,
                    std::enable_shared_from_this<T> {
 public:
   listener_t() = delete;
@@ -471,7 +506,7 @@ namespace uxdevice {
 template <typename T, typename... Args>
 class painter_brush_emitter_t : public display_unit_t,
                                 public painter_brush_t,
-                                public hash_members_t,
+                                virtual public hash_members_t,
                                 public typed_index_t<T>,
                                 public std::enable_shared_from_this<T>,
                                 public Args... {
@@ -505,7 +540,14 @@ public:
     return *this;
   }
 
-  virtual ~painter_brush_emitter_t() {}
+  ~painter_brush_emitter_t() {}
+
+  void emit(cairo_t *cr) {
+    painter_brush_t::emit(cr);
+  }
+  void emit(cairo_t *cr, coordinate_t &a) {
+    painter_brush_t::emit(cr,a);
+  }
   std::size_t hash_code(void) const noexcept {
     std::size_t __value = {};
     hash_combine(__value, std::type_index(typeid(T)),
@@ -540,7 +582,7 @@ polymorphic_overloads_t
 namespace uxdevice {
 template <typename T, typename... Args>
 class marker_emitter_t : public display_unit_t,
-                         public hash_members_t,
+                         virtual public hash_members_t,
                          public typed_index_t<T>,
                          public Args... {
 public:
@@ -590,9 +632,8 @@ these are listed, the interface callback must be defined.
 */
 namespace uxdevice {
 template <typename T, typename TS, typename... Args>
-class storage_emitter_t : public display_unit_t,
+class storage_emitter_t : virtual public hash_members_t, public display_unit_t,
                           public typed_index_t<T>,
-                          public hash_members_t,
                           std::enable_shared_from_this<T>,
                           public Args... {
 public:
@@ -601,17 +642,17 @@ public:
 
   // copy constructor
   storage_emitter_t(const storage_emitter_t &other)
-      : value(other), display_unit_t(other), typed_index_t<T>(other),
-        hash_members_t(other) {}
+      : typed_index_t<T>(other), display_unit_t(other),
+        hash_members_t(other) , value(other.value){}
 
   // move constructor
   storage_emitter_t(storage_emitter_t &&other) noexcept
-      : value(other), display_unit_t(other), typed_index_t<T>(other),
-        hash_members_t(other), TS(other) {}
+      : typed_index_t<T>(other), display_unit_t(other),
+        hash_members_t(other), value(other.value) {}
 
   // copy assignment operator
   storage_emitter_t &operator=(const storage_emitter_t &other) {
-    value = other.other;
+    value = other.value;
     display_unit_t::operator=(other);
     typed_index_t<T>::operator=(other);
     hash_members_t::operator=(other);
@@ -658,32 +699,34 @@ inherited and all constructors are also inherited.
 */
 namespace uxdevice {
 template <typename T, typename TC, typename... Args>
-class class_storage_emitter_t : public display_unit_t,
-                                public hash_members_t,
+class class_storage_emitter_t : public TC,
                                 public typed_index_t<T>,
+                                public display_unit_t,
+                                virtual public hash_members_t,
                                 std::enable_shared_from_this<T>,
-                                public Args...,
-                                public TC {
+                                public Args...
+                                {
 public:
   using TC::TC;
   class_storage_emitter_t() {}
 
   // copy constructor
   class_storage_emitter_t(const class_storage_emitter_t &other)
-      : display_unit_t(other), typed_index_t<T>(other), hash_members_t(other),
-        TC(other) {}
+      :  TC(other), hash_members_t(other),typed_index_t<T>(other), display_unit_t(other)
+        {}
 
   // move constructor
   class_storage_emitter_t(class_storage_emitter_t &&other) noexcept
-      : display_unit_t(other), typed_index_t<T>(other), hash_members_t(other),
-        TC(other) {}
+          :  TC(other), hash_members_t(other),typed_index_t<T>(other), display_unit_t(other)
+        {}
+
 
   // copy assignment operator
   class_storage_emitter_t &operator=(const class_storage_emitter_t &other) {
     display_unit_t::operator=(other);
     hash_members_t::operator=(other);
     typed_index_t<T>::operator=(other);
-    TC::opterator = (other);
+    TC::operator = (other);
     return *this;
   }
   // move assignment operator
@@ -695,7 +738,7 @@ public:
     return *this;
   }
 
-  virtual ~class_storage_emitter_t() {}
+  ~class_storage_emitter_t() {}
 
   std::size_t hash_code(void) const noexcept {
     std::size_t __value = {};
@@ -727,8 +770,8 @@ functions such as emit and invoke.
 
 namespace uxdevice {
 template <typename T, typename TS, typename... Args>
-class storage_drawing_function_t : public drawing_output_t,
-                                   public hash_members_t,
+class storage_drawing_function_t : virtual public drawing_output_t,
+                                   virtual public hash_members_t,
                                    public typed_index_t<T>,
                                    std::enable_shared_from_this<T>,
                                    public Args... {
@@ -798,10 +841,9 @@ view_port rectangle.
 */
 namespace uxdevice {
 template <typename T, typename TC, typename... Args>
-class class_storage_drawing_function_t : public drawing_output_t,
-                                         public typed_index_t<T>,
-                                         public hash_members_t,
-                                         public TC,
+class class_storage_drawing_function_t : public TC, public typed_index_t<T>,
+                                         virtual public drawing_output_t,
+                                         virtual public hash_members_t,
                                          std::enable_shared_from_this<T>,
                                          public Args... {
 public:
@@ -811,14 +853,14 @@ public:
   // copy constructor
   class_storage_drawing_function_t(
       const class_storage_drawing_function_t &other)
-      : drawing_output_t(other), typed_index_t<T>(other), hash_members_t(other),
-        TC(other) {}
+      :  TC(other), typed_index_t<T>(other), drawing_output_t(other),  hash_members_t(other)
+        {}
 
   // move constructor
   class_storage_drawing_function_t(
       class_storage_drawing_function_t &&other) noexcept
-      : drawing_output_t(other), typed_index_t<T>(other), hash_members_t(other),
-        TC(other) {}
+      :  TC(other), typed_index_t<T>(other), drawing_output_t(other),  hash_members_t(other)
+        {}
 
   // copy assignment operator
   class_storage_drawing_function_t &

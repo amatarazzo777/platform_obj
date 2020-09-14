@@ -36,7 +36,7 @@ namespace uxdevice {
 enum class paintType { none, color, pattern, image_block };
 enum class gradientType { none, linear, radial };
 
-class color_stop_t : public hash_members_t {
+class color_stop_t : virtual public hash_members_t {
 public:
   color_stop_t(u_int32_t _c);
   color_stop_t(double _r, double _g, double _b);
@@ -105,7 +105,7 @@ public:
     image_block_pattern
   };
 
-  class paint_definition_base_t : public hash_members_t {
+  class paint_definition_base_t : virtual public hash_members_t {
   public:
     paint_definition_base_t(paint_definition_class_t _ct,
                             const std::string &_description)
@@ -119,9 +119,8 @@ public:
     paint_definition_base_t(paint_definition_base_t &&other) {}
 
     virtual ~paint_definition_base_t() {}
-    virtual void emit(cairo_t *cr) {}
-    virtual void emit(cairo_t *cr, double x, double y, double w, double h) {}
-    virtual void emit(cairo_t *cr, const coordinate_t &a) {}
+    virtual void emit(const cairo_t *cr) {}
+    virtual void emit(const cairo_t *cr, const coordinate_t &a) {}
 
     bool is_color_description(void) {
       bool bret = false;
@@ -229,7 +228,7 @@ public:
 
     virtual ~color_definition_t() {}
     virtual void emit(cairo_t *cr) { cairo_set_source_rgba(cr, r, g, b, a); }
-    virtual void emit(cairo_t *cr, double x, double y, double w, double h) {
+    virtual void emit(cairo_t *cr, coordinate_t &coord) {
       cairo_set_source_rgba(cr, r, g, b, a);
     }
     std::size_t hash_code(void) const noexcept {
@@ -279,7 +278,7 @@ public:
       cairo_pattern_set_matrix(pattern, &matrix._matrix);
       cairo_set_source(cr, pattern);
     }
-    virtual void emit(cairo_t *cr, double x, double y, double w, double h) {
+    virtual void emit(cairo_t *cr, coordinate_t &a) {
       cairo_pattern_set_matrix(pattern, &matrix._matrix);
       cairo_set_source(cr, pattern);
     }
@@ -341,7 +340,7 @@ public:
       cairo_pattern_set_matrix(pattern, &matrix._matrix);
       cairo_set_source(cr, pattern);
     }
-    virtual void emit(cairo_t *cr, double x, double y, double w, double h) {
+    virtual void emit(cairo_t *cr, coordinate_t &coord) {
       cairo_pattern_set_matrix(pattern, &matrix._matrix);
       cairo_set_source(cr, pattern);
     }
@@ -414,7 +413,7 @@ public:
       cairo_pattern_set_matrix(pattern, &matrix._matrix);
       cairo_set_source(cr, pattern);
     }
-    virtual void emit(cairo_t *cr, double x, double y, double w, double h) {
+    virtual void emit(cairo_t *cr, coordinate_t &coord) {
       cairo_pattern_set_matrix(pattern, &matrix._matrix);
       cairo_set_source(cr, pattern);
     }
@@ -495,7 +494,7 @@ public:
       data_storage.reset();
   }
   virtual void emit(cairo_t *cr);
-  virtual void emit(cairo_t *cr, const coordinate_t &a);
+  virtual void emit(cairo_t *cr, coordinate_t &coord);
   bool is_valid(void) { return data_storage != nullptr; }
 
 private:

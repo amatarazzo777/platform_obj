@@ -177,7 +177,9 @@ public:
 
   // template << operator.
   template <typename T> surface_area_t &operator<<(const T &data) {
-    if constexpr (std::is_base_of<display_unit_t, T>::value) {
+     if constexpr (std::is_base_of<listener_t<T>, T>::value) {
+
+    } else  if constexpr (std::is_base_of<display_unit_t, T>::value) {
       display_list<T>(data);
     } else {
       std::ostringstream s;
@@ -379,14 +381,7 @@ private:
   std::shared_ptr<T> display_list(const std::shared_ptr<T> ptr,
                                   const Args &... args) {
     UX_DISPLAY_LIST_SPIN;
-
-    ptr->invoke(context);
-
-    if constexpr (std::is_base_of<drawing_output_t, T>::value)
-      context.add_drawable(std::dynamic_pointer_cast<drawing_output_t>(ptr));
-
-    maintain_index(std::dynamic_pointer_cast<display_unit_t>(ptr));
-
+    display_list_storage.emplace_back(ptr);
     UX_DISPLAY_LIST_CLEAR;
 
     return ptr;

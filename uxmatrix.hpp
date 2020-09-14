@@ -34,7 +34,7 @@
 #pragma once
 
 namespace uxdevice {
-using Matrix = class Matrix : public hash_members_t {
+using Matrix = class Matrix : virtual public hash_members_t {
 public:
   Matrix() { cairo_matrix_init_identity(&_matrix); }
   virtual ~Matrix() {}
