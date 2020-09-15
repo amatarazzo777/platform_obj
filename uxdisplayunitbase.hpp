@@ -121,51 +121,49 @@ public:
 namespace uxdevice {
 class emit_display_context_abstract_t {
 public:
-  virtual ~emit_display_context_abstract_t()=0;
+  virtual ~emit_display_context_abstract_t(){};
   virtual void emit( display_context_t &context) = 0;
 };
-emit_display_context_abstract_t::~emit_display_context_abstract_t() {}
+
 } // namespace uxdevice
 
 namespace uxdevice {
 class emit_cairo_abstract_t {
 public:
-  virtual ~emit_cairo_abstract_t()=0;
+  virtual ~emit_cairo_abstract_t(){};
   virtual void emit( cairo_t *cr) = 0;
 };
-emit_cairo_abstract_t::~emit_cairo_abstract_t() {}
+
 } // namespace uxdevice
 
 namespace uxdevice {
 class emit_cairo_relative_coordinate_abstract_t {
 public:
-  virtual ~emit_cairo_relative_coordinate_abstract_t()=0;
+  virtual ~emit_cairo_relative_coordinate_abstract_t(){};
   virtual void emit_relative( cairo_t *cr) = 0;
   virtual void emit_absolute( cairo_t *cr) = 0;
 };
-emit_cairo_relative_coordinate_abstract_t::~emit_cairo_relative_coordinate_abstract_t() {}
+
 
 } // namespace uxdevice
 
 namespace uxdevice {
 class emit_cairo_coordinate_abstract_t {
 public:
-  virtual ~emit_cairo_coordinate_abstract_t()=0;
+  virtual ~emit_cairo_coordinate_abstract_t(){};
   virtual void emit(cairo_t *cr) = 0;
   virtual void emit(cairo_t *cr, coordinate_t &a) = 0;
 };
-emit_cairo_coordinate_abstract_t::~emit_cairo_coordinate_abstract_t() {}
+
 
 } // namespace uxdevice
 
 namespace uxdevice {
 class emit_pango_abstract_t {
 public:
-  virtual ~emit_pango_abstract_t()=0;
+  virtual ~emit_pango_abstract_t(){};
   virtual void emit(PangoLayout *layout) = 0;
 };
-emit_pango_abstract_t::~emit_pango_abstract_t() {}
-
 } // namespace uxdevice
 
 namespace uxdevice {

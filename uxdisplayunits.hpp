@@ -56,7 +56,7 @@ public:
 
   std::size_t hash_code(void) const noexcept {
     std::size_t __value = {};
-    hash_combine(__value, std::type_index(typeid(display_unit_t)), x, y, w, h);
+    hash_combine(__value, std::type_index(typeid(coordinate_storage_t)), x, y, w, h);
     return __value;
   }
 
@@ -88,7 +88,7 @@ public:
 
   std::size_t hash_code(void) const noexcept {
     std::size_t __value = {};
-    hash_combine(__value, std::type_index(typeid(display_unit_t)), xc, yc,
+    hash_combine(__value, std::type_index(typeid(arc_storage_t)), xc, yc,
                  radius, angle1, angle2);
     return __value;
   }
@@ -541,17 +541,19 @@ public:
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_tab_stops_storage_t);
 
 /**
-The following is is the exact name that appears within the API. These macros
-provide expansion to create objects that have invoke and emit methods. The base
-services for these objects to be functional for the display are also provided
-by using the template classes within uxdisplayunitbase.hpp.
-These objects have all of the move and copy operators implemented.
-There are several types of objects that may be created and inserted.
+The following definitions are the exact name that appears within the API. These class templates
+provide factories that create objects compatible with the system. These
+objects might have invoke and emit methods. The base
+services for these objects to be functional for the display are also provided.
+These objects have all of the move and copy operators implemented for ease and
+efficiency of use. There are several types of objects that may be created
+and inserted. Please refer to the class template for a more detailed
+explanation. The following templates are provided for use:
 
+marker_emitter_t
 painter_brush_emitter_t
 storage_emitter_t
 class_storage_emitter_t
-marker_emitter_t
 storage_drawing_function_t
 class_storage_drawing_function_t
 
@@ -651,12 +653,7 @@ using text_color_t = class text_color_t
                                      display_context_memory_storage_t, emit_cairo_coordinate_abstract_t> {
 public:
   using painter_brush_emitter_t::painter_brush_emitter_t;
-  void emit(cairo_t *cr) {
-    painter_brush_emitter_t::emit(cr);
-   }
-  void emit(cairo_t *cr,coordinate_t &coord) {
-    painter_brush_emitter_t::emit(cr,coord);
-  }
+
 };
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_color_t);

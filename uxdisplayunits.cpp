@@ -802,7 +802,7 @@ void uxdevice::function_object_t::emit(cairo_t *cr) {
 
 
  */
-void uxdevice::cairo_option_function_t::invoke(display_context_t &context) {
+void uxdevice::cairo_option_function_t::emit(cairo_t *cr) {
   //  value(context.cr);
 }
 
