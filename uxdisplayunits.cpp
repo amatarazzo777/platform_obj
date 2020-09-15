@@ -182,26 +182,26 @@ std::size_t uxdevice::textual_render_storage_t::hash_code(void) const noexcept {
   hash_combine(__value, std::type_index(typeid(textual_render_storage_t)).hash_code(), pango_layout_get_serial(layout),
                ink_rect.x, ink_rect.y, ink_rect.width, ink_rect.height,
                matrix.hash_code(),
-               rendering_parameter<text_color_t>()->hash_code(),
-               rendering_parameter<text_outline_t>()->hash_code(),
-               rendering_parameter<text_fill_t>()->hash_code(),
-               rendering_parameter<text_shadow_t>()->hash_code(),
-               rendering_parameter<text_alignment_t>()->hash_code(),
-               rendering_parameter<text_indent_t>()->hash_code(),
-               rendering_parameter<text_ellipsize_t>()->hash_code(),
-               rendering_parameter<text_line_space_t>()->hash_code(),
-               rendering_parameter<text_tab_stops_t>()->hash_code(),
-               rendering_parameter<text_font_t>()->hash_code(),
-               rendering_parameter<text_data_t>()->hash_code(),
-               rendering_parameter<coordinate_t>()->hash_code(),
-               rendering_parameter<antialias_t>()->hash_code(),
-               rendering_parameter<line_width_t>()->hash_code(),
-               rendering_parameter<line_cap_t>()->hash_code(),
-               rendering_parameter<line_join_t>()->hash_code(),
-               rendering_parameter<miter_limit_t>()->hash_code(),
-               rendering_parameter<line_dashes_t>()->hash_code(),
-               rendering_parameter<tollerance_t>()->hash_code(),
-               rendering_parameter<graphic_operator_t>()->hash_code());
+               unit_memory<text_color_t>()->hash_code(),
+               unit_memory<text_outline_t>()->hash_code(),
+               unit_memory<text_fill_t>()->hash_code(),
+               unit_memory<text_shadow_t>()->hash_code(),
+               unit_memory<text_alignment_t>()->hash_code(),
+               unit_memory<text_indent_t>()->hash_code(),
+               unit_memory<text_ellipsize_t>()->hash_code(),
+               unit_memory<text_line_space_t>()->hash_code(),
+               unit_memory<text_tab_stops_t>()->hash_code(),
+               unit_memory<text_font_t>()->hash_code(),
+               unit_memory<text_data_t>()->hash_code(),
+               unit_memory<coordinate_t>()->hash_code(),
+               unit_memory<antialias_t>()->hash_code(),
+               unit_memory<line_width_t>()->hash_code(),
+               unit_memory<line_cap_t>()->hash_code(),
+               unit_memory<line_join_t>()->hash_code(),
+               unit_memory<miter_limit_t>()->hash_code(),
+               unit_memory<line_dashes_t>()->hash_code(),
+               unit_memory<tollerance_t>()->hash_code(),
+               unit_memory<graphic_operator_t>()->hash_code());
   return __value;
 }
 
@@ -273,23 +273,23 @@ bool uxdevice::textual_render_storage_t::set_layout_options(cairo_t *cr) {
       pango_layout_get_font_description(layout);
   if (!originalDescription ||
       !pango_font_description_equal(
-          originalDescription, rendering_parameter<text_font_t>()->font_ptr))
+          originalDescription, unit_memory<text_font_t>()->font_ptr))
     pango_layout_set_font_description(
-        layout, rendering_parameter<text_font_t>()->font_ptr);
+        layout, unit_memory<text_font_t>()->font_ptr);
 
-  if (rendering_parameter<text_alignment_t>()) {
-    rendering_parameter<text_alignment_t>()->emit(layout);
+  if (unit_memory<text_alignment_t>()) {
+    unit_memory<text_alignment_t>()->emit(layout);
   }
 
   // set the width and height of the layout.
-  auto coordinate = rendering_parameter<coordinate_t>();
+  auto coordinate = unit_memory<coordinate_t>();
   if (pango_layout_get_width(layout) != coordinate->w * PANGO_SCALE)
     pango_layout_set_width(layout, coordinate->w * PANGO_SCALE);
 
   if (pango_layout_get_height(layout) != coordinate->h * PANGO_SCALE)
     pango_layout_set_height(layout, coordinate->h * PANGO_SCALE);
 
-  auto text_data = rendering_parameter<text_data_t>();
+  auto text_data = unit_memory<text_data_t>();
   std::string_view sinternal = std::string_view(pango_layout_get_text(layout));
   if (text_data->value.compare(sinternal) != 0)
     pango_layout_set_text(layout, text_data->value.data(), -1);
@@ -322,7 +322,7 @@ bool uxdevice::textual_render_storage_t::set_layout_options(cairo_t *cr) {
  */
 void uxdevice::textual_render_storage_t::create_shadow(void) {
   if (!shadow_image) {
-    auto text_shadow = rendering_parameter<text_shadow_t>();
+    auto text_shadow = unit_memory<text_shadow_t>();
     shadow_image = cairo_image_surface_create(
         CAIRO_FORMAT_ARGB32, ink_rectangle.width + text_shadow->x,
         ink_rectangle_double.height + text_shadow->y);
@@ -370,35 +370,35 @@ uxdevice::textual_render_storage_t::precise_rendering_function(void) {
   text_rendering_lambda_t text_render_type = {};
   internal_cairo_function_t fn;
 
-  if (rendering_parameter<text_render_path_t>()) {
-    if (rendering_parameter<text_fill_t>() &&
-        rendering_parameter<text_outline_t>() &&
-        rendering_parameter<text_shadow_t>())
+  if (unit_memory<text_render_path_t>()) {
+    if (unit_memory<text_fill_t>() &&
+        unit_memory<text_outline_t>() &&
+        unit_memory<text_shadow_t>())
       text_render_type = text_rendering_fill_outline_shadowed_lambda;
 
-    else if (rendering_parameter<text_fill_t>() &&
-             rendering_parameter<text_outline_t>())
+    else if (unit_memory<text_fill_t>() &&
+             unit_memory<text_outline_t>())
       text_render_type = text_rendering_fill_outline_lambda;
 
-    else if (rendering_parameter<text_fill_t>() &&
-             rendering_parameter<text_shadow_t>())
+    else if (unit_memory<text_fill_t>() &&
+             unit_memory<text_shadow_t>())
       text_render_type = text_rendering_fill_shadowed_lambda;
 
-    else if (rendering_parameter<text_outline_t>() &&
-             rendering_parameter<text_shadow_t>())
+    else if (unit_memory<text_outline_t>() &&
+             unit_memory<text_shadow_t>())
       text_render_type = text_rendering_outline_shadowed_lambda;
 
-    else if (rendering_parameter<text_fill_t>())
+    else if (unit_memory<text_fill_t>())
       text_render_type = text_rendering_fill_lambda;
 
-    else if (rendering_parameter<text_outline_t>())
+    else if (unit_memory<text_outline_t>())
       text_render_type = text_rendering_outline_lambda;
   } else {
-    if (rendering_parameter<text_color_t>() &&
-        rendering_parameter<text_shadow_t>())
+    if (unit_memory<text_color_t>() &&
+        unit_memory<text_shadow_t>())
       text_render_type = text_rendering_fast_shadowed_lambda;
 
-    else if (rendering_parameter<text_color_t>())
+    else if (unit_memory<text_color_t>())
       text_render_type = text_rendering_fast_lambda;
   }
 
@@ -420,7 +420,7 @@ uxdevice::textual_render_storage_t::precise_rendering_function(void) {
       // drawing_output_t::invoke(cr);
 
       a.emit(cr);
-      rendering_parameter<text_color_t>()->emit(cr, a);
+      unit_memory<text_color_t>()->emit(cr, a);
       pango_cairo_show_layout(cr, layout);
     };
   } break;
@@ -436,7 +436,7 @@ uxdevice::textual_render_storage_t::precise_rendering_function(void) {
       FN_SHADOW
 
       a.emit(cr);
-      rendering_parameter<text_color_t>()->emit(cr, a);
+      unit_memory<text_color_t>()->emit(cr, a);
       pango_cairo_show_layout(cr, layout);
     };
 
@@ -452,7 +452,7 @@ uxdevice::textual_render_storage_t::precise_rendering_function(void) {
       a.emit(cr);
 
       pango_cairo_layout_path(cr, layout);
-      rendering_parameter<text_fill_t>()->emit(cr, a);
+      unit_memory<text_fill_t>()->emit(cr, a);
       cairo_fill(cr);
     };
 
@@ -468,7 +468,7 @@ uxdevice::textual_render_storage_t::precise_rendering_function(void) {
 
       a.emit(cr);
       pango_cairo_layout_path(cr, layout);
-      rendering_parameter<text_outline_t>()->emit(cr, a);
+      unit_memory<text_outline_t>()->emit(cr, a);
       cairo_stroke(cr);
     };
   } break;
@@ -483,9 +483,9 @@ uxdevice::textual_render_storage_t::precise_rendering_function(void) {
 
       a.emit(cr);
       pango_cairo_layout_path(cr, layout);
-      rendering_parameter<text_fill_t>()->emit(cr, a);
+      unit_memory<text_fill_t>()->emit(cr, a);
       cairo_fill_preserve(cr);
-      rendering_parameter<text_outline_t>()->emit(cr, a);
+      unit_memory<text_outline_t>()->emit(cr, a);
       cairo_stroke(cr);
     };
   } break;
@@ -502,7 +502,7 @@ uxdevice::textual_render_storage_t::precise_rendering_function(void) {
 
       a.emit(cr);
       pango_cairo_layout_path(cr, layout);
-      rendering_parameter<text_fill_t>()->emit(cr, a);
+      unit_memory<text_fill_t>()->emit(cr, a);
       cairo_fill(cr);
     };
   } break;
@@ -518,7 +518,7 @@ uxdevice::textual_render_storage_t::precise_rendering_function(void) {
 
       a.emit(cr);
       pango_cairo_layout_path(cr, layout);
-      rendering_parameter<text_outline_t>()->emit(cr, a);
+      unit_memory<text_outline_t>()->emit(cr, a);
       cairo_stroke(cr);
     };
   } break;
@@ -536,9 +536,9 @@ uxdevice::textual_render_storage_t::precise_rendering_function(void) {
 
       a.emit(cr);
       pango_cairo_layout_path(cr, layout);
-      rendering_parameter<text_fill_t>()->emit(cr, a);
+      unit_memory<text_fill_t>()->emit(cr, a);
       cairo_fill_preserve(cr);
-      rendering_parameter<text_outline_t>()->emit(cr, a);
+      unit_memory<text_outline_t>()->emit(cr, a);
       cairo_stroke(cr);
     };
 
@@ -560,17 +560,17 @@ uxdevice::textual_render_storage_t::precise_rendering_function(void) {
 void uxdevice::textual_render_t::emit(display_context_t &context) {
   using namespace std::placeholders;
 
-  // create a linkage snapshot to the shared pointer
+  // create a linkage snapshot to the shared pointers stored in unit memory
   // within the stream context.
-  rendering_parameter_storage = context.unit_memory_storage;
+  copy_unit_memory(context);
 
   // check the context parameters before operating
-  if (!((rendering_parameter<text_color_t>() ||
-         rendering_parameter<text_outline_t>() ||
-         rendering_parameter<text_fill_t>()) &&
-        rendering_parameter<coordinate_t>() &&
-        rendering_parameter<text_data_t>() &&
-        rendering_parameter<text_font_t>())) {
+  if (!((unit_memory<text_color_t>() ||
+         unit_memory<text_outline_t>() ||
+         unit_memory<text_fill_t>()) &&
+        unit_memory<coordinate_t>() &&
+        unit_memory<text_data_t>() &&
+        unit_memory<text_font_t>())) {
     const char *s =
         "A draw text object must include the following "
         "attributes. A text_color_t or a text_outline_t or "
@@ -588,7 +588,7 @@ void uxdevice::textual_render_t::emit(display_context_t &context) {
   // cairo_get_matrix(context.cr, &mat._matrix);
 
   auto fn = precise_rendering_function();
-  auto &coordinate = *rendering_parameter<coordinate_t>();
+  auto &coordinate = *unit_memory<coordinate_t>();
 
   // two function provide mode switching for the rendering.
   // a cache surface is a new xcb surface that can be threaded in creation
@@ -641,7 +641,7 @@ void uxdevice::textual_render_t::emit(display_context_t &context) {
       cairo_fill(context.cr);
     };
     auto fnClipping = [=](display_context_t &context) {
-      auto &coordinate = *rendering_parameter<coordinate_t>();
+      auto &coordinate = *unit_memory<coordinate_t>();
       // cairo_set_matrix(context.cr, &mat._matrix);
        drawing_output_t::emit(context);
       cairo_set_source_surface(context.cr, internal_buffer.rendered,

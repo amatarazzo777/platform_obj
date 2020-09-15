@@ -16,6 +16,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
+#ifndef UXDISPLAYUNITBASE_HPP
+#define UXDISPLAYUNITBASE_HPP
+
 /**
 \author Anthony Matarazzo
 \file uxdisplayunitbase.hpp
@@ -392,6 +395,7 @@ namespace uxdevice {
 class key_storage_t {
 public:
   key_storage_t() {}
+  virtual ~key_storage_t() {}
   key_storage_t(const indirect_index_display_unit_t &_key) : key(_key) { }
   /// @brief copy assignment operator
   key_storage_t &operator=(const key_storage_t &other) {
@@ -540,8 +544,10 @@ public:
     return *this;
   }
 
-  ~painter_brush_emitter_t() {}
-
+  virtual ~painter_brush_emitter_t() {}
+  void emit(display_context_t &context) {
+    painter_brush_t::emit(context.cr);
+  }
   void emit(cairo_t *cr) {
     painter_brush_t::emit(cr);
   }
@@ -642,13 +648,13 @@ public:
 
   // copy constructor
   storage_emitter_t(const storage_emitter_t &other)
-      : typed_index_t<T>(other), display_unit_t(other),
-        hash_members_t(other) , value(other.value){}
+      : hash_members_t(other), display_unit_t(other),typed_index_t<T>(other),
+         value(other.value){}
 
   // move constructor
   storage_emitter_t(storage_emitter_t &&other) noexcept
-      : typed_index_t<T>(other), display_unit_t(other),
-        hash_members_t(other), value(other.value) {}
+      : hash_members_t(other),display_unit_t(other),typed_index_t<T>(other),
+         value(other.value) {}
 
   // copy assignment operator
   storage_emitter_t &operator=(const storage_emitter_t &other) {
@@ -712,12 +718,12 @@ public:
 
   // copy constructor
   class_storage_emitter_t(const class_storage_emitter_t &other)
-      :  TC(other), hash_members_t(other),typed_index_t<T>(other), display_unit_t(other)
+      :   hash_members_t(other), TC(other),typed_index_t<T>(other), display_unit_t(other)
         {}
 
   // move constructor
   class_storage_emitter_t(class_storage_emitter_t &&other) noexcept
-          :  TC(other), hash_members_t(other),typed_index_t<T>(other), display_unit_t(other)
+          :   hash_members_t(other),TC(other),typed_index_t<T>(other), display_unit_t(other)
         {}
 
 
@@ -738,7 +744,7 @@ public:
     return *this;
   }
 
-  ~class_storage_emitter_t() {}
+  virtual ~class_storage_emitter_t() {}
 
   std::size_t hash_code(void) const noexcept {
     std::size_t __value = {};
@@ -853,13 +859,13 @@ public:
   // copy constructor
   class_storage_drawing_function_t(
       const class_storage_drawing_function_t &other)
-      :  TC(other), typed_index_t<T>(other), drawing_output_t(other),  hash_members_t(other)
+      :   hash_members_t(other),drawing_output_t(other),TC(other),typed_index_t<T>(other)
         {}
 
   // move constructor
   class_storage_drawing_function_t(
       class_storage_drawing_function_t &&other) noexcept
-      :  TC(other), typed_index_t<T>(other), drawing_output_t(other),  hash_members_t(other)
+      :   hash_members_t(other),drawing_output_t(other), TC(other),typed_index_t<T>(other)
         {}
 
   // copy assignment operator
@@ -892,3 +898,4 @@ public:
   virtual ~class_storage_drawing_function_t() {}
 };
 } // namespace uxdevice
+#endif

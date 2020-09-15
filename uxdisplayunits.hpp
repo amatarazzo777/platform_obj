@@ -447,7 +447,8 @@ object is created as the side effect of inserting text, char *, std string or
 a std::shared_ptr<std::string>.
 */
 namespace uxdevice {
-class textual_render_storage_t : virtual public drawing_output_t, virtual public hash_members_t {
+class textual_render_storage_t : virtual public drawing_output_t, virtual public hash_members_t,
+    public unit_memory_storage_t {
 public:
   typedef std::function<void(cairo_t *cr, const coordinate_t &a)>
       internal_cairo_function_t;
@@ -496,7 +497,7 @@ public:
     matrix = other.matrix;
     return *this;
   }
-  UX_DECLARE_TYPE_INDEX_MEMORY(rendering_parameter)
+
   std::size_t hash_code(void) const noexcept;
 
   cairo_surface_t *shadow_image = nullptr;

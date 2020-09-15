@@ -119,8 +119,8 @@ public:
     paint_definition_base_t(paint_definition_base_t &&other) {}
 
     virtual ~paint_definition_base_t() {}
-    virtual void emit(const cairo_t *cr) {}
-    virtual void emit(const cairo_t *cr, const coordinate_t &a) {}
+    virtual void emit(cairo_t *cr) {}
+    virtual void emit(cairo_t *cr, coordinate_t &a) {}
 
     bool is_color_description(void) {
       bool bret = false;

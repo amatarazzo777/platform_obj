@@ -349,7 +349,7 @@ void uxdevice::display_context_t::clear(void) {
 
   offsetx = 0;
   offsety = 0;
-  unit_memory_storage.clear();
+  unit_memory_clear();
 
   REGIONS_CLEAR;
 

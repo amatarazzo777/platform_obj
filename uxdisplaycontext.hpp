@@ -83,7 +83,7 @@ typedef struct _draw_buffer_t {
   cairo_surface_t *rendered = nullptr;
 } draw_buffer_t;
 
-class display_context_t : virtual public hash_members_t {
+class display_context_t : virtual public hash_members_t, public unit_memory_storage_t {
 public:
   class context_cairo_region_t {
   public:
@@ -255,12 +255,10 @@ public:
     return ret;
   }
 
-  UX_DECLARE_TYPE_INDEX_MEMORY(unit_memory)
-
   std::size_t hash_code(void) const noexcept {
     std::size_t __value = {};
     hash_combine(__value, std::type_index(typeid(this)),
-                 unit_memory_hash_code_all(), window_x, window_y, window_width,
+                 unit_memory_hash_code(), window_x, window_y, window_width,
                  window_height, window_open, brush.hash_code());
 
     return __value;
