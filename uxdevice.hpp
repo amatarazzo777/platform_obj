@@ -177,9 +177,9 @@ public:
 
   // template << operator.
   template <typename T> surface_area_t &operator<<(const T &data) {
-     if constexpr (std::is_base_of<listener_t<T>, T>::value) {
+    if constexpr (std::is_base_of<listener_t<T>, T>::value) {
 
-    } else  if constexpr (std::is_base_of<display_unit_t, T>::value) {
+    } else if constexpr (std::is_base_of<display_unit_t, T>::value) {
       display_list<T>(data);
     } else {
       std::ostringstream s;
@@ -203,7 +203,8 @@ public:
     } else if constexpr (std::is_base_of<display_unit_t, T>::value) {
       display_list<T>(data);
 
-      if constexpr (std::is_base_of<display_context_memory_storage_t, T>::value)
+      if constexpr (std::is_base_of<attribute_display_context_memory_t,
+                                    T>::value)
         context.unit_memory<T>(data);
 
       if constexpr (std::is_base_of<emit_display_context_abstract_t, T>::value)

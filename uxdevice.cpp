@@ -347,7 +347,8 @@ used to access the data.
 */
 void uxdevice::surface_area_t::maintain_index(
     const std::shared_ptr<display_unit_t> obj) {
-  std::shared_ptr<key_storage_t> key_store = std::dynamic_pointer_cast<key_storage_t>(obj);
+  std::shared_ptr<key_storage_t> key_store =
+      std::dynamic_pointer_cast<key_storage_t>(obj);
 
   if (!std::holds_alternative<std::monostate>(key_store->key))
     mapped_objects[key_store->key] = obj;
@@ -829,7 +830,7 @@ std::string _errorReport(std::string text_color_tFile, int ln,
 
 /**
   \internal
-  \brief opens a window on the target OS. used by all of the constuctors.
+  \brief opens a window on the target OS. used by all of the constructors.
   parameters may be nulled or defaulted.
 
 

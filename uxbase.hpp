@@ -122,13 +122,10 @@ void hash_combine(std::size_t &seed, const T &v, const Rest &... rest) {
 
 } // namespace uxdevice
 
-
-
-
 namespace uxdevice {
 typedef std::function<std::size_t(void)> hash_function_t;
 
-class  unit_memory_object_t {
+class unit_memory_object_t {
 public:
   std::any object = {};
   hash_function_t hash_function = {};
@@ -139,9 +136,8 @@ typedef std::unordered_map<std::type_index, unit_memory_object_t>
 class display_unit_t;
 class unit_memory_storage_t {
 public:
-
-
-
+  unit_memory_storage_t() {}
+  virtual ~unit_memory_storage_t() {}
   template <typename T> void unit_memory(const std::shared_ptr<T> ptr) {
     auto ti = std::type_index(typeid(T));
     storage[ti] = unit_memory_object_t{ptr, [&]() { return ptr->hash_code(); }};
@@ -150,14 +146,13 @@ public:
   template <typename T>
   void unit_memory(const std::shared_ptr<display_unit_t> ptr) {
     auto ti = std::type_index(typeid(T));
-    storage[ti] = unit_memory_object_t{std::dynamic_pointer_cast<T>(ptr), [&]() {
-          return std::dynamic_pointer_cast<T>(ptr)->hash_code();
-        }};
-
+    storage[ti] = unit_memory_object_t{
+        std::dynamic_pointer_cast<T>(ptr),
+        [&]() { return std::dynamic_pointer_cast<T>(ptr)->hash_code(); }};
   }
 
   template <typename T>
-  auto unit_memory(void) const noexcept->const std::shared_ptr<T> {
+  auto unit_memory(void) const noexcept -> const std::shared_ptr<T> {
     std::shared_ptr<T> ptr = {};
     auto ti = std::type_index(typeid(T));
     auto item = storage.find(ti);
@@ -168,8 +163,7 @@ public:
     return ptr;
   }
   void copy_unit_memory(const unit_memory_storage_t &other) {
-    storage=other.storage;
-
+    storage = other.storage;
   }
 
   std::size_t unit_memory_hash_code(void) const noexcept {
@@ -190,9 +184,9 @@ public:
     return value;
   }
   void unit_memory_clear(void) { storage.clear(); }
-  private:
+
+private:
   unit_memory_unordered_map_t storage = {};
-  };
+};
 
-
-  }
+} // namespace uxdevice

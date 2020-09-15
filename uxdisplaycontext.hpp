@@ -83,7 +83,8 @@ typedef struct _draw_buffer_t {
   cairo_surface_t *rendered = nullptr;
 } draw_buffer_t;
 
-class display_context_t : virtual public hash_members_t, public unit_memory_storage_t {
+class display_context_t : virtual public hash_members_t,
+                          public unit_memory_storage_t {
 public:
   class context_cairo_region_t {
   public:

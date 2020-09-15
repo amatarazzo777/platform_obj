@@ -24,7 +24,16 @@
 \file uxdisplayunitbase.hpp
 \date 5/12/20
 \version 1.0
-\details
+\details The file implements all base classes and template class factories
+that inform and operate within the rendering system. THe following templates
+are for use by the displayunits.hpp.
+
+painter_brush_emitter_t
+marker_emitter_t
+storage_emitter_t
+class_storage_emitter_t
+storage_drawing_function_t
+class_storage_drawing_function_t
 
 */
 /**
@@ -74,7 +83,7 @@ namespace uxdevice {
 using cairo_option_function_t = class cairo_option_function_t {
 public:
   cairo_option_function_t() {}
-  cairo_option_function_t(const cairo_function_t &val)  {value.push_back(val);}
+  cairo_option_function_t(const cairo_function_t &val) { value.push_back(val); }
 
   cairo_option_function_t &operator=(const cairo_option_function_t &other) {
     value = other.value;
@@ -98,7 +107,6 @@ public:
   std::size_t hash_code(void) const noexcept;
 
   std::list<cairo_function_t> value = {};
-
 };
 } // namespace uxdevice
   // namespace uxdevice
@@ -107,22 +115,21 @@ public:
 
 \internal
 \brief
-  abstract interfaces that should be defined within the class definition
-   template parameters. When these are placed there, the public member
-   of the pure abstract class is inherited within the resulting class generated
-   from the template. The uxdisplayunits.cpp file contains the implementation
-   of these objects. Objects are of a trivial storage or class type.
-   These methods provide usage for the data or marking the position
-   within the display list.
-
-
+  Abstract interfaces that should be defined within the class definition
+template parameters of the object factories. When these are placed there, the
+public members of the pure abstract class are inherited within the resulting
+class generated  from the template. This allows one to implement the function
+for callback or usage where appropriate. The uxdisplayunits.cpp file contains
+the implementation of these objects. Objects are of a trivial storage or class
+type.  These methods provide usage for the data or marking the position within
+the display list.
 
 */
 namespace uxdevice {
 class emit_display_context_abstract_t {
 public:
   virtual ~emit_display_context_abstract_t(){};
-  virtual void emit( display_context_t &context) = 0;
+  virtual void emit(display_context_t &context) = 0;
 };
 
 } // namespace uxdevice
@@ -131,7 +138,7 @@ namespace uxdevice {
 class emit_cairo_abstract_t {
 public:
   virtual ~emit_cairo_abstract_t(){};
-  virtual void emit( cairo_t *cr) = 0;
+  virtual void emit(cairo_t *cr) = 0;
 };
 
 } // namespace uxdevice
@@ -140,10 +147,9 @@ namespace uxdevice {
 class emit_cairo_relative_coordinate_abstract_t {
 public:
   virtual ~emit_cairo_relative_coordinate_abstract_t(){};
-  virtual void emit_relative( cairo_t *cr) = 0;
-  virtual void emit_absolute( cairo_t *cr) = 0;
+  virtual void emit_relative(cairo_t *cr) = 0;
+  virtual void emit_absolute(cairo_t *cr) = 0;
 };
-
 
 } // namespace uxdevice
 
@@ -154,7 +160,6 @@ public:
   virtual void emit(cairo_t *cr) = 0;
   virtual void emit(cairo_t *cr, coordinate_t &a) = 0;
 };
-
 
 } // namespace uxdevice
 
@@ -167,7 +172,10 @@ public:
 } // namespace uxdevice
 
 namespace uxdevice {
-class display_context_memory_storage_t {};
+class attribute_display_context_memory_t {
+public:
+  virtual ~attribute_display_context_memory_t() {}
+};
 
 } // namespace uxdevice
 
@@ -394,7 +402,7 @@ class key_storage_t {
 public:
   key_storage_t() {}
   virtual ~key_storage_t() {}
-  key_storage_t(const indirect_index_display_unit_t &_key) : key(_key) { }
+  key_storage_t(const indirect_index_display_unit_t &_key) : key(_key) {}
   /// @brief copy assignment operator
   key_storage_t &operator=(const key_storage_t &other) {
     key = other.key;
@@ -411,11 +419,11 @@ public:
   /// @brief copy constructor
   key_storage_t(const key_storage_t &other) { *this = other; }
 
-
   indirect_index_display_unit_t key = {};
 };
 
-template <typename T> class typed_index_t : public key_storage_t, virtual public hash_members_t {
+template <typename T>
+class typed_index_t : public key_storage_t, virtual public hash_members_t {
 public:
   /// @brief default constructor
   typed_index_t() : key_storage_t{} {}
@@ -431,19 +439,18 @@ public:
     return *this;
   }
   /// @brief move constructor
-  typed_index_t(typed_index_t &&other) noexcept:key_storage_t(other) {
- }
+  typed_index_t(typed_index_t &&other) noexcept : key_storage_t(other) {}
 
   /// @brief copy constructor
-  typed_index_t(const typed_index_t &other) :  key_storage_t(other) {  }
+  typed_index_t(const typed_index_t &other) : key_storage_t(other) {}
 
   T &index(const std::string &_k) {
     key_storage_t::operator=(indirect_index_display_unit_t(_k));
-    return *static_cast<T*>(this);
+    return *static_cast<T *>(this);
   }
   T &index(const std::size_t &_k) {
     key_storage_t::operator=(indirect_index_display_unit_t(_k));
-    return *static_cast<T*>(this);
+    return *static_cast<T *>(this);
   }
   std::size_t hash_code(void) const noexcept {
     std::size_t __value = {};
@@ -451,7 +458,6 @@ public:
     return __value;
   }
   virtual ~typed_index_t() {}
-
 };
 } // namespace uxdevice
 
@@ -497,11 +503,15 @@ Here the .index property returns a strong type of the original.
 
 
 \tparam Args... provides the ability to catch specific functions and their
-prototypes. emit, or invoke.
+prototypes. emit. Attributes may also be listed that apply to specific
+functionality of the system such as labeling items as textual rendering
+related. This is useful when applying attributes that comprise a rendering
+function.
 
 
 \brief creates a painter brush object that is also a display unit.
 class inherits publicly display_unit_t and painter_brush_t
+
 */
 
 namespace uxdevice {
@@ -510,12 +520,11 @@ class painter_brush_emitter_t : public display_unit_t,
                                 public painter_brush_t,
                                 virtual public hash_members_t,
                                 public typed_index_t<T>,
-                                public std::enable_shared_from_this<T>,
+                                std::enable_shared_from_this<T>,
                                 public Args... {
 
 public:
   using painter_brush_t::painter_brush_t;
-
   // copy constructor
   painter_brush_emitter_t(const painter_brush_emitter_t &other)
       : display_unit_t(other),
@@ -543,15 +552,11 @@ public:
   }
 
   virtual ~painter_brush_emitter_t() {}
-  void emit(display_context_t &context) {
-    painter_brush_t::emit(context.cr);
-  }
-  void emit(cairo_t *cr) {
-    painter_brush_t::emit(cr);
-  }
-  void emit(cairo_t *cr, coordinate_t &a) {
-    painter_brush_t::emit(cr,a);
-  }
+
+  void emit(display_context_t &context) { painter_brush_t::emit(context.cr); }
+  void emit(cairo_t *cr) { painter_brush_t::emit(cr); }
+  void emit(cairo_t *cr, coordinate_t &a) { painter_brush_t::emit(cr, a); }
+
   std::size_t hash_code(void) const noexcept {
     std::size_t __value = {};
     hash_combine(__value, std::type_index(typeid(T)),
@@ -578,9 +583,9 @@ Depending on the particular display unit type, context, pango or cairo
 emit functions may be included from the abstract base functions. When
 these are listed, the interface callback must be defined.
 
-\brief declares a class that marks a unit but does not store a value.
-This is useful for switch and state logic. When the item is present, the
-invoke method is called. class inherits publicly display_unit_t : public
+\brief declares a class that marks a unit as an emitter but does not store a
+value. This is useful for switch and state logic. When the item is present, the
+emit method is called. class inherits publicly display_unit_t : public
 polymorphic_overloads_t
 */
 namespace uxdevice {
@@ -620,7 +625,7 @@ public:
 /**
 \internal
 
-\class UX_DECLARE_STORAGE_EMITTER
+\class storage_emitter_t
 
 \tparam T - the name the display unit should assume.
 
@@ -631,12 +636,14 @@ Depending on the particular display unit type, context, pango or cairo
 emit functions may be included from the abstract base functions. When
 these are listed, the interface callback must be defined.
 
-\brief provides the flexibility to store associated data.
+\brief provides the flexibility to store associated trivial data such as enum,
+double, etc. The template names this storage area within the object 'value'.
 
 */
 namespace uxdevice {
 template <typename T, typename TS, typename... Args>
-class storage_emitter_t : virtual public hash_members_t, public display_unit_t,
+class storage_emitter_t : virtual public hash_members_t,
+                          public display_unit_t,
                           public typed_index_t<T>,
                           std::enable_shared_from_this<T>,
                           public Args... {
@@ -646,13 +653,13 @@ public:
 
   // copy constructor
   storage_emitter_t(const storage_emitter_t &other)
-      : hash_members_t(other), display_unit_t(other),typed_index_t<T>(other),
-         value(other.value){}
+      : hash_members_t(other), display_unit_t(other), typed_index_t<T>(other),
+        value(other.value) {}
 
   // move constructor
   storage_emitter_t(storage_emitter_t &&other) noexcept
-      : hash_members_t(other),display_unit_t(other),typed_index_t<T>(other),
-         value(other.value) {}
+      : hash_members_t(other), display_unit_t(other), typed_index_t<T>(other),
+        value(other.value) {}
 
   // copy assignment operator
   storage_emitter_t &operator=(const storage_emitter_t &other) {
@@ -692,7 +699,9 @@ public:
 \tparam T - the name the display unit should assume.
 
 \tparam TC - the storage class type. The storage type is publicly
-inherited and all constructors are also inherited.
+inherited and all constructors are also inherited. The class must include
+the hash_members_t interface. That is, implement the hash_code()
+ member function.
 
 \tparam Args... - inherits the data class interface as public.
   There constructors are inherited as well as the public methods of the class.
@@ -708,31 +717,30 @@ class class_storage_emitter_t : public TC,
                                 public display_unit_t,
                                 virtual public hash_members_t,
                                 std::enable_shared_from_this<T>,
-                                public Args...
-                                {
+                                public Args... {
 public:
   using TC::TC;
   class_storage_emitter_t() {}
 
   // copy constructor
   class_storage_emitter_t(const class_storage_emitter_t &other)
-      :   hash_members_t(other), TC(other),typed_index_t<T>(other), display_unit_t(other)
-        {}
+      : hash_members_t(other), TC(other), typed_index_t<T>(other),
+        display_unit_t(other) {}
 
   // move constructor
   class_storage_emitter_t(class_storage_emitter_t &&other) noexcept
-          :   hash_members_t(other),TC(other),typed_index_t<T>(other), display_unit_t(other)
-        {}
-
+      : hash_members_t(other), TC(other), typed_index_t<T>(other),
+        display_unit_t(other) {}
 
   // copy assignment operator
   class_storage_emitter_t &operator=(const class_storage_emitter_t &other) {
     display_unit_t::operator=(other);
     hash_members_t::operator=(other);
     typed_index_t<T>::operator=(other);
-    TC::operator = (other);
+    TC::operator=(other);
     return *this;
   }
+
   // move assignment operator
   class_storage_emitter_t &operator=(class_storage_emitter_t &&other) noexcept {
     display_unit_t::operator=(other);
@@ -839,13 +847,16 @@ defined classes can be placed here as well.
 api. These objects are called to render functions and also have
 a dimension. They occupy a bounds as defined by inkRectangle. They can be
 established as on or off view_port by intersection test with the
-view_port rectangle.
+view_port rectangle. The class must include
+the hash_members_t interface. That is, implement the hash_code()
+ member function.
 
 
 */
 namespace uxdevice {
 template <typename T, typename TC, typename... Args>
-class class_storage_drawing_function_t : public TC, public typed_index_t<T>,
+class class_storage_drawing_function_t : public TC,
+                                         public typed_index_t<T>,
                                          virtual public drawing_output_t,
                                          virtual public hash_members_t,
                                          std::enable_shared_from_this<T>,
@@ -857,14 +868,14 @@ public:
   // copy constructor
   class_storage_drawing_function_t(
       const class_storage_drawing_function_t &other)
-      :   hash_members_t(other),drawing_output_t(other),TC(other),typed_index_t<T>(other)
-        {}
+      : hash_members_t(other), drawing_output_t(other),
+        TC(other), typed_index_t<T>(other) {}
 
   // move constructor
   class_storage_drawing_function_t(
       class_storage_drawing_function_t &&other) noexcept
-      :   hash_members_t(other),drawing_output_t(other), TC(other),typed_index_t<T>(other)
-        {}
+      : hash_members_t(other), drawing_output_t(other),
+        TC(other), typed_index_t<T>(other) {}
 
   // copy assignment operator
   class_storage_drawing_function_t &

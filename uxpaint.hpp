@@ -270,7 +270,7 @@ public:
     linear_gradient_definition_t(linear_gradient_definition_t &&other)
         : paint_definition_base_t(other) {}
 
-    ~linear_gradient_definition_t() {
+    virtual ~linear_gradient_definition_t() {
       if (pattern)
         cairo_pattern_destroy(pattern);
     }
@@ -319,7 +319,7 @@ public:
           cx0(_cx0), cy0(_cy0), radius0(_radius0), cx1(_cx1), cy1(_cy1),
           radius1(_radius1), color_stops(_cs), filter(_filter),
           extend(_extend) {}
-    ~radial_gradient_definition_t() {
+    virtual ~radial_gradient_definition_t() {
       if (pattern)
         cairo_pattern_destroy(pattern);
     }
@@ -403,7 +403,7 @@ public:
         image_block_pattern_source_definition_t &&other)
         : paint_definition_base_t(other) {}
 
-    ~image_block_pattern_source_definition_t() {
+    virtual ~image_block_pattern_source_definition_t() {
       if (image_block)
         cairo_surface_destroy(image_block);
       if (pattern)
