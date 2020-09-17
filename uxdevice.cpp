@@ -59,14 +59,19 @@ void uxdevice::surface_area_t::render_loop(void) {
     // of the paint event. As well, the underlying surface may
     // need to be resized. This function acquires locks on these
     // small lists for the multi-threaded necessity.
-    // searc_thes for unready and syncs display context
+    // search_these for unready and syncs display context
     // if no work exists  it waits on the cvRenderWork condition variable.
     if (context.surface_prime()) {
       context.render();
     }
 
-    if (context.error_state())
-      fnError(context.error_text());
+    if (context.error_state()) {
+      std::string errors = context.error_text(true);
+      if (fnError)
+        fnError(errors);
+      else
+        cout << errors << std::flush;
+    }
   }
 }
 
@@ -367,7 +372,7 @@ uxdevice.hpp is where is interface is declared.
 
 The routine is specialized because it creates a textual_rendering_t object
 that accepts the textual data. Textual data is stored in a separate object.
-The textual_rendering_t object encapsulates the pango cairo api functions
+The textual_rendering_t object encapsulates the pango cairo API functions
 which is also added.
 
 */
@@ -390,15 +395,14 @@ the UX_DECLARE_STREAM_INTERFACE macro inside the uxdevice::surface_area_t class.
 \details The routine is specialized because it creates
 a textual_rendering_t object that accepts the textual data. Textual data is
 stored in a separate object. The textual_rendering_t object encapsulates the
-pango cairo api functions.
+pango cairo API functions.
 
 */
 //////////////////////////////////////////logic bugs, where left off
 surface_area_t &uxdevice::surface_area_t::stream_input(
     const std::shared_ptr<std::string> _val) {
-  auto item = display_list<text_data_t>(*_val);
-  item->key = reinterpret_cast<std::size_t>(_val.get());
-  auto textrender = display_list<textual_render_t>();
+  in(text_data_t{_val}.index(reinterpret_cast<std::size_t>(_val.get())),
+     textual_render_t{});
   return *this;
 }
 
@@ -417,7 +421,7 @@ specific type is below.
 \details The routine is specialized because it creates
 a textual_rendering_t object that accepts the textual data. Textual data is
 stored in a separate object. The textual_rendering_t object encapsulates the
-pango cairo api functions.
+pango cairo API functions.
 
 */
 surface_area_t &
@@ -445,7 +449,7 @@ uxdevice.hpp is where is interface is declared.
 
 The routine is specialized because it creates a textual_rendering_t object
 that accepts the textual data. Textual data is stored in a separate object.
-The textual_rendering_t object encapsulates the pango cairo api functions
+The textual_rendering_t object encapsulates the pango cairo API functions
 which is also added.
 
 */
@@ -463,13 +467,13 @@ uxdevice::surface_area_t::stream_input(const std::string_view &s) {
 
 \param const std::shared_ptr<std::string_view> _val
 
-\brief An overloaded stream interface implemetatione that is declared using
-the UX_DECLARE_STREAM_INTERFACE macro inside the uxdevice::surface_area_t class.
+\brief An overloaded stream interface implemetation that is declared
+ inside the uxdevice::surface_area_t class.
 
 \details The routine is specialized because it creates
 a textual_rendering_t object that accepts the textual data. Textual data is
 stored in a separate object. The textual_rendering_t object encapsulates the
-pango cairo api functions.
+pango cairo API functions.
 
 */
 //////////////////////////////////////////logic bugs, where left off
@@ -831,14 +835,13 @@ std::string _errorReport(std::string text_color_tFile, int ln,
 /**
   \internal
   \brief opens a window on the target OS. used by all of the constructors.
-  parameters may be nulled or defaulted.
+  parameters may be null or defaulted.
 
 
 */
 void uxdevice::surface_area_t::open_window(
     const coordinate_list_t &coord, const std::string &sWindowTitle,
     const painter_brush_t &background, const event_handler_t &dispatch_events) {
-  surface_area_t ret;
   auto it = coord.begin();
 
   context.window_width = *it;

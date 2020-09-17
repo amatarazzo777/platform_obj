@@ -844,7 +844,7 @@ inheirit. The system uses the spot for abstract classes. However, other user
 defined classes can be placed here as well.
 
 \brief Provides the ability to store an object accepting a specific parameter
-api. These objects are called to render functions and also have
+API. These objects are called to render functions and also have
 a dimension. They occupy a bounds as defined by inkRectangle. They can be
 established as on or off view_port by intersection test with the
 view_port rectangle. The class must include

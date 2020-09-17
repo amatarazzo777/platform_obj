@@ -95,10 +95,10 @@
 
 /**
 \internal
-\def hash_members_t
+\class hash_members_t
 \param ... - variadic parameter expanding to hash combine each listed.
 \brief Creates interface routines for the hashing system and change detection
-logic. Hashes each of the listed values within the macro parameters.
+logic. Hashes each of the listed values within the  parameters.
 */
 
 namespace uxdevice {
@@ -122,6 +122,14 @@ void hash_combine(std::size_t &seed, const T &v, const Rest &... rest) {
 
 } // namespace uxdevice
 
+/**
+\internal
+\class unit_memory_storage_t
+\brief class exposes template member functions in that class that it is
+inherited in. The mechanism provides typed index storage of objects that may be
+referenced at any time.
+
+*/
 namespace uxdevice {
 typedef std::function<std::size_t(void)> hash_function_t;
 
@@ -164,6 +172,9 @@ public:
   }
   void copy_unit_memory(const unit_memory_storage_t &other) {
     storage = other.storage;
+  }
+  template <typename T> void unit_memory_erase(void) {
+    storage.erase(std::type_index(typeid(T)));
   }
 
   std::size_t unit_memory_hash_code(void) const noexcept {

@@ -29,7 +29,7 @@
 \date 5/12/20
 \version 1.0
  \details CLass provides the painting object interface which invokes the
- appropriate cairo api. The notable virtual method is the emit function
+ appropriate cairo API. The notable virtual method is the emit function
  which applies the cairo text_color_t setting.
 
 */

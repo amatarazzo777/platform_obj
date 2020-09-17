@@ -129,6 +129,12 @@ public:
   display_context_t(void) {}
 
   display_context_t(const display_context_t &other) { *this = other; }
+
+  // move constructor
+  display_context_t(display_context_t &&other) noexcept {
+    { *this = other; }
+  }
+
   display_context_t &operator=(const display_context_t &other) {
     window_x = other.window_x;
     window_y = other.window_y;
@@ -248,7 +254,7 @@ public:
     UX_ERRORS_SPIN;
     std::string ret;
     for (auto s : _errors)
-      ret += s;
+      ret += s + "\n";
     if (bclear)
       _errors.clear();
 
@@ -271,8 +277,6 @@ public:
   unsigned short window_width = 0;
   unsigned short window_height = 0;
   bool window_open = false;
-  std::atomic<bool> relative_coordinate = false;
-  std::atomic<bool> text_path_rendering = false;
 
   std::atomic_flag lockBrush = ATOMIC_FLAG_INIT;
 #define BRUSH_SPIN while (lockBrush.test_and_set(std::memory_order_acquire))

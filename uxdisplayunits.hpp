@@ -328,11 +328,12 @@ public:
   image_block_storage_t()
       : description{}, image_block_ptr{}, is_SVG{}, is_loaded{}, coordinate{} {}
 
-  image_block_storage_t(const std::string &image_description)
-      : description(image_description) {}
+  image_block_storage_t(const std::string &_description)
+      : description(_description) {}
 
   /// @brief move assignment
   image_block_storage_t &operator=(image_block_storage_t &&other) noexcept {
+    description = std::move(other.description);
     image_block_ptr = std::move(other.image_block_ptr);
     is_SVG = other.is_SVG;
     is_loaded = other.is_loaded;
@@ -342,6 +343,7 @@ public:
 
   /// @brief copy assignment operator
   image_block_storage_t &operator=(const image_block_storage_t &other) {
+    description = other.description;
     image_block_ptr = cairo_surface_reference(other.image_block_ptr);
     is_SVG = other.is_SVG;
     is_loaded = other.is_loaded;
@@ -351,13 +353,13 @@ public:
 
   /// @brief move constructor
   image_block_storage_t(image_block_storage_t &&other) noexcept
-      : image_block_ptr(std::move(other.image_block_ptr)),
+      : description(std::move(other.description)), image_block_ptr(std::move(other.image_block_ptr)),
         is_SVG(std::move(other.is_SVG)), is_loaded(std::move(other.is_loaded)),
         coordinate(std::move(other.coordinate)) {}
 
   /// @brief copy constructor
   image_block_storage_t(const image_block_storage_t &other)
-      : image_block_ptr(cairo_surface_reference(other.image_block_ptr)),
+      : description(other.description), image_block_ptr(cairo_surface_reference(other.image_block_ptr)),
         is_SVG(other.is_SVG), is_loaded(other.is_loaded),
         coordinate(other.coordinate) {}
 
@@ -452,7 +454,7 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_font_storage_t);
 
 /**
 
-\class `
+\class textual_render_storage_t
 \brief class used to store parameters and options for a textual render. The
 object is created as the side effect of inserting text, char *, std string or
 a std::shared_ptr<std::string>.
@@ -476,6 +478,7 @@ public:
     if (layout)
       g_object_unref(layout);
   }
+
   /// @brief move constructor
   textual_render_storage_t(textual_render_storage_t &&other) noexcept
       : shadow_image(other.shadow_image), shadow_cr(other.shadow_cr),
@@ -486,13 +489,18 @@ public:
   textual_render_storage_t(const textual_render_storage_t &other)
       : shadow_image(cairo_surface_reference(other.shadow_image)),
         shadow_cr(cairo_reference(other.shadow_cr)),
-        layout(pango_layout_copy(other.layout)), ink_rect(other.ink_rect),
-        logical_rect(other.logical_rect), matrix(other.matrix) {}
+        ink_rect(other.ink_rect),
+        logical_rect(other.logical_rect), matrix(other.matrix) {
+        if(other.layout)
+          layout=pango_layout_copy(other.layout);
+
+        }
 
   textual_render_storage_t &operator=(const textual_render_storage_t &other) {
     shadow_image = cairo_surface_reference(other.shadow_image);
     shadow_cr = cairo_reference(other.shadow_cr);
-    layout = pango_layout_copy(other.layout);
+    if(other.layout)
+      layout=pango_layout_copy(other.layout);
     ink_rect = other.ink_rect;
     logical_rect = other.logical_rect;
     matrix = other.matrix;
@@ -555,12 +563,13 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_tab_stops_storage_t);
 /**
 The following definitions are the exact name that appears within the API. These
 class templates provide factories that create objects compatible with the
-system. These objects might have invoke and emit methods. The base services for
-these objects to be functional for the display are also provided. These objects
+system. These objects might have invoke and emit methods depending upon the emit
+abstract interfaces named for inheritance. The base services for
+these objects to be functional for the display are provided. These objects
 have all of the move and copy operators implemented for ease and efficiency of
-use. There are several types of objects that may be created and inserted. Please
-refer to the class template for a more detailed explanation. The following
-templates are provided for use:
+use. There are several types of objects that may be created and inserted by
+using the template parameters. Please refer to the class template for a more
+detailed explanation. The following templates are provided for use:
 
 marker_emitter_t
 painter_brush_emitter_t
@@ -631,6 +640,7 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::surface_area_title_t);
 namespace uxdevice {
 using text_render_normal_t = class text_render_normal_t
     : public marker_emitter_t<text_render_normal_t,
+                              attribute_display_context_memory_t,
                               emit_display_context_abstract_t> {
 public:
   using marker_emitter_t::marker_emitter_t;
@@ -646,6 +656,7 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_render_normal_t);
 namespace uxdevice {
 using text_render_path_t = class text_render_path_t
     : public marker_emitter_t<text_render_path_t,
+                              attribute_display_context_memory_t,
                               emit_display_context_abstract_t> {
 public:
   using marker_emitter_t::marker_emitter_t;
@@ -802,8 +813,9 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_tab_stops_t);
 \brief
 */
 namespace uxdevice {
+typedef std::variant<std::string, std::shared_ptr<std::string>> text_data_storage_t;
 using text_data_t = class text_data_t
-    : public storage_emitter_t<text_data_t, std::string,
+    : public storage_emitter_t<text_data_t, text_data_storage_t,
                                attribute_display_context_memory_t> {
 public:
   using storage_emitter_t::storage_emitter_t;
@@ -818,13 +830,15 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_data_t);
 */
 namespace uxdevice {
 using coordinate_t = class coordinate_t
-    : public class_storage_emitter_t<coordinate_t, coordinate_storage_t,
-                                     attribute_display_context_memory_t,
-                                     emit_cairo_abstract_t> {
+    : public class_storage_emitter_t<
+          coordinate_t, coordinate_storage_t,
+          attribute_display_context_memory_t, emit_cairo_abstract_t,
+          emit_cairo_relative_coordinate_abstract_t> {
 public:
   using class_storage_emitter_t::class_storage_emitter_t;
-
-  void emit(cairo_t *cr);
+  void emit(cairo_t *cr) { emit_absolute(cr); }
+  void emit_relative(cairo_t *cr);
+  void emit_absolute(cairo_t *cr);
 };
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::coordinate_t);
@@ -971,6 +985,7 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::graphic_operator_t);
 namespace uxdevice {
 using relative_coordinate_t = class relative_coordinate_t
     : public marker_emitter_t<relative_coordinate_t,
+                              attribute_display_context_memory_t,
                               emit_display_context_abstract_t> {
 public:
   using marker_emitter_t::marker_emitter_t;
@@ -987,6 +1002,7 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::relative_coordinate_t);
 namespace uxdevice {
 using absolute_coordinate_t = class absolute_coordinate_t
     : public marker_emitter_t<absolute_coordinate_t,
+                              attribute_display_context_memory_t,
                               emit_display_context_abstract_t> {
 public:
   using marker_emitter_t::marker_emitter_t;

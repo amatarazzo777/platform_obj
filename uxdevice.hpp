@@ -52,7 +52,8 @@ options when compiling the text_color_t.
 
 */
 #define SYSTEM_DEFAULTS                                                        \
-  in(text_render_normal_t{}, text_font_t{"Arial 20px"}, text_color_t{"black"}, \
+  in(absolute_coordinate_t(), text_render_normal_t{},                          \
+     text_font_t{"Arial 20px"}, text_color_t{"black"},                         \
      surface_area_brush_t{"white"}, text_indent_t{100.0},                      \
      text_alignment_t{text_alignment_options_t::left},                         \
      text_ellipsize_t{text_ellipsize_options_t::off}, text_line_space_t{1.1},  \
@@ -88,10 +89,6 @@ typedef std::function<void(const std::string &err)> errorHandler;
 namespace uxdevice {
 
 class event;
-
-/**
- \details
-*/
 
 using bounds = class bounds {
 public:
@@ -175,18 +172,101 @@ public:
                  const painter_brush_t &background);
   ~surface_area_t();
 
-  // template << operator.
+  // copy constructor
+  surface_area_t(const surface_area_t &other)
+      : context(other.context), fnError(other.fnError),
+        fnEvents(other.fnEvents),
+        display_list_storage(other.display_list_storage) {
+    if (other.bProcessing)
+      bProcessing = true;
+  }
+
+  // move constructor
+  surface_area_t(surface_area_t &&other) noexcept
+      : context(other.context), fnError(other.fnError),
+        fnEvents(other.fnEvents),
+        display_list_storage(other.display_list_storage) {
+    if (other.bProcessing)
+      bProcessing = true;
+  }
+
+  // copy assignment operator
+  surface_area_t &operator=(const surface_area_t &other) {
+    context = other.context;
+    fnError = other.fnError;
+    fnEvents = other.fnEvents;
+    display_list_storage = other.display_list_storage;
+    if (other.bProcessing)
+      bProcessing = true;
+    return *this;
+  }
+  // move assignment operator
+  surface_area_t &operator=(surface_area_t &&other) noexcept {
+    context = std::move(other.context);
+    fnError = std::move(other.fnError);
+    fnEvents = std::move(other.fnEvents);
+    display_list_storage = std::move(other.display_list_storage);
+    if (other.bProcessing)
+      bProcessing = true;
+    return *this;
+  }
+
+  /**
+  \fn template << operator.
+  \brief The operator is a template function that also checks the base class
+    inheritance for the type of object as well as its exposed methods. The base
+    class inheritance signifies operations that occur specific to the object type.
+    The constexpr if states decide this at compile time which creates a routine specific
+    for the class and its described characteristics.
+
+  */
   template <typename T> surface_area_t &operator<<(const T &data) {
+    // event listeners are intercepted here.
     if constexpr (std::is_base_of<listener_t<T>, T>::value) {
 
     } else if constexpr (std::is_base_of<display_unit_t, T>::value) {
-      display_list<T>(data);
+      std::shared_ptr<T> obj = display_list<T>(data);
+      maintain_index(std::dynamic_pointer_cast<display_unit_t>(obj));
+
+      if constexpr (std::is_base_of<attribute_display_context_memory_t,
+                                    T>::value)
+        context.unit_memory<T>(obj);
+
+      if constexpr (std::is_base_of<emit_display_context_abstract_t, T>::value)
+        obj->emit(context);
+
+      if constexpr (std::is_base_of<emit_cairo_abstract_t, T>::value)
+        obj->emit(context.cr);
+
+      if constexpr (std::is_base_of<emit_cairo_relative_coordinate_abstract_t,
+                                    T>::value) {
+        if (context.unit_memory<relative_coordinate_t>())
+          obj->emit_relative(context.cr);
+        else
+          obj->emit_absolute(context.cr);
+      }
+
+      if constexpr (std::is_base_of<emit_cairo_coordinate_abstract_t,
+                                    T>::value) {
+      }
+      // virtual void emit(cairo_t *cr) = 0;
+      // virtual void emit(cairo_t *cr, const coordinate_t &a) = 0;
+      if constexpr (std::is_base_of<emit_pango_abstract_t, T>::value) {
+      }
+
+      // if the item is a drawing output object, inform the context of it.
+      if constexpr(std::is_base_of<drawing_output_t,T>::value)
+        context.add_drawable(obj);
+
+      // otherwise the input is another type. Try
+      // the default string stream.
     } else {
       std::ostringstream s;
       s << data;
       std::string sData = s.str();
       stream_input(sData);
     }
+
     return *this;
   }
 
@@ -198,10 +278,13 @@ public:
   template <typename T>
   surface_area_t &operator<<(const std::shared_ptr<T> data) {
 
+    // if the item is an event listener it is placed into a separate area.
     if constexpr (std::is_base_of<listener_t<T>, T>::value) {
 
+      // display units are handled distinctly
     } else if constexpr (std::is_base_of<display_unit_t, T>::value) {
       display_list<T>(data);
+      maintain_index(data);
 
       if constexpr (std::is_base_of<attribute_display_context_memory_t,
                                     T>::value)
@@ -209,25 +292,30 @@ public:
 
       if constexpr (std::is_base_of<emit_display_context_abstract_t, T>::value)
         T::emit(context);
-    } else if constexpr (std::is_base_of<emit_cairo_abstract_t, T>::value) {
-      T::emit(context.cr);
-    } else if constexpr (std::is_base_of<
-                             emit_cairo_relative_coordinate_abstract_t,
-                             T>::value) {
-      if (context.relative_coordinate)
-        T::emit_relative(context.cr);
-      else
-        T::emit_relative(context.cr);
-    } else if constexpr (std::is_base_of<emit_cairo_coordinate_abstract_t,
-                                         T>::value) {
+
+      if constexpr (std::is_base_of<emit_cairo_abstract_t, T>::value)
+        T::emit(context.cr);
+
+      if constexpr (std::is_base_of<emit_cairo_relative_coordinate_abstract_t,
+                                    T>::value) {
+        if (context.unit_memory<relative_coordinate_t>())
+          T::emit_relative(context.cr);
+        else
+          T::emit_absolute(context.cr);
+      }
+
+      if constexpr (std::is_base_of<emit_cairo_coordinate_abstract_t,
+                                    T>::value) {
+      }
       // virtual void emit(cairo_t *cr) = 0;
       // virtual void emit(cairo_t *cr, const coordinate_t &a) = 0;
-    } else if constexpr (std::is_base_of<emit_pango_abstract_t, T>::value) {
+      if constexpr (std::is_base_of<emit_pango_abstract_t, T>::value) {
+      }
+
+      // otherwise the input is another type. Try
+      // the default string stream.
     } else {
-      std::ostringstream s;
-      s << data;
-      std::string sData = s.str();
-      stream_input(sData);
+      stream_input(data);
     }
 
     return *this;
@@ -261,6 +349,9 @@ public:
   \tparam T - object to insert using the stream operator.
   \tparam Args - list of them, param pack expansion calls recursively to
   operator.
+  \brief An alternative input function to stream syntax.
+     e.g.
+        vis.in(text_font_t{"Arial 20px"}, coordindate_t{0,0}, "Hello");
   */
   template <typename T> void in(const T &obj) { operator<<(obj); }
   template <typename T, typename... Args>
@@ -270,6 +361,12 @@ public:
   }
 
 public:
+  /**
+  \fn
+  \tparam T -
+  \brief
+
+  */
   template <typename T> T &operator[](const T &o) {
     std::shared_ptr<T> ptr = {};
     auto n = mapped_objects.find(o.key);
@@ -282,19 +379,22 @@ public:
 
   display_unit_t &operator[](const std::string &_val) noexcept {
     auto n = mapped_objects.find(indirect_index_display_unit_t{_val});
-    n->second->changed();
+    if (n != mapped_objects.end())
+      n->second->changed();
     return *n->second;
   }
   template <typename T> T &get(const std::string &key) {
     auto n = mapped_objects.find(indirect_index_display_unit_t{key});
-    n->second->changed();
+    if (n != mapped_objects.end())
+      n->second->changed();
     return *std::dynamic_pointer_cast<T>(n->second);
   }
 
   // return display unit associated, update
   std::string &operator[](std::shared_ptr<std::string> _val) noexcept {
     auto n = mapped_objects.find(reinterpret_cast<std::size_t>(_val.get()));
-    n->second->changed();
+    if (n != mapped_objects.end())
+      n->second->changed();
     return *_val;
   }
 
@@ -371,7 +471,7 @@ private:
     return display_list<T>(std::make_shared<T>(args...));
   }
 
-  // interface between client and api rendering threads.
+  // interface between client and API rendering threads.
   std::atomic_flag DL_readwrite = ATOMIC_FLAG_INIT;
 
 #define UX_DISPLAY_LIST_SPIN                                                   \
@@ -379,8 +479,7 @@ private:
 #define UX_DISPLAY_LIST_CLEAR DL_readwrite.clear(std::memory_order_release)
 
   template <class T, typename... Args>
-  std::shared_ptr<T> display_list(const std::shared_ptr<T> ptr,
-                                  const Args &... args) {
+  std::shared_ptr<T> display_list(const std::shared_ptr<T> ptr) {
     UX_DISPLAY_LIST_SPIN;
     display_list_storage.emplace_back(ptr);
     UX_DISPLAY_LIST_CLEAR;

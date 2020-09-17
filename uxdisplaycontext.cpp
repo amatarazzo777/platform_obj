@@ -42,6 +42,7 @@
 arrives to the thread via the regions list. However, when no official work
 exists, the condition variable cvRenderWork is placed in a wait state. The
 condition may be awoken by calling the routine state_notify_complete().
+\return bool - true - work exists, false none.
 */
 bool uxdevice::display_context_t::surface_prime() {
   bool bRet = false;
@@ -67,6 +68,7 @@ bool uxdevice::display_context_t::surface_prime() {
     std::unique_lock<std::mutex> lk(mutexRenderWork);
     cvRenderWork.wait(lk);
     lk.unlock();
+    bRet = true;
   }
 
   return bRet;
@@ -123,6 +125,7 @@ void uxdevice::display_context_t::resize_surface(const int w, const int h) {
     _surfaceRequests.emplace_back(w, h);
   SURFACE_REQUESTS_CLEAR;
 }
+
 /**
 \internal
 \brief The routine applies resize requests of a window.
@@ -148,6 +151,11 @@ void uxdevice::display_context_t::apply_surface_requests(void) {
   SURFACE_REQUESTS_CLEAR;
 }
 
+/**
+\internal
+\brief The routine paints the surface requests. The background brush
+ is emitted first then plot routine is called.
+*/
 void uxdevice::display_context_t::render(void) {
   clearing_frame = false;
 
@@ -436,9 +444,10 @@ void uxdevice::display_context_t::state_notify_complete(void) {
 bool uxdevice::display_context_t::state(void) {
 
   // determine if any on screen elements, or their attribute shared pointers
-  // have changed.
+  // have changed. if so, create a surface state repaint
   for (auto n : viewport_on) {
-    // if (n->is_different_hash())      add_drawable(n);
+//    if (n->is_different_hash())
+//      state(n);
   }
 
   REGIONS_SPIN;

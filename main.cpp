@@ -91,7 +91,7 @@ const char *stripes =
 // of the style. Not all of the blocks below are required,
 // such as meta data. The parsing is fast, however the information is still
 // transposed from text. The biggest slowdowns are the effects that use the
-// Gaussian blur functions. This uses the RSVG api for its rendering and
+// Gaussian blur functions. This uses the RSVG API for its rendering and
 // parsing. Files may be drawn in the inkscape application and transposed at
 // this layer.
 std::string sSVG_BUTTON =
@@ -405,7 +405,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
   // easily index  properties for specific access later.
   // creating shared objects allows for some interface architectures
   // to be crafted easier.
-  vis << text_font_t("28px").index("paragraphfont");
+  vis << text_font_t("38px").index("paragraphfont");
   vis << text_shadow_t("green") << coordinate_t{0, 100, 600, 300}
       << text_color_t("white");
   vis << paragraph_text << '\n';
@@ -414,13 +414,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
       "New text is applied without an indirect index, more simplified syntax. ";
   vis.get<text_font_t>("paragraphfont").description = "40px";
 
+
   for (int i = 0; i < 5; i++) {
-    vis << coordinate_t{i * 130.0, 200, 150, 240} << image_block_t{sSVG_BUTTON}
-        << text_shadow_t("black")
-        << text_fill_t(0, 0, 5, 30, {{"orange"}, {"yellow"}})
+    vis << coordinate_t{i * 130.0, 200, 150, 240};
+    vis << image_block_t{sSVG_BUTTON};
+    vis << text_shadow_t("black")
+        << text_fill_t(0, 0, 5, 30, {{"green"}, {"purple"}})
         << text_outline_t(stripes) << text_font_t("16px") << line_width_t(5.0)
         << coordinate_t{20.0 + i * 130.0, 210, 150, 240} << button_caption;
   }
+
 
   vis.notify_complete();
   while (vis.processing()) {
