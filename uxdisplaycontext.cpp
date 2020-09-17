@@ -446,8 +446,8 @@ bool uxdevice::display_context_t::state(void) {
   // determine if any on screen elements, or their attribute shared pointers
   // have changed. if so, create a surface state repaint
   for (auto n : viewport_on) {
-//    if (n->is_different_hash())
-//      state(n);
+    //    if (n->is_different_hash())
+    //      state(n);
   }
 
   REGIONS_SPIN;

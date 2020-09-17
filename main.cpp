@@ -29,7 +29,8 @@
 using namespace std;
 using namespace uxdevice;
 
-void show_time(surface_area_t &vis, double x, double y);
+std::string get_current_time();
+
 std::shared_ptr<std::string> insert_text(surface_area_t &vis, bool bfast,
                                          string &stxt);
 void draw_shapes(surface_area_t &vis);
@@ -103,7 +104,7 @@ std::string sSVG_BUTTON =
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:xlink="http://www.w3.org/1999/xlink"
-   xmlns:sodipodi="http://sodipodi.text_color_tforge.net/DTD/sodipodi-0.dtd"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    enable-background="new"
    id="svg8"
@@ -295,7 +296,7 @@ std::string sSVG_BUTTON =
          rdf:about="">
         <dc:format>image/svg+xml</dc:format>
         <dc:type
-           rdf:retext_color_t="http://purl.org/dc/dcmitype/StillImage" />
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
         <dc:title />
       </cc:Work>
     </rdf:RDF>
@@ -336,6 +337,7 @@ std::string sSVG_BUTTON =
   </g>
 </svg>
 
+
 )data";
 
 /****************************************************************************************************
@@ -351,7 +353,7 @@ double mx = 0, my = 0;
 double ox = 0, oy = 0;
 
 #define FAST_TEXT true
-#define DRAW_SLEEP 100
+#define DRAW_SLEEP 500
 #define NUM_SEGMENTS 10
 
 #if defined(__linux__)
@@ -373,9 +375,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
 #define _C color(gen)
 #define _A opac(gen)
 
-  surface_area_t vis = surface_area_t({500, 500}, "Information Title",
-                                      painter_brush_t("darkorange"));
+  // create window at the specified area with the given title and the
+  // color of the background is a linear gradient.
+  auto vis = surface_area_t(
+      {500, 500}, "Information Title",
+      painter_brush_t(0, 0, 300, 0, {{"orange"}, {"darkorange"}}));
 
+  // add event listeners.
   vis << listen_keypress_t([&vis](auto &evt) {
     string s = " ";
     s[0] = evt.key;
@@ -395,44 +401,78 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
     my = evt.y;
   });
 
+  // clear the context. This is here for test, this will remove
+  // the even listeners previously held within the display list.
   vis.clear();
+
+  // draw some shapes
   // draw_lines(vis);
+
+  // the following variables are shared pointers of textual data
+  // they are added directly to the display list. Later they can be modified
+  // to reflect new values. THe system senses these changes and repaints the area.
   std::shared_ptr<std::string> paragraph_text =
       std::make_shared<std::string>("starting text");
   std::shared_ptr<std::string> button_caption =
       std::make_shared<std::string>("button text");
+  std::shared_ptr<std::string> current_time =
+      std::make_shared<std::string>(get_current_time());
 
-  // easily index  properties for specific access later.
+
+  // add the current time shared pointer to the display list.
+  // which is a std::string_view.
+  // once the pointer is in the list, just the pointer can be updated
+  vis << text_render_normal_t{} << text_font_t("58px")
+      << text_shadow_t("darkgrey") << coordinate_t{0,0, 600, 300}
+      << text_color_t(0, 0, 10, 10, {{"white"}, {"grey"}}) << current_time << "  "
+      << '\n';
+
+  // draw paragraph text adding a shared std::string pointer. Later this
+  // pointer can be updated to reflect changes. The method of using the
+  // [] operator provides a more efficient detection of changes. This can
+  // be used where textual data within the display list is very large.
+  // meaning that hash values will not be calculated for the string,
+  // rather the [] operator informs the system of the change.
+  vis[paragraph_text] = "New text is applied using the shared_ptr as an "
+                        "indirect index, more simplified syntax. ";
+
+  // index any object using the "index" function.
+  // properties for specific access later.
   // creating shared objects allows for some interface architectures
   // to be crafted easier.
-  vis << text_font_t("38px").index("paragraphfont");
-  vis << text_shadow_t("green") << coordinate_t{0, 100, 600, 300}
-      << text_color_t("white");
+  vis << text_font_t("28px").index("paragraphfont");
+
+  vis << text_shadow_t("darkbrown") << coordinate_t{0, 100, 600, 300}
+      << text_color_t(0, 0, 30, 30, {{"white"}, {"darkgrey"}});
   vis << paragraph_text << '\n';
 
-  vis[paragraph_text] =
-      "New text is applied without an indirect index, more simplified syntax. ";
+  // change the indexed object.
   vis.get<text_font_t>("paragraphfont").description = "40px";
 
-
+  // draw svg images and captions.
   for (int i = 0; i < 5; i++) {
     vis << coordinate_t{i * 130.0, 200, 150, 240};
     vis << image_block_t{sSVG_BUTTON};
     vis << text_shadow_t("black")
-        << text_fill_t(0, 0, 5, 30, {{"green"}, {"purple"}})
+        << text_fill_t(0, 0, 5, 30, {{"white"}, {"grey"}})
         << text_outline_t(stripes) << text_font_t("16px") << line_width_t(5.0)
         << coordinate_t{20.0 + i * 130.0, 210, 150, 240} << button_caption;
   }
 
-
+  // the notify_complete method call is essential to inform the
+  // render system that work may be available for paint.
+  // This must be called after updates.
   vis.notify_complete();
+
+  // loop while the system is processing, the threaded implementation
+  // provides the ability for the caller to implement other work
+  // while the render system runs in a separate thread.
   while (vis.processing()) {
     std::this_thread::sleep_for(std::chrono::milliseconds(DRAW_SLEEP));
 
-    // show_time(vis, 0, 0);
-    vis[paragraph_text] = generate_text();
-
-    // window_background.value
+    // update the shared pointers to reflect new data
+    *current_time = get_current_time();
+    *paragraph_text = generate_text();
 
     vis.notify_complete();
   }
@@ -440,15 +480,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /* hPrevInstance */,
   return 0;
 }
 
-void show_time(surface_area_t &vis, double x, double y) {
+std::string get_current_time(void) {
   std::time_t t = std::time(nullptr);
   char mbstr[100];
   std::strftime(mbstr, sizeof(mbstr), "%A %c", std::localtime(&t));
-
-  vis << text_render_normal_t{} << text_font_t("28px")
-      << text_shadow_t("darkgrey") << coordinate_t{x, y, 600, 300}
-      << text_color_t(0, 0, 10, 10, {{"white"}, {"grey"}}) << mbstr << "  "
-      << '\n';
+  return mbstr;
 }
 
 std::shared_ptr<std::string> insert_text(surface_area_t &vis, bool bfast,
@@ -475,7 +511,8 @@ std::shared_ptr<std::string> insert_text(surface_area_t &vis, bool bfast,
 
   } else {
 
-    vis << text_fill_t{coord(gen),
+    vis << text_render_path_t{}
+        << text_fill_t{coord(gen),
                        coord(gen),
                        coord(gen),
                        coord(gen),

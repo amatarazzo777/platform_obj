@@ -132,6 +132,14 @@ void uxdevice::coordinate_t::emit_relative(cairo_t *cr) {
 void uxdevice::coordinate_t::emit_absolute(cairo_t *cr) {
   cairo_move_to(cr, x, y);
 }
+void uxdevice::coordinate_t::emit(PangoLayout *layout) {
+  if (pango_layout_get_width(layout) != w * PANGO_SCALE)
+    pango_layout_set_width(layout, w * PANGO_SCALE);
+
+  if (pango_layout_get_height(layout) != h * PANGO_SCALE)
+    pango_layout_set_height(layout, h * PANGO_SCALE);
+}
+
 /**
 
 \class text_indent_t
@@ -185,30 +193,20 @@ void uxdevice::text_line_space_t::emit(PangoLayout *layout) {
  */
 std::size_t uxdevice::textual_render_storage_t::hash_code(void) const noexcept {
   std::size_t __value = {};
-  hash_combine(__value,
-               std::type_index(typeid(textual_render_storage_t)),
+  hash_combine(__value, std::type_index(typeid(textual_render_storage_t)),
                pango_layout_get_serial(layout), ink_rect.x, ink_rect.y,
                ink_rect.width, ink_rect.height, matrix.hash_code(),
-               unit_memory<text_color_t>(),
-               unit_memory<text_outline_t>(),
-               unit_memory<text_fill_t>(),
-               unit_memory<text_shadow_t>(),
-               unit_memory<text_alignment_t>(),
-               unit_memory<text_indent_t>(),
+               unit_memory<text_color_t>(), unit_memory<text_outline_t>(),
+               unit_memory<text_fill_t>(), unit_memory<text_shadow_t>(),
+               unit_memory<text_alignment_t>(), unit_memory<text_indent_t>(),
                unit_memory<text_ellipsize_t>(),
                unit_memory<text_line_space_t>(),
-               unit_memory<text_tab_stops_t>(),
-               unit_memory<text_font_t>(),
-               unit_memory<text_data_t>(),
-               unit_memory<coordinate_t>(),
-               unit_memory<antialias_t>(),
-               unit_memory<line_width_t>(),
-               unit_memory<line_cap_t>(),
-               unit_memory<line_join_t>(),
-               unit_memory<miter_limit_t>(),
-               unit_memory<line_dashes_t>(),
-               unit_memory<tollerance_t>(),
-               unit_memory<graphic_operator_t>());
+               unit_memory<text_tab_stops_t>(), unit_memory<text_font_t>(),
+               unit_memory<text_data_t>(), unit_memory<coordinate_t>(),
+               unit_memory<antialias_t>(), unit_memory<line_width_t>(),
+               unit_memory<line_cap_t>(), unit_memory<line_join_t>(),
+               unit_memory<miter_limit_t>(), unit_memory<line_dashes_t>(),
+               unit_memory<tollerance_t>(), unit_memory<graphic_operator_t>());
   return __value;
 }
 
@@ -252,8 +250,44 @@ void uxdevice::text_font_t::emit(PangoLayout *layout) {
       //      std::string_view(s));
     }
   }
-  if (font_ptr)
-    pango_layout_set_font_description(layout, font_ptr);
+
+  const PangoFontDescription *internal_description =
+      pango_layout_get_font_description(layout);
+  if (!internal_description ||
+      !pango_font_description_equal(internal_description, font_ptr))
+    if (font_ptr)
+      pango_layout_set_font_description(layout, font_ptr);
+}
+
+/**
+\internal
+\fn text_data_t::emit(layout)
+\brief sets that text of the layout to the one stored withi nthe text_data_t
+  object. The text_data_t object contains a text_data_storage_t which is a
+  std::variant holding the information within a string, string_view or
+
+*/
+void uxdevice::text_data_t::emit(PangoLayout *layout) {
+  std::string_view sinternal = std::string_view(pango_layout_get_text(layout));
+
+  // text data is variant based
+  if (auto pval = std::get_if<std::string>(&value)) {
+    if (pval->compare(sinternal) != 0)
+      pango_layout_set_text(layout, pval->data(), -1);
+
+  } else if (auto pval = std::get_if<std::string_view>(&value)) {
+    if (pval->compare(sinternal) != 0)
+      pango_layout_set_text(layout, pval->data(), -1);
+
+  } else if (auto pval = std::get_if<std::shared_ptr<std::string>>(&value)) {
+    if ((*pval)->compare(sinternal) != 0)
+      pango_layout_set_text(layout, (*pval)->data(), -1);
+
+  } else if (auto pval =
+                 std::get_if<std::shared_ptr<std::string_view>>(&value)) {
+    if ((*pval)->compare(sinternal) != 0)
+      pango_layout_set_text(layout, (*pval)->data(), -1);
+  }
 }
 
 /**
@@ -272,44 +306,27 @@ bool uxdevice::textual_render_storage_t::set_layout_options(cairo_t *cr) {
   if (!layout)
     layout = pango_cairo_create_layout(cr);
 
+  // get the serial number of all the current attributes.
+  // if any of the emitter functions change the layout
+  // the serial number changes.
   guint layoutSerial = pango_layout_get_serial(layout);
 
-  const PangoFontDescription *originalDescription =
-      pango_layout_get_font_description(layout);
-  if (!originalDescription ||
-      !pango_font_description_equal(originalDescription,
-                                    unit_memory<text_font_t>()->font_ptr))
-    pango_layout_set_font_description(layout,
-                                      unit_memory<text_font_t>()->font_ptr);
+  // emit the text rendering attribtues from unit storage.
+  unit_memory<text_font_t>()->emit(layout);
 
   if (unit_memory<text_alignment_t>()) {
     unit_memory<text_alignment_t>()->emit(layout);
   }
 
   // set the width and height of the layout.
-  auto coordinate = unit_memory<coordinate_t>();
-  if (pango_layout_get_width(layout) != coordinate->w * PANGO_SCALE)
-    pango_layout_set_width(layout, coordinate->w * PANGO_SCALE);
+  unit_memory<coordinate_t>()->emit(layout);
 
-  if (pango_layout_get_height(layout) != coordinate->h * PANGO_SCALE)
-    pango_layout_set_height(layout, coordinate->h * PANGO_SCALE);
-
-  auto text_data = unit_memory<text_data_t>();
-  std::string_view sinternal = std::string_view(pango_layout_get_text(layout));
-
-  // text data is variant based
-  if(auto pval = std::get_if<std::string>(&text_data->value)) {
-    if (pval->compare(sinternal) != 0)
-      pango_layout_set_text(layout, pval->data(), -1);
-
-  } else if(auto pval = std::get_if<std::shared_ptr<std::string>>(&text_data->value)) {
-    if ((*pval)->compare(sinternal) != 0)
-      pango_layout_set_text(layout, (*pval)->data(), -1);
-
-  }
+  // set the text data
+  unit_memory<text_data_t>()->emit(layout);
 
   // any changes
   if (layoutSerial != pango_layout_get_serial(layout)) {
+    auto coordinate = unit_memory<coordinate_t>();
     pango_layout_get_pixel_extents(layout, &ink_rect, &logical_rect);
     int tw = std::min((double)logical_rect.width, coordinate->w);
     int th = std::min((double)logical_rect.height, coordinate->h);
@@ -714,7 +731,7 @@ void uxdevice::image_block_t::emit(display_context_t &context) {
   auto coordinate = context.unit_memory<coordinate_t>();
   auto options = context.unit_memory<cairo_option_function_t>();
 
-  if (!coordinate ||  description.size()==0) {
+  if (!coordinate || description.size() == 0) {
     const char *s = "An image_block_t object must include the following "
                     "attributes. coordinate_t and an image_block_t name.";
     UX_ERROR_DESC(s);

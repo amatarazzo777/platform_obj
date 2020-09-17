@@ -34,10 +34,10 @@
 #pragma once
 
 namespace uxdevice {
-using Matrix = class Matrix : virtual public hash_members_t {
+using matrix_t = class matrix_t : virtual public hash_members_t {
 public:
-  Matrix() { cairo_matrix_init_identity(&_matrix); }
-  virtual ~Matrix() {}
+  matrix_t() { cairo_matrix_init_identity(&_matrix); }
+  virtual ~matrix_t() {}
   void init_identity(void) { cairo_matrix_init_identity(&_matrix); };
   void init_translate(double tx, double ty) {
     cairo_matrix_init_translate(&_matrix, tx, ty);
@@ -54,7 +54,7 @@ public:
   void scale(double sx, double sy) { cairo_matrix_scale(&_matrix, sx, sy); }
   void rotate(double radians) { cairo_matrix_rotate(&_matrix, radians); }
   void invert(void) { cairo_matrix_invert(&_matrix); }
-  void multiply(const Matrix &operand, Matrix &result) {
+  void multiply(const matrix_t &operand, matrix_t &result) {
     cairo_matrix_multiply(&result._matrix, &_matrix, &operand._matrix);
   }
   void transform_distance(double &dx, double &dy) {
@@ -81,3 +81,4 @@ public:
   cairo_matrix_t _matrix = {0, 0, 0, 0, 0, 0};
 };
 } // namespace uxdevice
+UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::matrix_t);

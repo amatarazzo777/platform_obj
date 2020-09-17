@@ -353,13 +353,15 @@ public:
 
   /// @brief move constructor
   image_block_storage_t(image_block_storage_t &&other) noexcept
-      : description(std::move(other.description)), image_block_ptr(std::move(other.image_block_ptr)),
+      : description(std::move(other.description)),
+        image_block_ptr(std::move(other.image_block_ptr)),
         is_SVG(std::move(other.is_SVG)), is_loaded(std::move(other.is_loaded)),
         coordinate(std::move(other.coordinate)) {}
 
   /// @brief copy constructor
   image_block_storage_t(const image_block_storage_t &other)
-      : description(other.description), image_block_ptr(cairo_surface_reference(other.image_block_ptr)),
+      : description(other.description),
+        image_block_ptr(cairo_surface_reference(other.image_block_ptr)),
         is_SVG(other.is_SVG), is_loaded(other.is_loaded),
         coordinate(other.coordinate) {}
 
@@ -488,19 +490,17 @@ public:
   /// @brief copy constructor
   textual_render_storage_t(const textual_render_storage_t &other)
       : shadow_image(cairo_surface_reference(other.shadow_image)),
-        shadow_cr(cairo_reference(other.shadow_cr)),
-        ink_rect(other.ink_rect),
+        shadow_cr(cairo_reference(other.shadow_cr)), ink_rect(other.ink_rect),
         logical_rect(other.logical_rect), matrix(other.matrix) {
-        if(other.layout)
-          layout=pango_layout_copy(other.layout);
-
-        }
+    if (other.layout)
+      layout = pango_layout_copy(other.layout);
+  }
 
   textual_render_storage_t &operator=(const textual_render_storage_t &other) {
     shadow_image = cairo_surface_reference(other.shadow_image);
     shadow_cr = cairo_reference(other.shadow_cr);
-    if(other.layout)
-      layout=pango_layout_copy(other.layout);
+    if (other.layout)
+      layout = pango_layout_copy(other.layout);
     ink_rect = other.ink_rect;
     logical_rect = other.logical_rect;
     matrix = other.matrix;
@@ -525,7 +525,7 @@ public:
   PangoLayout *layout = nullptr;
   PangoRectangle ink_rect = PangoRectangle();
   PangoRectangle logical_rect = PangoRectangle();
-  Matrix matrix = {};
+  matrix_t matrix = {};
 
   bool set_layout_options(cairo_t *cr);
   void create_shadow(void);
@@ -813,12 +813,18 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_tab_stops_t);
 \brief
 */
 namespace uxdevice {
-typedef std::variant<std::string, std::shared_ptr<std::string>> text_data_storage_t;
+typedef std::variant<std::string, std::shared_ptr<std::string>,
+                     std::string_view, std::shared_ptr<std::string_view>>
+    text_data_storage_t;
+
 using text_data_t = class text_data_t
     : public storage_emitter_t<text_data_t, text_data_storage_t,
-                               attribute_display_context_memory_t> {
+                               attribute_display_context_memory_t,
+                               emit_pango_abstract_t> {
 public:
   using storage_emitter_t::storage_emitter_t;
+
+  void emit(PangoLayout *layout);
 };
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_data_t);
@@ -833,12 +839,13 @@ using coordinate_t = class coordinate_t
     : public class_storage_emitter_t<
           coordinate_t, coordinate_storage_t,
           attribute_display_context_memory_t, emit_cairo_abstract_t,
-          emit_cairo_relative_coordinate_abstract_t> {
+          emit_cairo_relative_coordinate_abstract_t, emit_pango_abstract_t> {
 public:
   using class_storage_emitter_t::class_storage_emitter_t;
   void emit(cairo_t *cr) { emit_absolute(cr); }
   void emit_relative(cairo_t *cr);
   void emit_absolute(cairo_t *cr);
+  void emit(PangoLayout *layout);
 };
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::coordinate_t);

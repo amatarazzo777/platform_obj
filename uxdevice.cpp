@@ -59,7 +59,7 @@ void uxdevice::surface_area_t::render_loop(void) {
     // of the paint event. As well, the underlying surface may
     // need to be resized. This function acquires locks on these
     // small lists for the multi-threaded necessity.
-    // search_these for unready and syncs display context
+    // search these for unready and syncs display context
     // if no work exists  it waits on the cvRenderWork condition variable.
     if (context.surface_prime()) {
       context.render();
@@ -368,7 +368,7 @@ void uxdevice::surface_area_t::maintain_index(
 
 \brief A stream interface routine that is declared using the
 UX_DECLARE_STREAM_INTERFACE macro within the device published development API.
-uxdevice.hpp is where is interface is declared.
+uxdevice.hpp is where this is interface is declared.
 
 The routine is specialized because it creates a textual_rendering_t object
 that accepts the textual data. Textual data is stored in a separate object.
@@ -377,8 +377,7 @@ which is also added.
 
 */
 surface_area_t &uxdevice::surface_area_t::stream_input(const std::string &s) {
-  auto item = display_list<text_data_t>(s);
-  auto textrender = display_list<textual_render_t>();
+  in(text_data_t{s}, textual_render_t{});
   return *this;
 }
 
@@ -455,8 +454,8 @@ which is also added.
 */
 surface_area_t &
 uxdevice::surface_area_t::stream_input(const std::string_view &s) {
-  auto item = display_list<text_data_t>(std::string(s));
-  auto textrender = display_list<textual_render_t>();
+  in(text_data_t{s}, textual_render_t{});
+
   return *this;
 }
 
@@ -476,12 +475,10 @@ stored in a separate object. The textual_rendering_t object encapsulates the
 pango cairo API functions.
 
 */
-//////////////////////////////////////////logic bugs, where left off
 surface_area_t &uxdevice::surface_area_t::stream_input(
     const std::shared_ptr<std::string_view> _val) {
-  auto item = display_list<text_data_t>(std::string(*_val));
-  item->key = reinterpret_cast<std::size_t>(_val.get());
-  auto textrender = display_list<textual_render_t>();
+  in(text_data_t{_val}.index(reinterpret_cast<std::size_t>(_val.get())),
+     textual_render_t{});
   return *this;
 }
 
@@ -649,7 +646,7 @@ surface_area_t &uxdevice::surface_area_t::scale(double x, double y) {
 /**
 
 \fn transform
-\param const Matrix &m
+\param const matrix_t &m
 
 \brief
 
@@ -657,7 +654,7 @@ surface_area_t &uxdevice::surface_area_t::scale(double x, double y) {
 
 
  */
-surface_area_t &uxdevice::surface_area_t::transform(const Matrix &m) {
+surface_area_t &uxdevice::surface_area_t::transform(const matrix_t &m) {
   using namespace std::placeholders;
   display_list<function_object_t>(std::bind(cairo_transform, _1, &m._matrix));
   return *this;
@@ -666,7 +663,7 @@ surface_area_t &uxdevice::surface_area_t::transform(const Matrix &m) {
 /**
 
 \fn matrix
-\param const Matrix &m
+\param const matrix_t &m
 
 \brief
 
@@ -674,7 +671,7 @@ surface_area_t &uxdevice::surface_area_t::transform(const Matrix &m) {
 
 
  */
-surface_area_t &uxdevice::surface_area_t::matrix(const Matrix &m) {
+surface_area_t &uxdevice::surface_area_t::matrix(const matrix_t &m) {
   using namespace std::placeholders;
   display_list<function_object_t>(std::bind(cairo_set_matrix, _1, &m._matrix));
   return *this;

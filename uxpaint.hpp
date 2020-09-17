@@ -94,7 +94,7 @@ radial-gradient(ellipsize at center, #1e5799 0%,#2989d8 50%,#207cca
 namespace uxdevice {
 class coordinate_t;
 
-class painter_brush_t : public Matrix {
+class painter_brush_t : public matrix_t {
 public:
   enum class paint_definition_class_t {
     none,
@@ -157,7 +157,7 @@ public:
 
     paint_definition_class_t class_type = paint_definition_class_t::none;
     std::string description = {};
-    Matrix matrix = {};
+    matrix_t matrix = {};
     PangoColor pango_color = {0, 0, 0};
     bool is_loaded = false;
   };
@@ -255,7 +255,7 @@ public:
                                  extend_options_t _extend)
         : paint_definition_base_t(paint_definition_class_t::linear_gradient,
                                   _description),
-          x0(_x0), y0(_x0), x1(_x0), y1(_x0), color_stops(_cs), filter(_filter),
+          x0(_x0), y0(_x0), x1(_x1), y1(_y1), color_stops(_cs), filter(_filter),
           extend(_extend) {}
     linear_gradient_definition_t(const std::string &_description)
         : paint_definition_base_t(paint_definition_class_t::linear_gradient,
@@ -481,7 +481,7 @@ public:
 
   painter_brush_t(const painter_brush_t &other) { *this = other; }
   painter_brush_t &operator=(const painter_brush_t &other) {
-    Matrix::operator=(other);
+    matrix_t::operator=(other);
     data_storage = other.data_storage;
     return *this;
   }

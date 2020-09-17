@@ -215,9 +215,9 @@ public:
   \fn template << operator.
   \brief The operator is a template function that also checks the base class
     inheritance for the type of object as well as its exposed methods. The base
-    class inheritance signifies operations that occur specific to the object type.
-    The constexpr if states decide this at compile time which creates a routine specific
-    for the class and its described characteristics.
+    class inheritance signifies operations that occur specific to the object
+  type. The constexpr if states decide this at compile time which creates a
+  routine specific for the class and its described characteristics.
 
   */
   template <typename T> surface_area_t &operator<<(const T &data) {
@@ -255,7 +255,7 @@ public:
       }
 
       // if the item is a drawing output object, inform the context of it.
-      if constexpr(std::is_base_of<drawing_output_t,T>::value)
+      if constexpr (std::is_base_of<drawing_output_t, T>::value)
         context.add_drawable(obj);
 
       // otherwise the input is another type. Try
@@ -420,8 +420,8 @@ public:
   surface_area_t &translate(double x, double y);
   surface_area_t &rotate(double angle);
   surface_area_t &scale(double x, double y);
-  surface_area_t &transform(const Matrix &mat);
-  surface_area_t &matrix(const Matrix &mat);
+  surface_area_t &transform(const matrix_t &mat);
+  surface_area_t &matrix(const matrix_t &mat);
   surface_area_t &identity(void);
   surface_area_t &device(double &x, double &y);
   surface_area_t &device_distance(double &x, double &y);
