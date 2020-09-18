@@ -227,7 +227,7 @@ public:
   void error(const char *s) { error_description = s; }
   bool valid(void) { return error_description == nullptr; }
   void changed(void) { bchanged = true; }
-  bool has_changed(void) { return bchanged; }
+  bool has_changed(void) { return is_different_hash(); }
 
   std::size_t hash_code(void) const noexcept {
     std::size_t __value = {};
@@ -246,9 +246,10 @@ public:
 /**
 \internal
 \class drawing_output_t
-\brief base class for objects that produce image_block_t drawing commands
+\brief base class for objects that produce image drawing commands
 The is_output is overridden to return true. As well the object uses
-the render work list to determine if a particular image_block_t is on screen.
+the intersection to determine if a particular derrived drawing object
+is on screen.
 
 \details
 
@@ -510,7 +511,9 @@ function.
 
 
 \brief creates a painter brush object that is also a display unit.
-class inherits publicly display_unit_t and painter_brush_t
+class inherits publicly display_unit_t and painter_brush_t. The
+painter_brush_t constructor interface is also inherited which allows
+multiple types of brushes to be defined in several formats,
 
 */
 
@@ -585,8 +588,8 @@ these are listed, the interface callback must be defined.
 
 \brief declares a class that marks a unit as an emitter but does not store a
 value. This is useful for switch and state logic. When the item is present, the
-emit method is called. class inherits publicly display_unit_t : public
-polymorphic_overloads_t
+emit method is called. class inherits publicly display_unit_t
+
 */
 namespace uxdevice {
 template <typename T, typename... Args>
@@ -638,6 +641,9 @@ these are listed, the interface callback must be defined.
 
 \brief provides the flexibility to store associated trivial data such as enum,
 double, etc. The template names this storage area within the object 'value'.
+This can be accessed and controlled from the emit function. A default
+constructor is established which zero initializes the value. As well,
+a constructor accepting the initial value of the given storage  type.
 
 */
 namespace uxdevice {
@@ -779,7 +785,6 @@ The class names the the item 'value' which can be accessed from class member
 functions such as emit and invoke.
 
 */
-
 namespace uxdevice {
 template <typename T, typename TS, typename... Args>
 class storage_drawing_function_t : virtual public drawing_output_t,
@@ -844,12 +849,11 @@ inheirit. The system uses the spot for abstract classes. However, other user
 defined classes can be placed here as well.
 
 \brief Provides the ability to store an object accepting a specific parameter
-API. These objects are called to render functions and also have
-a dimension. They occupy a bounds as defined by inkRectangle. They can be
-established as on or off view_port by intersection test with the
-view_port rectangle. The class must include
-the hash_members_t interface. That is, implement the hash_code()
- member function.
+API. These objects are called for render functions and also have a dimension
+(ink rectangle). They occupy a bounds as defined by ink_rectangle. They can be
+established as on or off view_port by intersection test with the view_port
+rectangle. The class must include the hash_members_t interface. That is,
+implement the hash_code()  member function.
 
 
 */

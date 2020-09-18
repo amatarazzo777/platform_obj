@@ -21,13 +21,6 @@
 \file uxdisplayunits.hpp
 \date 9/7/20
 \version 1.0
-\brief
-*/
-/**
-\author Anthony Matarazzo
-\file uxworkstate.hpp
-\date 5/12/20
-\version 1.0
  \details  Routines for cairo image_block_t
 
 */
@@ -46,7 +39,7 @@ cairo_surface_t *image_surface_SVG(bool bDataPassed, std::string &data,
 void blur_image(cairo_surface_t *img, unsigned int radius);
 
 #elif defined(USE_SVGREN)
-cairo_surface_t *blurImage(cairo_surface_t *img, unsigned int radius);
+cairo_surface_t *blur_image(cairo_surface_t *img, unsigned int radius);
 
 cairo_surface_t *cairoImageSurfaceBlur(cairo_surface_t *img,
                                        std::array<double, 2> stdDeviation);

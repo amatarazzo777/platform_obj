@@ -47,8 +47,8 @@ options when compiling the text_color_t.
 
 /**
 \internal
-\def DEFAULT_TEXTFACE
-\brief default text face
+\def SYSTEM_DEFAULTS
+\brief sets the defaults for each window created.
 
 */
 #define SYSTEM_DEFAULTS                                                        \
@@ -56,12 +56,33 @@ options when compiling the text_color_t.
      text_font_t{"Arial 20px"}, text_color_t{"black"},                         \
      surface_area_brush_t{"white"}, text_indent_t{100.0},                      \
      text_alignment_t{text_alignment_options_t::left},                         \
-     text_ellipsize_t{text_ellipsize_options_t::off}, text_line_space_t{1.1},  \
+     text_ellipsize_t{text_ellipsize_options_t::off}, text_line_space_t{1.0},  \
      text_tab_stops_t{                                                         \
          std::vector<double>{250, 250, 250, 250, 250, 250, 250, 250}},         \
      surface_area_title_t{DEFAULT_WINDOW_TITLE});
 
+/**
+\def USE_STACKBLUR
+\brief The stack blue algorithm of shadow creation is used. Use either
+ USE_STACKBLUR or USE_SVGREN. Both cannot be used at the same time.
+*/
 #define USE_STACKBLUR
+
+/**
+\def USE_SVGREN
+\brief The svgren svg c++ algorithm of image blurring is used. A convolution
+matrix is applied. Much slower but may look a bit better. Use either
+ USE_STACKBLUR or USE_SVGREN. Both cannot be used at the same time.
+*/
+
+//#define USE_SVGREN
+
+// catch for dual defines. must comment out one of the options.
+#ifdef USE_STACKBLUR
+#ifdef USE_SVGREN
+#error "Select either USE_STACKBLUR or USE_SVGREN but not both."
+#endif // USE_SVGREN
+#endif
 
 /**
 \def USE_DEBUG_CONSOLE
@@ -353,6 +374,7 @@ public:
      e.g.
         vis.in(text_font_t{"Arial 20px"}, coordindate_t{0,0}, "Hello");
   */
+public:
   template <typename T> void in(const T &obj) { operator<<(obj); }
   template <typename T, typename... Args>
   void in(const T &obj, const Args &... args) {

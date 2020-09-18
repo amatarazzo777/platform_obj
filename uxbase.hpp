@@ -95,6 +95,23 @@
 
 /**
 \internal
+\struct hash_members_t
+\tparam ... - variadic parameter expanding to each listed visitor lambda.
+\brief Creates structure for std::visit pattern.
+
+From:
+https://stackoverflow.com/questions/52088928/trying-to-return-the-value-from-stdvariant-using-stdvisit-and-a-lambda-expre
+
+*/
+namespace uxdevice {
+template <class... Fs> struct overload_visitors_t : Fs... {
+  using Fs::operator()...;
+};
+template <class... Fs> overload_visitors_t(Fs...) -> overload_visitors_t<Fs...>;
+} // namespace uxdevice
+
+/**
+\internal
 \class hash_members_t
 \param ... - variadic parameter expanding to hash combine each listed.
 \brief Creates interface routines for the hashing system and change detection

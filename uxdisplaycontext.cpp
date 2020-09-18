@@ -169,6 +169,11 @@ void uxdevice::display_context_t::render(void) {
 
   // partitionVisibility();
 
+  // detect any changes that have occurred
+  for (auto n : viewport_on)
+    if (n->has_changed())
+      state(n);
+
   REGIONS_SPIN;
   cairo_region_t *current = nullptr;
   while (!_regions.empty()) {
@@ -509,6 +514,7 @@ void uxdevice::display_context_t::plot(context_cairo_region_t &plotArea) {
       UX_ERROR_CHECK(cr);
     } break;
     }
+    n->state_hash_code();
     if (clearing_frame)
       bDone = true;
 

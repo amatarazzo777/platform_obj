@@ -21,7 +21,6 @@
 \file uxdisplayunits.hpp
 \date 9/7/20
 \version 1.0
-\version 1.0
 
 \brief The modules extends the uxdevice namespace. The objects
 provided are the base objects for which the caller may instantiate to
@@ -43,7 +42,8 @@ shading or texturing derive and publish the painter_brush_t class interface.
 
 \param display_context_t &context
 
-\brief
+\brief uses cached glyph bitmap rendering. fastest method of display
+using bitmap font cache data.
 
 \details
 
@@ -60,7 +60,9 @@ void uxdevice::text_render_normal_t::emit(display_context_t &context) {
 
 \param display_context_t &context
 
-\brief
+\brief outputs text using vector drawing operations. This enables
+the custom outline and fill of text. Slower but more versatile.
+Text can bend to follow a path if logic is added.
 
 \details
 
@@ -89,7 +91,7 @@ void uxdevice::surface_area_title_t::emit(display_context_t &context) {
 \fn surface_area_brush_t
 \param display_context_t &context
 
-\brief Sets the window title.
+\brief Sets the background brysh.
 
  */
 void uxdevice::surface_area_brush_t::emit(display_context_t &context) {
@@ -143,7 +145,7 @@ void uxdevice::coordinate_t::emit(PangoLayout *layout) {
 /**
 
 \class text_indent_t
-\brief
+\brief indentation of first line paragraph.
 
 \details
 
@@ -157,7 +159,8 @@ void uxdevice::text_indent_t::emit(PangoLayout *layout) {
 /**
 
 \class text_ellipsize_t
-\brief
+\brief when text is longer than the defined box, "..."
+  is shown. can be at beginning, middle, or end.
 
 \details
 
@@ -170,7 +173,7 @@ void uxdevice::text_ellipsize_t::emit(PangoLayout *layout) {
 /**
 
 \class text_line_space_t
-\brief
+\brief space between the lines of text.
 
 \details
 
@@ -182,38 +185,8 @@ void uxdevice::text_line_space_t::emit(PangoLayout *layout) {
 
 /**
 
-\fn textual_render_storage_t::hash_code(void)
-\param ...b
-
-\brief
-
-\details
-
-
- */
-std::size_t uxdevice::textual_render_storage_t::hash_code(void) const noexcept {
-  std::size_t __value = {};
-  hash_combine(__value, std::type_index(typeid(textual_render_storage_t)),
-               pango_layout_get_serial(layout), ink_rect.x, ink_rect.y,
-               ink_rect.width, ink_rect.height, matrix.hash_code(),
-               unit_memory<text_color_t>(), unit_memory<text_outline_t>(),
-               unit_memory<text_fill_t>(), unit_memory<text_shadow_t>(),
-               unit_memory<text_alignment_t>(), unit_memory<text_indent_t>(),
-               unit_memory<text_ellipsize_t>(),
-               unit_memory<text_line_space_t>(),
-               unit_memory<text_tab_stops_t>(), unit_memory<text_font_t>(),
-               unit_memory<text_data_t>(), unit_memory<coordinate_t>(),
-               unit_memory<antialias_t>(), unit_memory<line_width_t>(),
-               unit_memory<line_cap_t>(), unit_memory<line_join_t>(),
-               unit_memory<miter_limit_t>(), unit_memory<line_dashes_t>(),
-               unit_memory<tollerance_t>(), unit_memory<graphic_operator_t>());
-  return __value;
-}
-
-/**
-
 \class text_tab_stops_t
-\brief
+\brief when tabs occur, this defines the tab stops.
 
 \details
 
@@ -267,27 +240,92 @@ void uxdevice::text_font_t::emit(PangoLayout *layout) {
   std::variant holding the information within a string, string_view or
 
 */
+std::size_t uxdevice::text_data_t::hash_code(void) const noexcept {
+  std::size_t __value = std::type_index(typeid(text_data_t)).hash_code();
+
+  auto text_data_visitor = overload_visitors_t{
+      [&](std::string s) { hash_combine(__value, s); },
+      [&](std::string_view s) { hash_combine(__value, s); },
+      [&](std::shared_ptr<std::string> ps) { hash_combine(__value, *ps); },
+      [&](std::shared_ptr<std::string_view> ps) { hash_combine(__value, *ps); },
+      [&](std::shared_ptr<std::stringstream> ps) {
+        std::string stmp = ps->str();
+        hash_combine(__value, stmp);
+      }};
+
+  std::visit(text_data_visitor, value);
+
+  return __value;
+}
+
+/**
+\internal
+\fn text_data_t::emit(layout)
+\brief sets that text of the layout to the one stored withi nthe text_data_t
+  object. The text_data_t object contains a text_data_storage_t which is a
+  std::variant holding the information within a string, string_view or
+
+*/
 void uxdevice::text_data_t::emit(PangoLayout *layout) {
   std::string_view sinternal = std::string_view(pango_layout_get_text(layout));
+  auto text_data_visitor =
+      overload_visitors_t{[&](std::string s) {
+                            if (s.compare(sinternal) != 0)
+                              pango_layout_set_text(layout, s.data(), -1);
+                          },
 
-  // text data is variant based
-  if (auto pval = std::get_if<std::string>(&value)) {
-    if (pval->compare(sinternal) != 0)
-      pango_layout_set_text(layout, pval->data(), -1);
+                          [&](std::string_view s) {
+                            if (s.compare(sinternal) != 0)
+                              pango_layout_set_text(layout, s.data(), -1);
+                          },
 
-  } else if (auto pval = std::get_if<std::string_view>(&value)) {
-    if (pval->compare(sinternal) != 0)
-      pango_layout_set_text(layout, pval->data(), -1);
+                          [&](std::shared_ptr<std::string> ps) {
+                            if (ps->compare(sinternal) != 0)
+                              pango_layout_set_text(layout, ps->data(), -1);
+                          },
 
-  } else if (auto pval = std::get_if<std::shared_ptr<std::string>>(&value)) {
-    if ((*pval)->compare(sinternal) != 0)
-      pango_layout_set_text(layout, (*pval)->data(), -1);
+                          [&](std::shared_ptr<std::string_view> ps) {
+                            if (ps->compare(sinternal) != 0)
+                              pango_layout_set_text(layout, ps->data(), -1);
+                          },
 
-  } else if (auto pval =
-                 std::get_if<std::shared_ptr<std::string_view>>(&value)) {
-    if ((*pval)->compare(sinternal) != 0)
-      pango_layout_set_text(layout, (*pval)->data(), -1);
-  }
+                          [&](std::shared_ptr<std::stringstream> ps) {
+                            std::string stmp = ps->str();
+                            if (stmp.compare(sinternal) != 0)
+                              pango_layout_set_text(layout, stmp.data(), -1);
+                          }};
+
+  std::visit(text_data_visitor, value);
+}
+
+/**
+
+\fn textual_render_storage_t::hash_code(void)
+
+\brief hash code of the textual rendering. used to detect changes
+that might occur within all of the dependent rendering parameters,
+
+\details
+
+
+ */
+std::size_t uxdevice::textual_render_storage_t::hash_code(void) const noexcept {
+  std::size_t __value = {};
+  hash_combine(
+      __value, std::type_index(typeid(textual_render_storage_t)),
+      pango_layout_get_serial(layout), ink_rect.x, ink_rect.y, ink_rect.width,
+      ink_rect.height, matrix.hash_code(), unit_memory<text_color_t>(),
+      unit_memory<text_outline_t>(), unit_memory<text_fill_t>(),
+      unit_memory<text_shadow_t>(), unit_memory<text_alignment_t>(),
+      unit_memory<text_indent_t>(), unit_memory<text_ellipsize_t>(),
+      unit_memory<text_line_space_t>(), unit_memory<text_tab_stops_t>(),
+      unit_memory<text_font_t>(), unit_memory<text_data_t>()->hash_code(),
+      unit_memory<coordinate_t>(), unit_memory<antialias_t>(),
+      unit_memory<line_width_t>(), unit_memory<line_cap_t>(),
+      unit_memory<line_join_t>(), unit_memory<miter_limit_t>(),
+      unit_memory<line_dashes_t>(), unit_memory<tollerance_t>(),
+      unit_memory<graphic_operator_t>());
+  return __value;
 }
 
 /**
@@ -311,7 +349,7 @@ bool uxdevice::textual_render_storage_t::set_layout_options(cairo_t *cr) {
   // the serial number changes.
   guint layoutSerial = pango_layout_get_serial(layout);
 
-  // emit the text rendering attribtues from unit storage.
+  // emit the text rendering attributes from unit storage.
   unit_memory<text_font_t>()->emit(layout);
 
   if (unit_memory<text_alignment_t>()) {
@@ -352,6 +390,19 @@ bool uxdevice::textual_render_storage_t::set_layout_options(cairo_t *cr) {
 
  */
 void uxdevice::textual_render_storage_t::create_shadow(void) {
+  // if the text has changed, recreate the shadow texture
+  if (unit_memory<text_data_t>()->has_changed()) {
+    if (shadow_image) {
+      cairo_surface_destroy(shadow_image);
+      shadow_image = nullptr;
+    }
+
+    if (shadow_cr) {
+      cairo_destroy(shadow_cr);
+      shadow_cr = nullptr;
+    }
+  }
+
   if (!shadow_image) {
     auto text_shadow = unit_memory<text_shadow_t>();
     shadow_image = cairo_image_surface_create(
@@ -371,7 +422,7 @@ void uxdevice::textual_render_storage_t::create_shadow(void) {
 #elif defined(USE_SVGREN)
     cairo_surface_t *blurred = blur_image(shadow_image, text_shadow->radius);
     cairo_surface_destroy(shadow_image);
-    _shadow_image = blurred;
+    shadow_image = blurred;
 #endif
   }
 }
@@ -379,7 +430,8 @@ void uxdevice::textual_render_storage_t::create_shadow(void) {
 /**
 \internal
 \fn invoke
-\brief creates linkages to the drawing functions and rendering parameters
+\brief creates linkage to the drawing function based upon the rendering
+parameters set.
 
 \details
 
@@ -616,7 +668,7 @@ void uxdevice::textual_render_t::emit(display_context_t &context) {
   auto fn = precise_rendering_function();
   auto &coordinate = *unit_memory<coordinate_t>();
 
-  // two function provide mode switching for the rendering.
+  // two functions provide mode switching for the rendering.
   // a cache surface is a new xcb surface that can be threaded in creation
   // base surface issues the drawing commands to the base window drawing cairo
   // context. base surface creation is not threaded.
@@ -684,7 +736,8 @@ void uxdevice::textual_render_t::emit(display_context_t &context) {
   };
 
   // the base option rendered contains two functions that rendering using the
-  // cairo API to the base surface context. One is for clipping and one without.
+  // cairo API to the base surface context. One is for clipping and one
+  // without.
   auto fnBase = [=](display_context_t &context) {
     auto drawfn = [=](display_context_t &context) {
       drawing_output_t::emit(context);
@@ -1058,7 +1111,6 @@ void uxdevice::hline_t::emit_relative(cairo_t *cr) {
 }
 
 void uxdevice::hline_t::emit_absolute(cairo_t *cr) {
-
   if (cairo_has_current_point(cr)) {
     double curx = 0.0, cury = 0.0;
     cairo_get_current_point(cr, &curx, &cury);
@@ -1084,7 +1136,6 @@ void uxdevice::vline_t::emit_relative(cairo_t *cr) {
 }
 
 void uxdevice::vline_t::emit_absolute(cairo_t *cr) {
-
   if (cairo_has_current_point(cr)) {
     double curx = 0.0, cury = 0.0;
     cairo_get_current_point(cr, &curx, &cury);
@@ -1144,7 +1195,7 @@ void uxdevice::fill_path_t::emit(cairo_t *cr) {
 
 /**
 
-\class stroke_fill_path_storage_t
+\class stroke_fill_path_t
 \brief
 
 \details

@@ -392,7 +392,7 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::image_block_storage_t);
 /**
 \internal
 \class text_font_data_storage
-\brief
+\brief storage for fonts.
 
 \details
 
@@ -459,7 +459,10 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_font_storage_t);
 \class textual_render_storage_t
 \brief class used to store parameters and options for a textual render. The
 object is created as the side effect of inserting text, char *, std string or
-a std::shared_ptr<std::string>.
+a std::shared_ptr<std::string>. The clas inherits from drawing_output_t
+which notes the ink rectangle of the object. The drawing_output_class_t class
+also exposes intersection method for the render system to decide which function
+to invoke, a standard draw or a clipped draw.
 */
 namespace uxdevice {
 class textual_render_storage_t : virtual public drawing_output_t,
@@ -560,7 +563,12 @@ public:
 } // namespace uxdevice
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_tab_stops_storage_t);
 
-/**
+/********************************************************************************
+
+                      API objects
+
+*********************************************************************************
+
 The following definitions are the exact name that appears within the API. These
 class templates provide factories that create objects compatible with the
 system. These objects might have invoke and emit methods depending upon the emit
@@ -571,6 +579,7 @@ use. There are several types of objects that may be created and inserted by
 using the template parameters. Please refer to the class template for a more
 detailed explanation. The following templates are provided for use:
 
+
 marker_emitter_t
 painter_brush_emitter_t
 storage_emitter_t
@@ -579,7 +588,7 @@ storage_drawing_function_t
 class_storage_drawing_function_t
 
 
-*/
+*********************************************************************************/
 
 /**
 \class surface_area_brush_t
@@ -601,7 +610,7 @@ public:
 UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::surface_area_brush_t);
 
 /**
-\class
+\class text_font_t
 \brief
 */
 namespace uxdevice {
@@ -814,7 +823,8 @@ UX_REGISTER_STD_HASH_SPECIALIZATION(uxdevice::text_tab_stops_t);
 */
 namespace uxdevice {
 typedef std::variant<std::string, std::shared_ptr<std::string>,
-                     std::string_view, std::shared_ptr<std::string_view>>
+                     std::string_view, std::shared_ptr<std::string_view>,
+                     std::shared_ptr<std::stringstream>>
     text_data_storage_t;
 
 using text_data_t = class text_data_t
@@ -823,7 +833,7 @@ using text_data_t = class text_data_t
                                emit_pango_abstract_t> {
 public:
   using storage_emitter_t::storage_emitter_t;
-
+  std::size_t hash_code(void) const noexcept;
   void emit(PangoLayout *layout);
 };
 } // namespace uxdevice

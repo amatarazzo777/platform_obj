@@ -33,8 +33,6 @@ namespace uxdevice {
 \brief interface for the paint class.
 
 */
-enum class paintType { none, color, pattern, image_block };
-enum class gradientType { none, linear, radial };
 
 class color_stop_t : virtual public hash_members_t {
 public:
@@ -242,7 +240,7 @@ public:
     double r = {};
     double g = {};
     double b = {};
-    double a = {};
+    double a = 1.0;
   };
 
   class linear_gradient_definition_t : public paint_definition_base_t {
@@ -479,20 +477,30 @@ public:
             "radial_gradient", cx0, cy0, radius0, cx1, cy1, radius1, cs,
             filter_options_t::fast, extend_options_t::off)) {}
 
-  painter_brush_t(const painter_brush_t &other) { *this = other; }
+  virtual ~painter_brush_t() {
+    if (data_storage)
+      data_storage.reset();
+  }
+
+  /// @brief copy constructor
+  painter_brush_t(const painter_brush_t &other)
+      : matrix_t(other), data_storage(other.data_storage) {}
+  /// @brief move constructor
+  painter_brush_t(painter_brush_t &&other)
+      : matrix_t(other), data_storage(std::move(other.data_storage)) {}
+  /// @brief copy assignment
   painter_brush_t &operator=(const painter_brush_t &other) {
     matrix_t::operator=(other);
     data_storage = other.data_storage;
     return *this;
   }
-  painter_brush_t(painter_brush_t &&other) {
+  /// @brief move assignment
+  painter_brush_t &operator=(painter_brush_t &&other) noexcept {
     data_storage = std::move(other.data_storage);
+    matrix_t::operator=(other);
+    return *this;
   }
 
-  virtual ~painter_brush_t() {
-    if (data_storage)
-      data_storage.reset();
-  }
   virtual void emit(cairo_t *cr);
   virtual void emit(cairo_t *cr, coordinate_t &coord);
   bool is_valid(void) { return data_storage != nullptr; }
